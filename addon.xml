@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="lib.module.nakamori" name="Nakamori Lib" version="3.0.9" provider-name="BigRetroMike, da3dsoul">
+    <requires>
+        <import addon="xbmc.python" version="2.25.0" />
+    </requires>
+    <extension point="xbmc.python.module" library="__init__.py" />
+    <extension point="xbmc.addon.metadata">
+        <platform>all</platform>
+        <summary lang="en">A Library containing the core code for Nakamori</summary>
+        <description lang="en">A Library containing the core code for Nakamori</description>
+        <website>https://shokunin.monogatari.pl/</website>
+        <source>http://github.com/bigretromike/nakamori.lib</source>
+        <license>GNU GENERAL PUBLIC LICENSE. Version 2, June 1991</license>
+        <news>3.0.8[CR]- small typo[CR]- show error message for get_json</news>
+        <assets>
+            <icon>resources/icon.png</icon>
+            <fanart>resources/fanart.jpg</fanart>
+        </assets>
+    </extension>
+</addon>
