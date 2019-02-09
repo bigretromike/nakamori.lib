@@ -17,6 +17,7 @@ import re
 
 from distutils.version import LooseVersion
 
+# TODO refactor version info out into proxies
 if sys.version_info < (3, 0):
     from urllib2 import urlopen
     from urllib import quote, quote_plus, unquote, unquote_plus, urlencode
