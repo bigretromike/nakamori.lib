@@ -17,6 +17,7 @@ from nakamori_utils.globalvars import *
 
 # TODO refactor version info out into proxies
 # __ is public, _ is protected
+from proxy import python_version_proxy
 from proxy.python_version_proxy import python_proxy as pyproxy
 
 global addonversion
@@ -410,7 +411,7 @@ def get_json(url_in, direct=False):
             # if code does not exist, then assume we are receiving proper data
             # if str(body.get('code', '200')) != '200':
             #    raise HTTPError(url_in, body.get('code', '0'), body.get('message', ''), None, None)
-    except pyproxy.http_error as err:
+    except python_version_proxy.http_error as err:
         body = err.code
         return body
     except:
@@ -619,7 +620,7 @@ def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon
                         'Feel free to ask for advice on our discord')
             return False
         return True
-    except pyproxy.http_error as httperror:
+    except python_version_proxy.http_error as httperror:
         message_box('Server Error', 'There was an error returned from Shoko Server', 'Check the server\'s status.' +
                     ' Error: ' + str(httperror.code),
                     'Feel free to ask for advice on our discord')

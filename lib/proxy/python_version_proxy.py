@@ -2,7 +2,7 @@ import gzip
 import sys
 from abc import abstractmethod
 from urllib import quote, unquote_plus, quote_plus, urlencode
-from io import StringIO, BytesIO
+from io import BytesIO
 
 from nakamori_utils.globalvars import plugin_addon
 from proxy import kodi_version_proxy
@@ -53,11 +53,10 @@ class BasePythonProxy:
         response = urlopen(req, timeout=int(timeout))
         if response.info().get('Content-Encoding') == 'gzip':
             try:
-                buf = self.parse_request_encoding(response)
+                buf = BytesIO(response.read())
                 f = gzip.GzipFile(fileobj=buf)
                 data = f.read()
             except Exception as ex:
-                # nt.error('Decompresing gzip respond failed: ' + str(ex))
                 pass
         else:
             data = response.read()
@@ -76,7 +75,13 @@ class BasePythonProxy:
             return False
 
     def set_parameter(self, url, parameter, value):
-        value = str(value)
+        """
+        Process a URL to add parameters to the query string
+        :param url:
+        :param parameter: what to set
+        :param value: what to set it to. Do not urlencode it
+        :return: the url
+        """
         if value is None or value == '':
             if '?' not in url:
                 return url
@@ -91,7 +96,7 @@ class BasePythonProxy:
                     continue
                 url += array3[0] + '=' + array3[1] + '&'
             return url[:-1]
-        value = quote_plus(value)
+        value = quote_plus(self.encode(str(value)))
         if '?' not in url:
             return url + '?' + parameter + '=' + value
 
@@ -157,10 +162,6 @@ class BasePythonProxy:
         response.close()
         return data
 
-    @abstractmethod
-    def parse_request_encoding(self, data):
-        pass
-
     def parse_parameters(self, input_string):
         """Parses a parameter string starting at the first ? found in inputString
 
@@ -191,16 +192,14 @@ class BasePythonProxy:
     def unquote(self, url):
         return unquote_plus(url)
 
+    @abstractmethod
+    def isnumeric(self, value):
+        pass
+
 
 class Python2Proxy(BasePythonProxy):
     def __init__(self):
         BasePythonProxy.__init__(self)
-
-    def decode(self, value):
-        pass
-
-    def parse_request_encoding(self, data):
-        return StringIO(data.read())
 
     def encode(self, i):
         try:
@@ -208,9 +207,27 @@ class Python2Proxy(BasePythonProxy):
                 return i
             elif isinstance(i, unicode):
                 return i.encode('utf-8')
+            else:
+                return str(i)
         except:
             pass  # nt.error("Unicode Error", error_type='Unicode Error')
             return ''
+
+    def decode(self, i):
+        try:
+            if isinstance(i, str):
+                return i.decode("utf-8")
+            elif isinstance(i, unicode):
+                return i
+            else:
+                return unicode(i)
+        except:
+            # error("Unicode Error", error_type='Unicode Error')
+            return ''\
+
+
+    def isnumeric(self, value):
+        return unicode(value).isnumeric()
 
 
 class Python3Proxy(BasePythonProxy):
@@ -223,16 +240,28 @@ class Python3Proxy(BasePythonProxy):
                 return i
             elif isinstance(i, str):
                 return i.encode('utf-8')
+            else:
+                return str(i).encode('utf-8')
         except:
             pass  # nt.error("Unicode Error", error_type='Unicode Error')
             return ''
 
-    def decode(self, value):
-        pass
+    def decode(self, i):
+        try:
+            if isinstance(i, bytes):
+                return i.decode("utf-8")
+            elif isinstance(i, str):
+                return i
+            else:
+                return str(i)
+        except:
+            # error("Unicode Error", error_type='Unicode Error')
+            return ''
 
-    def parse_request_encoding(self, data):
-        return BytesIO(data.read())
+    def isnumeric(self, value):
+        # noinspection PyUnresolvedReferences
+        return str(value).isnumeric()
 
 
-python_proxy = Python2Proxy() if sys.version < 3 else Python3Proxy()
+python_proxy = Python2Proxy() if sys.version_info[0] < 3 else Python3Proxy()
 http_error = HTTPError
