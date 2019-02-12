@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
+import sys
+from urllib import unquote
+
 import xbmc
 import xbmcgui
 import xbmcplugin
-import sys
 import traceback
 import os
 import json
 import time
-import gzip
 import collections
 import re
 
@@ -15,33 +16,15 @@ from distutils.version import LooseVersion
 from nakamori_utils.globalvars import *
 
 # TODO refactor version info out into proxies
-
-if sys.version_info < (3, 0):
-    from urllib2 import urlopen
-    from urllib import quote, quote_plus, unquote, unquote_plus, urlencode
-    from urllib2 import Request
-    from urllib2 import HTTPError, URLError
-    from StringIO import StringIO
-else:
-    # For Python 3.0 and later
-    # noinspection PyUnresolvedReferences
-    from urllib.request import urlopen
-    # noinspection PyUnresolvedReferences
-    from urllib.parse import quote, quote_plus, unquote, unquote_plus, urlencode
-    # noinspection PyUnresolvedReferences
-    from urllib.request import Request
-    # noinspection PyUnresolvedReferences
-    from urllib.error import HTTPError, URLError
-    from io import StringIO, BytesIO
-
 # __ is public, _ is protected
+from proxy.python_version_proxy import python_proxy as pyproxy
+
 global addonversion
 global addonid
 global addonname
 global icon
 global localize
 global home
-global python_two
 
 # noinspection PyRedeclaration
 addonversion = plugin_addon.getAddonInfo('version')
@@ -53,15 +36,7 @@ addonname = plugin_addon.getAddonInfo('name')
 icon = plugin_addon.getAddonInfo('icon')
 # noinspection PyRedeclaration
 localize = script_addon.getLocalizedString
-# noinspection PyRedeclaration
-python_two = sys.version_info < (3, 0)
 
-try:
-    # kodi 17+
-    UA = xbmc.getUserAgent()
-except:
-    # kodi < 17
-    UA = 'Mozilla/6.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.5) Gecko/2008092417 Firefox/3.0.3'
 pDialog = ''
 
 
@@ -204,7 +179,7 @@ def sync_offset(file_id, current_time):
     offset_url = server + "/api/file/offset"
     offset_body = '"id":' + str(file_id) + ',"offset":' + str(current_time * 1000)
     try:
-        post_json(offset_url, offset_body)
+        pyproxy.post_json(offset_url, offset_body)
     except:
         error('error Scrobbling', '', True)
 
@@ -373,33 +348,8 @@ def get_data(url_in, referer, data_type):
 
     url = url_in
 
-    req = Request(encode(url))
-    req.add_header('Accept', 'application/' + data_type)
-    req.add_header('apikey', plugin_addon.getSetting("apikey"))
-
-    if referer is not None:
-        referer = quote(encode(referer)).replace("%3A", ":")
-        if len(referer) > 1:
-            req.add_header('Referer', referer)
-    use_gzip = plugin_addon.getSetting("use_gzip")
-    if "127.0.0.1" not in url and "localhost" not in url:
-        if use_gzip == "true":
-            req.add_header('Accept-encoding', 'gzip')
-    data = None
-    response = urlopen(req, timeout=int(plugin_addon.getSetting('timeout')))
-    if response.info().get('Content-Encoding') == 'gzip':
-        try:
-            if python_two:
-                buf = StringIO(response.read())
-            else:
-                buf = BytesIO(response.read())
-            f = gzip.GzipFile(fileobj=buf)
-            data = f.read()
-        except Exception as ex:
-            error('Decompresing gzip respond failed: ' + str(ex))
-    else:
-        data = response.read()
-    response.close()
+    data = pyproxy.get_data(url, data_type, referer, plugin_addon.getSetting('timeout'),
+                            plugin_addon.getSetting('apikey'))
 
     if data is not None and data != '':
         parse_possible_error(data, data_type)
@@ -423,7 +373,7 @@ def parse_possible_error(data, data_type):
                     error_msg = 'The was refused as unauthorized'
                 error(error_msg, error_type='Network Error: ' + code)
                 if stream.get('Details', '') != '':
-                    xbmc.log(encode(stream.get('Details')), xbmc.LOGERROR)
+                    xbmc.log(pyproxy.encode(stream.get('Details')), xbmc.LOGERROR)
 
 
 def get_json(url_in, direct=False):
@@ -458,56 +408,15 @@ def get_json(url_in, direct=False):
             else:
                 body = get_data(url_in, None, "json")
             # if code does not exist, then assume we are receiving proper data
-            #if str(body.get('code', '200')) != '200':
+            # if str(body.get('code', '200')) != '200':
             #    raise HTTPError(url_in, body.get('code', '0'), body.get('message', ''), None, None)
-    except HTTPError as err:
+    except pyproxy.http_error as err:
         body = err.code
         return body
     except:
         xbmc.log('--> body = None, because error in get_json')
         body = None
     return body
-
-
-def post_json(url_in, body):
-    """
-    Push data to server using 'POST' method
-    :param url_in:
-    :param body:
-    :return:
-    """
-    if len(body) > 3:
-        proper_body = '{' + body + '}'
-        return post_data(url_in, proper_body)
-    else:
-        return None
-
-
-def post_data(url, data_in):
-    """
-    Send a message to the server and wait for a response
-    Args:
-        url: the URL to send the data to
-        data_in: the message to send (in json)
-
-    Returns: The response from the server
-    """
-    if data_in is not None:
-        req = Request(encode(url), encode(data_in), {'Content-Type': 'application/json'})
-        req.add_header('apikey', plugin_addon.getSetting("apikey"))
-        req.add_header('Accept', 'application/json')
-        data_out = None
-        try:
-            response = urlopen(req, timeout=int(plugin_addon.getSetting('timeout')))
-            data_out = response.read()
-            response.close()
-        except Exception as ex:
-            error('url:' + str(url))
-            error('Connection Failed in post_data', str(ex))
-        return data_out
-    else:
-        error('post_data body is None')
-        return None
 
 
 def error(msg, error_type='Error', silent=False):
@@ -539,83 +448,7 @@ def error(msg, error_type='Error', silent=False):
                                                                         plugin_addon.getAddonInfo('icon')))
 
 
-def encode(i=''):
-    """
-    encode a string from UTF-8 to bytes or safe string
-    Args:
-        i: string to encode
-
-    Returns: encoded string
-
-    """
-
-    if python_two:
-        try:
-            if isinstance(i, str):
-                return i
-            elif isinstance(i, unicode):
-                return i.encode('utf-8')
-        except:
-            error("Unicode Error", error_type='Unicode Error')
-            return ''
-    else:
-        try:
-            if isinstance(i, bytes):
-                return i
-            elif isinstance(i, str):
-                return i.encode('utf-8')
-        except:
-            error("Unicode Error", error_type='Unicode Error')
-            return ''
-
-
-# noinspection PyRedeclaration
-def get_kodi_setting_int(setting):
-    try:
-        parent_setting = xbmc.executeJSONRPC(
-            '{"jsonrpc": "2.0", "method": "Settings.GetSettingValue", "params":' +
-            '{"setting": "' + setting + '"}, "id": 1}')
-        # {"id":1,"jsonrpc":"2.0","result":{"value":false}} or true if ".." is displayed on list
-
-        result = json.loads(parent_setting)
-        if "result" in result:
-            if "value" in result["result"]:
-                return int(result["result"]["value"])
-    except Exception as exc:
-        error("jsonrpc_error: " + str(exc))
-    return -1
-
-
-def decode(i=''):
-    """
-    decode a string to UTF-8
-    Args:
-        i: string to decode
-
-    Returns: decoded string
-
-    """
-    if python_two:
-        try:
-            if isinstance(i, str):
-                return i.decode("utf-8")
-            elif isinstance(i, unicode):
-                return i
-        except:
-            error("Unicode Error", error_type='Unicode Error')
-            return ''
-    else:
-        try:
-            if isinstance(i, bytes):
-                return i.decode("utf-8")
-            elif isinstance(i, str):
-                return i
-        except:
-            error("Unicode Error", error_type='Unicode Error')
-            return ''
-
-
-home = decode(xbmc.translatePath(plugin_addon.getAddonInfo('path')))
+home = pyproxy.decode(xbmc.translatePath(plugin_addon.getAddonInfo('path')))
 
 
 def message_box(title, text, text2=None, text3=None):
@@ -638,7 +471,7 @@ def valid_user():
                 body = '{"user":"' + plugin_addon.getSetting("login") + '",' + \
                        '"device":"' + plugin_addon.getSetting("device") + '",' + \
                        '"pass":"' + plugin_addon.getSetting("password") + '"}'
-                post_body = post_data(_server + "/api/auth", body)
+                post_body = pyproxy.post_data(_server + "/api/auth", body)
                 auth = json.loads(post_body)
                 if "apikey" in auth:
                     apikey_found_in_auth = str(auth['apikey'])
@@ -664,7 +497,7 @@ def dump_dictionary(details, name):
 
             for i in details:
                 if isinstance(details, dict):
-                    a = details.get(decode(i))
+                    a = details.get(pyproxy.decode(i))
                     if a is None:
                         temp_log = "\'unset\'"
                     elif isinstance(a, collections.Iterable):
@@ -676,18 +509,6 @@ def dump_dictionary(details, name):
                 elif isinstance(details, collections.Iterable):
                     temp_log = json.dumps(i, sort_keys=True, indent=4, separators=(',', ': '))
                     xbmc.log("-" + temp_log, xbmc.LOGWARNING)
-
-
-def post(url, data, headers=None):
-    if headers is None:
-        headers = {}
-    postdata = urlencode(data)
-    req = Request(url, postdata, headers)
-    req.add_header('User-Agent', UA)
-    response = urlopen(req)
-    data = response.read()
-    response.close()
-    return data
 
 
 def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon.getSetting('port')):
@@ -798,7 +619,7 @@ def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon
                         'Feel free to ask for advice on our discord')
             return False
         return True
-    except HTTPError as httperror:
+    except pyproxy.http_error as httperror:
         message_box('Server Error', 'There was an error returned from Shoko Server', 'Check the server\'s status.' +
                     ' Error: ' + str(httperror.code),
                     'Feel free to ask for advice on our discord')
@@ -844,84 +665,12 @@ def get_version(ip=plugin_addon.getSetting("ipaddress"), port=plugin_addon.getSe
     return legacy
 
 
-def parse_parameters(input_string):
-    """Parses a parameter string starting at the first ? found in inputString
-
-    Argument:
-    input_string: the string to be parsed, sys.argv[2] by default
-
-    Returns a dictionary with parameter names as keys and parameter values as values
-    """
-    parameters = {}
-    p1 = input_string.find('?')
-    if p1 >= 0:
-        split_parameters = input_string[p1 + 1:].split('&')
-        for name_value_pair in split_parameters:
-            # xbmc.log("parseParameter detected Value: " + str(name_value_pair))
-            if (len(name_value_pair) > 0) & ("=" in name_value_pair):
-                pair = name_value_pair.split('=')
-                key = pair[0]
-                value = decode(unquote_plus(pair[1]))
-                parameters[key] = value
-    return parameters
-
-
 def post_dict(url, body):
-    json_body = ''
     try:
         json_body = json.dumps(body)
+        pyproxy.post_data(url, json_body)
     except:
         error('Failed to send data')
-    post_data(url, json_body)
-
-
-def head(url_in):
-    try:
-        urlopen(url_in)
-        return True
-    except HTTPError:
-        # error('HTTPError', e.code)
-        return False
-    except URLError:
-        # error('URLError', str(e.args))
-        return False
-    except:
-        # error('Exceptions', str(e.args))
-        return False
-
-
-def set_parameter(url, parameter, value):
-    value = str(value)
-    if value is None or value == '':
-        if '?' not in url:
-            return url
-        array1 = url.split('?')
-        if (parameter + '=') not in array1[1]:
-            return url
-        url = array1[0] + '?'
-        array2 = array1[1].split('&')
-        for key in array2:
-            array3 = key.split('=')
-            if array3[0] == parameter:
-                continue
-            url += array3[0] + '=' + array3[1] + '&'
-        return url[:-1]
-    value = quote_plus(value)
-    if '?' not in url:
-        return url + '?' + parameter + '=' + value
-
-    array1 = url.split('?')
-    if (parameter + '=') not in array1[1]:
-        return url + "&" + parameter + '=' + value
-
-    url = array1[0] + '?'
-    array2 = array1[1].split('&')
-    for key in array2:
-        array3 = key.split('=')
-        if array3[0] == parameter:
-            array3[1] = value
-        url += array3[0] + '=' + array3[1] + '&'
-    return url[:-1]
 
 
 def add_dir(name, url, mode, iconimage='DefaultTVShows.png', plot="", poster="DefaultVideo.png", filename="none",
@@ -929,15 +678,15 @@ def add_dir(name, url, mode, iconimage='DefaultTVShows.png', plot="", poster="De
     # u=sys.argv[0]+"?url="+url+"&mode="+str(mode)+"&name="+quote_plus(name)+"&poster_file="+quote_plus(poster)+"&filename="+quote_plus(filename)
     u = sys.argv[0]
     if mode is not '':
-        u = set_parameter(u, 'mode', str(mode))
+        u = pyproxy.set_parameter(u, 'mode', str(mode))
     if name is not '':
-        u = set_parameter(u, 'name', quote_plus(name))
-    u = set_parameter(u, 'poster_file', quote_plus(poster))
-    u = set_parameter(u, 'filename', quote_plus(filename))
+        u = pyproxy.set_parameter(u, 'name', name)
+    u = pyproxy.set_parameter(u, 'poster_file', poster)
+    u = pyproxy.set_parameter(u, 'filename', filename)
     if offset is not '':
-        u = set_parameter(u, 'offset', offset)
+        u = pyproxy.set_parameter(u, 'offset', offset)
     if url is not '':
-        u = set_parameter(u, 'url', url)
+        u = pyproxy.set_parameter(u, 'url', url)
 
     liz = xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=iconimage)
     liz.setInfo(type="Video", infoLabels={"Title": name, "Plot": plot})
@@ -961,15 +710,6 @@ def show_information():
 
 
 # not sure if needed
-
-
-def get_kodi_version():
-    """
-    This returns a LooseVersion instance containing the kodi version (16.0, 16.1, 17.0, etc)
-    """
-    version_string = xbmc.getInfoLabel('System.BuildVersion')
-    version_string = version_string.split(' ')[0]
-    return LooseVersion(version_string)
 
 
 def kodi_jsonrpc(request):
