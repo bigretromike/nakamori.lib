@@ -37,6 +37,8 @@ addonname = plugin_addon.getAddonInfo('name')
 icon = plugin_addon.getAddonInfo('icon')
 # noinspection PyRedeclaration
 localize = script_addon.getLocalizedString
+# noinspection PyRedeclaration
+home = xbmc.translatePath(plugin_addon.getAddonInfo('path'))
 
 pDialog = ''
 
@@ -705,6 +707,7 @@ def add_dir(name, url, mode, iconimage='DefaultTVShows.png', plot="", poster="De
 
 def show_information():
     file_flag = 'news.log'
+    home = xbmc.translatePath(plugin_addon.getAddonInfo('path'))  # global is ignored and None is taken
     if os.path.exists(os.path.join(home, file_flag)):
         os.remove(os.path.join(home, file_flag))
         xbmc.executebuiltin('RunScript(script.module.nakamori,?info=information)', True)
