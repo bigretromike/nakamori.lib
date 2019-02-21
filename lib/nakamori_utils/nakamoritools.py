@@ -13,7 +13,7 @@ import collections
 import re
 
 from distutils.version import LooseVersion
-from nakamori_utils.globalvars import *
+from nakamori_utils.globalvars import *  # TODO I'm aint sure if those global works correct, I remamber reading that globals don't in kodi python.
 
 # TODO refactor version info out into proxies
 # __ is public, _ is protected
@@ -706,11 +706,32 @@ def add_dir(name, url, mode, iconimage='DefaultTVShows.png', plot="", poster="De
 
 
 def show_information():
+    """
+    Open information, read news tag from addon.xml so the most important things are shown
+    :return:
+    """
     file_flag = 'news.log'
-    home = xbmc.translatePath(plugin_addon.getAddonInfo('path'))  # global is ignored and None is taken
+    home = xbmc.translatePath(plugin_addon.getAddonInfo('path'))  # TODO fix? global is ignored and home=None?!
     if os.path.exists(os.path.join(home, file_flag)):
         os.remove(os.path.join(home, file_flag))
         xbmc.executebuiltin('RunScript(script.module.nakamori,?info=information)', True)
+
+
+def calendar():
+    """
+    Open calendar
+    :return:
+    """
+    xbmc.executebuiltin('RunScript(script.module.nakamori,?info=calendar)', True)
+
+
+def wizard():
+    """
+    Run wizard if there weren't any before
+    :return: nothing, set ip/port user/password in settings
+    """
+    if plugin_addon.getSetting('wizard') == '0':
+        xbmc.executebuiltin('RunScript(script.module.nakamori,?info=wizard)', True)
 
 
 # not sure if needed
