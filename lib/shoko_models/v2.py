@@ -19,7 +19,36 @@ class Directory(object):
         self.actors = model_utils.get_cast_info(json_node)
 
 
+class Filter(Directory):
+    """
+    A filter object, contains a unified method of representing a filter, with convenient converters
+    """
+    def __init__(self, json_node):
+        """
+        Create a filter object from a json node, containing everything that is relevant to a ListItem
+        :param json_node: the json response from things like api/filter
+        :type json_node: Union[list,dict]
+        """
+        Directory.__init__(self, json_node)
+
+
+class Group(Directory):
+    """
+    A group object, contains a unified method of representing a group, with convenient converters
+    """
+    def __init__(self, json_node):
+        """
+        Create a group object from a json node, containing everything that is relevant to a ListItem
+        :param json_node: the json response from things like api/group
+        :type json_node: Union[list,dict]
+        """
+        Directory.__init__(self, json_node)
+
+
 class Series(Directory):
+    """
+    A series object, contains a unified method of representing a series, with convenient converters
+    """
     def __init__(self, json_node):
         """
         Create a series object from a json node, containing everything that is relevant to a ListItem
@@ -28,3 +57,28 @@ class Series(Directory):
         """
         Directory.__init__(self, json_node)
 
+
+class Episode(Directory):
+    """
+    An episode object, contains a unified method of representing an episode, with convenient converters
+    """
+    def __init__(self, json_node):
+        """
+        Create an episode object from a json node, containing everything that is relevant to a ListItem
+        :param json_node: the json response from things like api/episode
+        :type json_node: Union[list,dict]
+        """
+        Directory.__init__(json_node)
+
+
+class File(Directory):
+    """
+    A file object, contains a unified method of representing a video file, with convenient converters
+    """
+    def __init__(self, json_node):
+        """
+        Create a file object from a json node, containing everything that is relevant to a ListItem
+        :param json_node: the json response from things like api/file
+        :type json_node: Union[list,dict]
+        """
+        Directory.__init__(self, json_node)
