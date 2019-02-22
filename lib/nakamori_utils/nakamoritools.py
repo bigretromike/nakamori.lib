@@ -34,7 +34,7 @@ addonname = plugin_addon.getAddonInfo('name')
 # noinspection PyRedeclaration
 icon = plugin_addon.getAddonInfo('icon')
 # noinspection PyRedeclaration
-localize = localize
+localize = script_addon.getLocalizedString
 
 pDialog = ''
 
