@@ -14,6 +14,7 @@ class Kodi16Proxy:
         This is the useragent that kodi uses when making requests to various services, such as TvDB
         It used to act like Firefox, but in newer versions it has its own
         :return:
+        :rtype: basestring
         """
         return 'Mozilla/6.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.5) Gecko/2008092417 Firefox/3.0.3'
 
@@ -21,16 +22,19 @@ class Kodi16Proxy:
         """
         Starting in Kodi 18, the duration tag uses a string timestamp, rather than an integer in seconds.
         This takes the duration in seconds and returns the proper converted version
-        :param time_s:
+        :param time_s: time in seconds
+        :type time_s: int
         :return:
+        :rtype Union[str, int]
         """
         return time_s
 
     def external_player(self, player_obj):
         """
-        In Kodi 18, xbmc.Player has a isExternalPlayer() method. In earlier versions, the user must specify
+        In Kodi 18+, xbmc.Player has a isExternalPlayer() method. In earlier versions, the user must specify
         :param player_obj: the player object to check
         :return: true or false
+        :rtype: bool
         """
         return plugin_addon.getSetting('external_player') == 'true'
 
