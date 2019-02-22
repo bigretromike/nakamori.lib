@@ -2,7 +2,6 @@
 import sys
 from urllib import unquote
 
-import xbmc
 import xbmcgui
 import xbmcplugin
 import traceback
@@ -13,7 +12,7 @@ import collections
 import re
 
 from distutils.version import LooseVersion
-from nakamori_utils.globalvars import *  # TODO I'm aint sure if those global works correct, I remamber reading that globals don't in kodi python.
+from nakamori_utils.globalvars import *
 
 # TODO refactor version info out into proxies
 # __ is public, _ is protected
@@ -25,7 +24,6 @@ global addonid
 global addonname
 global icon
 global localize
-global home
 
 # noinspection PyRedeclaration
 addonversion = plugin_addon.getAddonInfo('version')
@@ -36,9 +34,7 @@ addonname = plugin_addon.getAddonInfo('name')
 # noinspection PyRedeclaration
 icon = plugin_addon.getAddonInfo('icon')
 # noinspection PyRedeclaration
-localize = script_addon.getLocalizedString
-# noinspection PyRedeclaration
-home = xbmc.translatePath(plugin_addon.getAddonInfo('path'))
+localize = localize
 
 pDialog = ''
 
@@ -48,7 +44,7 @@ def search_box():
     Shows a keyboard, and returns the text entered
     :return: the text that was entered
     """
-    keyb = xbmc.Keyboard('', script_addon.getLocalizedString(30026))
+    keyb = xbmc.Keyboard('', localize(30026))
     keyb.doModal()
     search_text = ''
 
@@ -243,8 +239,8 @@ def mark_watch_status(params):
 
     box = plugin_addon.getSetting("watchedbox")
     if box == "true":
-        xbmc.executebuiltin("XBMC.Notification(%s, %s %s, 2000, %s)" % (script_addon.getLocalizedString(30024),
-                                                                        script_addon.getLocalizedString(30025),
+        xbmc.executebuiltin("XBMC.Notification(%s, %s %s, 2000, %s)" % (localize(30024),
+                                                                        localize(30025),
                                                                         watched_msg,
                                                                         plugin_addon.getAddonInfo('icon')))
     refresh()
@@ -304,15 +300,15 @@ def vote_series(series_id):
 
     """
     vote_list = ['Don\'t Vote', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', '0']
-    my_vote = xbmcgui.Dialog().select(script_addon.getLocalizedString(30021), vote_list)
+    my_vote = xbmcgui.Dialog().select(localize(30021), vote_list)
     if my_vote == -1:
         return
     elif my_vote != 0:
         vote_value = str(vote_list[my_vote])
         body = '?id=' + series_id + '&score=' + vote_value
         get_json(server + "/api/serie/vote" + body)
-        xbmc.executebuiltin("XBMC.Notification(%s, %s %s, 7500, %s)" % (script_addon.getLocalizedString(30021),
-                                                                        script_addon.getLocalizedString(30022),
+        xbmc.executebuiltin("XBMC.Notification(%s, %s %s, 7500, %s)" % (localize(30021),
+                                                                        localize(30022),
                                                                         vote_value, plugin_addon.getAddonInfo('icon')))
 
 
@@ -324,15 +320,15 @@ def vote_episode(ep_id):
 
     """
     vote_list = ['Don\'t Vote', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', '0']
-    my_vote = xbmcgui.Dialog().select(script_addon.getLocalizedString(30023), vote_list)
+    my_vote = xbmcgui.Dialog().select(localize(30023), vote_list)
     if my_vote == -1:
         return
     elif my_vote != 0:
         vote_value = str(vote_list[my_vote])
         body = '?id=' + ep_id + '&score=' + vote_value
         get_json(server + "/api/ep/vote" + body)
-        xbmc.executebuiltin("XBMC.Notification(%s, %s %s, 7500, %s)" % (script_addon.getLocalizedString(30023),
-                                                                        script_addon.getLocalizedString(30022),
+        xbmc.executebuiltin("XBMC.Notification(%s, %s %s, 7500, %s)" % (localize(30023),
+                                                                        localize(30022),
                                                                         vote_value, plugin_addon.getAddonInfo('icon')))
 
 
@@ -449,9 +445,6 @@ def error(msg, error_type='Error', silent=False):
     if not silent:
         xbmc.executebuiltin('XBMC.Notification(%s, %s %s, 2000, %s)' % (error_type, ' ', msg,
                                                                         plugin_addon.getAddonInfo('icon')))
-
-
-home = pyproxy.decode(xbmc.translatePath(plugin_addon.getAddonInfo('path')))
 
 
 def message_box(title, text, text2=None, text3=None):
@@ -711,9 +704,8 @@ def show_information():
     :return:
     """
     file_flag = 'news.log'
-    home = xbmc.translatePath(plugin_addon.getAddonInfo('path'))  # TODO fix? global is ignored and home=None?!
-    if os.path.exists(os.path.join(home, file_flag)):
-        os.remove(os.path.join(home, file_flag))
+    if os.path.exists(os.path.join(plugin_home, file_flag)):
+        os.remove(os.path.join(plugin_home, file_flag))
         xbmc.executebuiltin('RunScript(script.module.nakamori,?info=information)', True)
 
 
