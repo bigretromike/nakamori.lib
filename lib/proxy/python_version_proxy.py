@@ -156,7 +156,7 @@ class BasePythonProxy:
             headers = {}
         postdata = urlencode(data)
         req = Request(url, postdata, headers)
-        req.add_header('User-Agent', kodi_version_proxy.instance.user_agent())
+        req.add_header('User-Agent', kodi_version_proxy.kodi_proxy.user_agent())
         response = urlopen(req)
         data = response.read()
         response.close()

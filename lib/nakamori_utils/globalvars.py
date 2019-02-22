@@ -3,6 +3,10 @@
 import xbmc
 import xbmcaddon
 
+# in kodi 18, this will just work, but in kodi <18, these are regenerated each time this is called.
+# We can make this an object belonging to nakamori.service, but we may need to make script and plugin
+# dependent on service if that is the case
+
 # The plugin object for nakamori.plugin
 plugin_addon = xbmcaddon.Addon('plugin.video.nakamori')
 service_addon = xbmcaddon.Addon('service.nakamori')
