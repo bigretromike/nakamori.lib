@@ -293,6 +293,78 @@ def video_file_information(node, detail_dict):
             i += 1
 
 
+def get_video_streams(node, streams):
+    """
+    Process given 'node' and parse it to create proper file information dictionary 'detail_dict'
+    :param node: node that contains file
+    :param streams: dictionary for output
+    :return: dict
+    """
+    if "videos" in node:
+        for stream_node in node["videos"]:
+            stream_info = node["videos"][stream_node]
+            if not isinstance(stream_info, dict):
+                continue
+            stream_id = int(stream_info["Index"])
+            streams[stream_id]['VideoCodec'] = stream_info['Codec']
+            streams['xVideoCodec'] = stream_info['Codec']
+            streams[stream_id]['width'] = stream_info['Width']
+            if 'width' not in streams:
+                streams['width'] = stream_info['Width']
+            streams['xVideoResolution'] = str(stream_info['Width'])
+            streams[stream_id]['height'] = stream_info['Height']
+            if 'height' not in streams:
+                streams['height'] = stream_info['Height']
+                streams[stream_id]['aspect'] = round(int(streams['width']) / int(streams['height']), 2)
+            streams['xVideoResolution'] += "x" + str(stream_info['Height'])
+            streams[stream_id]['duration'] = int(round(float(stream_info.get('Duration', 0)) / 1000, 0))
+    return streams
+
+
+def get_audio_streams(node, streams):
+    """
+    Process given 'node' and parse it to create proper file information dictionary 'detail_dict'
+    :param node: node that contains file
+    :param streams: dictionary for output
+    :return: dict
+    """
+    if "audios" in node:
+        for stream_node in node["audios"]:
+            stream_info = node["audios"][stream_node]
+            if not isinstance(stream_info, dict):
+                continue
+            stream_id = int(stream_info["Index"])
+            streams[stream_id]['AudioCodec'] = stream_info["Codec"]
+            streams['xAudioCodec'] = streams[stream_id]['AudioCodec']
+            streams[stream_id]['AudioLanguage'] = stream_info["LanguageCode"] if "LanguageCode" in stream_info \
+                else "unk"
+            streams[stream_id]['AudioChannels'] = int(stream_info["Channels"]) if "Channels" in stream_info else 1
+            streams['xAudioChannels'] = nt.safe_int(streams[stream_id]['AudioChannels'])
+    return streams
+
+
+def get_sub_streams(node, streams):
+    """
+    Process given 'node' and parse it to create proper file information dictionary 'detail_dict'
+    :param node: node that contains file
+    :param streams: dictionary for output
+    :return: dict
+    """
+    if "subtitles" in node:
+        i = 0
+        for stream_node in node["subtitles"]:
+            stream_info = node["subtitles"][stream_node]
+            if not isinstance(stream_info, dict):
+                continue
+            try:
+                stream_id = int(stream_node)
+            except:
+                stream_id = i
+            streams[stream_id]['SubtitleLanguage'] = stream_info["LanguageCode"] if "LanguageCode" in stream_info else "unk"
+            i += 1
+    return streams
+
+
 def get_cast_info(json_node):
     """
     Extracts and processes cast and staff info
@@ -308,6 +380,19 @@ def get_cast_info(json_node):
             else:
                 result_list = get_cast_and_role(cast_nodes)
             return result_list
+
+
+def get_date(json_node):
+    """
+    get the air from json, removing default value
+    :param json_node: the json response
+    :return: str date or ''
+    :rtype: str
+    """
+    air = json_node.get('air', '')
+    if air == '0001-01-01' or air == '01-01-0001':
+        air = ''
+    return air
 
 
 global __tagSettingFlags__
