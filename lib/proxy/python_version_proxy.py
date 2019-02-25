@@ -81,6 +81,7 @@ class BasePythonProxy:
         :param parameter: what to set
         :param value: what to set it to. Do not urlencode it
         :return: the url
+        :rtype: basestring
         """
         if value is None or value == '':
             if '?' not in url:

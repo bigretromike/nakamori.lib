@@ -6,22 +6,6 @@ from nakamori_utils.globalvars import *
 from proxy.python_version_proxy import python_proxy as pyproxy
 
 
-def populate_tag_setting_flags():
-    """
-    Get user settings from local Kodi, and use them with Nakamori
-    :rtype: object
-    :return: setting_flags
-    """
-    tag_setting_flags = 0
-    tag_setting_flags |= 0b000001 if plugin_addon.getSetting('hideMiscTags') == 'true' else 0
-    tag_setting_flags |= 0b000010 if plugin_addon.getSetting('hideArtTags') == 'true' else 0
-    tag_setting_flags |= 0b000100 if plugin_addon.getSetting('hideSourceTags') == 'true' else 0
-    tag_setting_flags |= 0b001000 if plugin_addon.getSetting('hideUsefulMiscTags') == 'true' else 0
-    tag_setting_flags |= 0b010000 if plugin_addon.getSetting('hideSpoilerTags') == 'true' else 0
-    tag_setting_flags |= 0b100000 if plugin_addon.getSetting('hideSettingTags') == 'true' else 0
-    return tag_setting_flags
-
-
 def get_tags(tag_node):
     """
     Get the tags from the new style
@@ -393,7 +377,3 @@ def get_date(json_node):
     if air == '0001-01-01' or air == '01-01-0001':
         air = ''
     return air
-
-
-global __tagSettingFlags__
-__tagSettingFlags__ = populate_tag_setting_flags()

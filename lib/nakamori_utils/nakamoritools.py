@@ -12,6 +12,7 @@ import collections
 import re
 
 from distutils.version import LooseVersion
+
 from nakamori_utils.globalvars import *
 
 # TODO refactor version info out into proxies
@@ -736,3 +737,12 @@ def kodi_jsonrpc(request):
         return result
     except Exception as exc:
         error("jsonrpc_error: " + str(exc))
+
+
+def add_default_parameters(url, obj_id, level):
+    key = pyproxy.set_parameter(url, 'id', obj_id)
+    key = pyproxy.set_parameter(key, 'level', level)
+    key = pyproxy.set_parameter(key, 'tagfilter', tag_setting_flags)
+    if plugin_addon.getSetting('request_nocast') == 'true':
+        key = pyproxy.set_parameter(key, 'nocast', 1)
+    return key
