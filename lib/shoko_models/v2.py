@@ -20,6 +20,7 @@ from proxy.python_version_proxy import python_proxy as pyproxy
 # TODO playing files
 
 
+# noinspection Duplicates
 class Directory(object):
     """
     A directory object, the base for Groups, Series, Episodes, etc
@@ -27,7 +28,6 @@ class Directory(object):
     def __init__(self, json_node):
         """
         Create a directory object from a json node, containing only what is needed to form a ListItem.
-        You can also pass an ID for a small helper object.
         :param json_node: the json response from things like api/serie
         :type json_node: Union[list,dict]
         """
@@ -46,29 +46,7 @@ class Directory(object):
         self.name = model_utils.get_title(json_node)
         self.size = json_node.get('size', 0)
 
-        thumb = ''
-        fanart = ''
-        banner = ''
-        try:
-            if len(json_node["art"]["thumb"]) > 0:
-                thumb = json_node["art"]["thumb"][0]["url"]
-                if thumb is not None and ":" not in thumb:
-                    thumb = server + thumb
-
-            if len(json_node["art"]["fanart"]) > 0:
-                fanart = json_node["art"]["fanart"][0]["url"]
-                if fanart is not None and ":" not in fanart:
-                    fanart = server + fanart
-
-            if len(json_node["art"]["banner"]) > 0:
-                banner = json_node["art"]["banner"][0]["url"]
-                if banner is not None and ":" not in banner:
-                    banner = server + banner
-        except:
-            pass
-        self.fanart = fanart
-        self.poster = thumb
-        self.banner = banner
+        self.process_art(json_node)
 
         self.items = []
 
@@ -93,6 +71,34 @@ class Directory(object):
         json_node = json.loads(json_body)
         return json_node
 
+    def process_art(self, json_node):
+        thumb = ''
+        fanart = ''
+        banner = ''
+        try:
+            if len(json_node["art"]["thumb"]) > 0:
+                thumb = json_node["art"]["thumb"][0]["url"]
+                if thumb is not None and ":" not in thumb:
+                    thumb = server + thumb
+
+            if len(json_node["art"]["fanart"]) > 0:
+                fanart = json_node["art"]["fanart"][0]["url"]
+                if fanart is not None and ":" not in fanart:
+                    fanart = server + fanart
+
+            if len(json_node["art"]["banner"]) > 0:
+                banner = json_node["art"]["banner"][0]["url"]
+                if banner is not None and ":" not in banner:
+                    banner = server + banner
+        except:
+            pass
+        self.fanart = fanart
+        self.poster = thumb
+        self.banner = banner
+
+    def process_children(self, json_node):
+        pass
+
     @abstractmethod
     def get_listitem(self):
         """
@@ -110,6 +116,7 @@ class Directory(object):
             yield i
 
 
+# noinspection Duplicates
 class Filter(Directory):
     """
     A filter object, contains a unified method of representing a filter, with convenient converters
@@ -132,24 +139,7 @@ class Filter(Directory):
         self.directory_filter = json_node.get('type', 'filter') == 'filters'
 
         self.apply_built_in_overrides()
-
-        items = json_node.get('filters', [])
-        for i in items:
-            try:
-                self.items.append(Filter(i))
-            except:
-                pass
-        items = json_node.get('groups', [])
-        for i in items:
-            try:
-                group = Group(i)
-                if len(group.items) == 1 and group.items[0] is not None:
-                    group = group.items[0]
-                    if group.name is None:
-                        group = Series(group.id, True)
-                self.items.append(group)
-            except:
-                pass
+        self.process_children(json_node)
 
     def get_api_url(self):
         url = self.base_url()
@@ -172,7 +162,24 @@ class Filter(Directory):
         elif self.name == 'Unsort':
             self.name = 'Unsorted Files'
 
-
+    def process_children(self, json_node):
+        items = json_node.get('filters', [])
+        for i in items:
+            try:
+                self.items.append(Filter(i))
+            except:
+                pass
+        items = json_node.get('groups', [])
+        for i in items:
+            try:
+                group = Group(i)
+                if len(group.items) == 1 and group.items[0] is not None:
+                    group = group.items[0]
+                    if group.name is None:
+                        group = Series(group.id, True)
+                self.items.append(group)
+            except:
+                pass
 
     def get_listitem(self):
         url = self.get_plugin_url()
@@ -186,6 +193,7 @@ class Filter(Directory):
         pass
 
 
+# noinspection Duplicates
 class Group(Directory):
     """
     A group object, contains a unified method of representing a group, with convenient converters
@@ -213,12 +221,7 @@ class Group(Directory):
         self.actors = model_utils.get_cast_info(json_node)
         self.date = model_utils.get_date(json_node)
 
-        items = json_node.get('series', [])
-        for i in items:
-            try:
-                self.items.append(Series(i))
-            except:
-                pass
+        self.process_children(json_node)
 
     def get_api_url(self):
         url = self.base_url()
@@ -245,10 +248,19 @@ class Group(Directory):
         li.set_art(self)
         return li
 
+    def process_children(self, json_node):
+        items = json_node.get('series', [])
+        for i in items:
+            try:
+                self.items.append(Series(i))
+            except:
+                pass
+
     def get_context_menu_items(self):
         pass
 
 
+# noinspection Duplicates
 class Series(Directory):
     """
     A series object, contains a unified method of representing a series, with convenient converters
@@ -263,7 +275,6 @@ class Series(Directory):
         if build_full_object:
             json_node = self.get_full_object()
         self.episode_types = []
-        episode_types = []
         # check again, as we might have replaced it above
         if isinstance(json_node, (str, int, unicode)):
             return
@@ -271,18 +282,7 @@ class Series(Directory):
         self.season = json_node.get('season', '1')
         self.date = model_utils.get_date(json_node)
         self.actors = model_utils.get_cast_info(json_node)
-        items = json_node.get('eps', [])
-
-        for i in items:
-            try:
-                episode = Episode(i)
-                self.items.append(episode)
-                if episode.episode_type not in episode_types:
-                    episode_types.append(episode.episode_type)
-            except:
-                pass
-        for i in episode_types:
-            self.episode_types.append(SeriesTypeList(self.id, i))
+        self.process_children(json_node)
 
     def get_api_url(self):
         url = self.base_url()
@@ -303,10 +303,25 @@ class Series(Directory):
         li.set_art(self)
         return li
 
+    def process_children(self, json_node):
+        items = json_node.get('eps', [])
+        episode_types = []
+        for i in items:
+            try:
+                episode = Episode(i)
+                self.items.append(episode)
+                if episode.episode_type not in episode_types:
+                    episode_types.append(episode.episode_type)
+            except:
+                pass
+        for i in episode_types:
+            self.episode_types.append(SeriesTypeList(self.id, i))
+
     def get_context_menu_items(self):
         pass
 
 
+# noinspection Duplicates
 class SeriesTypeList(Series):
     """
     The Episode Type List for a series
@@ -317,7 +332,6 @@ class SeriesTypeList(Series):
         self.name = episode_type
 
         items = json_node.get('eps', [])
-
         for i in items:
             try:
                 episode = Episode(i)
@@ -331,6 +345,7 @@ class SeriesTypeList(Series):
         return nakamoriplugin.routing_plugin.url_for(nakamoriplugin.show_series_episode_types_menu, self.id, self.name)
 
 
+# noinspection Duplicates
 class Episode(Directory):
     """
     An episode object, contains a unified method of representing an episode, with convenient converters
@@ -404,6 +419,7 @@ class Episode(Directory):
         pass
 
 
+# noinspection Duplicates
 class File(Directory):
     """
     A file object, contains a unified method of representing a json_node file, with convenient converters
