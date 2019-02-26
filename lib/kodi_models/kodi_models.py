@@ -2,6 +2,7 @@ import sys
 
 import xbmcgui
 import xbmcplugin
+from nakamori_utils.globalvars import *
 
 
 class ListItem(xbmcgui.ListItem):
@@ -36,6 +37,33 @@ class ListItem(xbmcgui.ListItem):
 
     def set_banner(self, banner):
         xbmcgui.ListItem.setArt(self, {"banner": banner})
+
+    def set_watched_flags(self, episode):
+        """
+        set the needed flags on a listitem for watched or resume icons
+        :param self:
+        :param episode:
+        :return:
+        """
+        if episode.watched:
+            infolabels = {
+                "playcount": '1',
+                "overlay": '5',
+                "watched": 'True'
+            }
+            self.setInfo("Video", infolabels)
+            return
+        file = episode.items[0] if len(episode.items) > 0 else None
+        if file is not None and file.resume_time > 0 and plugin_addon.getSetting("file_resume") == "true":
+            infolabels = {
+                "overlay": '7',
+                "watched": 'True'
+            }
+            self.setInfo("Video", infolabels)
+            properties = {
+                'ResumeTime': str(file.resume_time)
+            }
+            self.setProperties(properties)
 
 
 class DirectoryListing(list):

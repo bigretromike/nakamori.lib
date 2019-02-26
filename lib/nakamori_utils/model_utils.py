@@ -141,13 +141,12 @@ def is_type_list(title):
     return False
 
 
-def get_title(data):
+def get_title(data, lang=None, title_type=None):
     """
-    Get the new title
-    Args:
-        data: json node containing the title
-
-    Returns: string of the desired title
+    Get the title based on settings
+    :param data: json node containing the title
+    :return: string of the desired title
+    :rtype: str
 
     """
     try:
@@ -158,36 +157,34 @@ def get_title(data):
         if is_type_list(title):
             return pyproxy.decode(data.get('name', ''))
 
-        lang = plugin_addon.getSetting("displaylang")
-        title_type = plugin_addon.getSetting("title_type")
+        if lang is None:
+            lang = plugin_addon.getSetting("displaylang")
+        if title_type is None:
+            title_type = plugin_addon.getSetting("title_type")
+
         try:
-            for titleTag in data.get("titles", []):
-                if titleTag.get("Type", "").lower() == title_type.lower():
-                    if titleTag.get("Language", "").lower() == lang.lower():
-                        if pyproxy.decode(titleTag.get("Title", "")) == "":
-                            continue
-                        return pyproxy.decode(titleTag.get("Title", ""))
-            # fallback on language any title
-            for titleTag in data.get("titles", []):
-                if titleTag.get("Type", "").lower() != 'short':
-                    if titleTag.get("Language", "").lower() == lang.lower():
-                        if pyproxy.decode(titleTag.get("Title", "")) == "":
-                            continue
-                        return pyproxy.decode(titleTag.get("Title", ""))
-            # fallback on x-jat main title
-            for titleTag in data.get("titles", []):
-                if titleTag.get("Type", "").lower() == 'main':
-                    if titleTag.get("Language", "").lower() == "x-jat":
-                        if pyproxy.decode(titleTag.get("Title", "")) == "":
-                            continue
-                        return pyproxy.decode(titleTag.get("Title", ""))
+            for title_tag in data.get("titles", []):
+                title = pyproxy.decode(title_tag.get("Title", ""))
+                if pyproxy.decode(title_tag.get("Title", "")) == "":
+                    continue
+
+                if title_tag.get("Language", "").lower() == lang.lower():
+                    # does it match the proper type
+                    if title_tag.get("Type", "").lower() == title_type.lower():
+                        return title
+                    # fallback on language any title
+                    if title_tag.get("Type", "").lower() != 'short':
+                        return title
+                    # fallback on x-jat main title
+                    if title_tag.get("Type", "").lower() == 'main' and title_tag.get("Language", "").lower() == "x-jat":
+                        return title
             # fallback on directory title
             return pyproxy.decode(data.get('name', ''))
-        except Exception as expc:
-            nt.error('util.error thrown on getting title', str(expc))
+        except Exception as ex1:
+            nt.error('util.error thrown on getting title', str(ex1))
             return pyproxy.decode(data.get('name', ''))
-    except Exception as exw:
-        nt.error("get_title Exception", str(exw))
+    except Exception as ex2:
+        nt.error("get_title Exception", str(ex2))
         return 'util.error'
 
 
@@ -214,20 +211,23 @@ def video_file_information(node, detail_dict):
     :param detail_dict: dictionary for output
     :return: dict
     """
-    # Video
-    if 'VideoStreams' not in detail_dict:
-        detail_dict['VideoStreams'] = defaultdict(dict)
-    if 'AudioStream' not in detail_dict:
-        detail_dict['AudioStreams'] = defaultdict(dict)
-    if 'SubStream' not in detail_dict:
-        detail_dict['SubStreams'] = defaultdict(dict)
+    detail_dict['VideoStreams'] = get_video_streams(node)
+    detail_dict['AudioStreams'] = get_audio_streams(node)
+    detail_dict['SubStreams'] = get_sub_streams(node)
 
+
+def get_video_streams(node):
+    """
+    Process given 'node' and parse it to create a Kodi friendly format
+    :param node: node that contains file
+    :return: dict
+    """
+    streams = defaultdict(dict)
     if "videos" in node:
         for stream_node in node["videos"]:
             stream_info = node["videos"][stream_node]
             if not isinstance(stream_info, dict):
                 continue
-            streams = detail_dict.get('VideoStreams', defaultdict(dict))
             stream_id = int(stream_info["Index"])
             streams[stream_id]['VideoCodec'] = stream_info['Codec']
             streams['xVideoCodec'] = stream_info['Codec']
@@ -241,15 +241,21 @@ def video_file_information(node, detail_dict):
                 streams[stream_id]['aspect'] = round(int(streams['width']) / int(streams['height']), 2)
             streams['xVideoResolution'] += "x" + str(stream_info['Height'])
             streams[stream_id]['duration'] = int(round(float(stream_info.get('Duration', 0)) / 1000, 0))
-            detail_dict['VideoStreams'] = streams
+    return streams
 
-    # Audio
+
+def get_audio_streams(node):
+    """
+    Process given 'node' and parse it to create a Kodi friendly format
+    :param node: node that contains file
+    :return: dict
+    """
+    streams = defaultdict(dict)
     if "audios" in node:
         for stream_node in node["audios"]:
             stream_info = node["audios"][stream_node]
             if not isinstance(stream_info, dict):
                 continue
-            streams = detail_dict.get('AudioStreams', defaultdict(dict))
             stream_id = int(stream_info["Index"])
             streams[stream_id]['AudioCodec'] = stream_info["Codec"]
             streams['xAudioCodec'] = streams[stream_id]['AudioCodec']
@@ -257,94 +263,28 @@ def video_file_information(node, detail_dict):
                 else "unk"
             streams[stream_id]['AudioChannels'] = int(stream_info["Channels"]) if "Channels" in stream_info else 1
             streams['xAudioChannels'] = nt.safe_int(streams[stream_id]['AudioChannels'])
-            detail_dict['AudioStreams'] = streams
+    return streams
 
-    # Subtitle
+
+def get_sub_streams(node):
+    """
+    Process given 'node' and parse it to create a Kodi friendly format
+    :param node: node that contains file
+    :return: dict
+    """
+    streams = defaultdict(dict)
     if "subtitles" in node:
         i = 0
         for stream_node in node["subtitles"]:
             stream_info = node["subtitles"][stream_node]
             if not isinstance(stream_info, dict):
                 continue
-            streams = detail_dict.get('SubStreams', defaultdict(dict))
             try:
                 stream_id = int(stream_node)
             except:
                 stream_id = i
             streams[stream_id]['SubtitleLanguage'] = stream_info["LanguageCode"] if "LanguageCode" in stream_info \
                 else "unk"
-            detail_dict['SubStreams'] = streams
-            i += 1
-
-
-def get_video_streams(node, streams):
-    """
-    Process given 'node' and parse it to create proper file information dictionary 'detail_dict'
-    :param node: node that contains file
-    :param streams: dictionary for output
-    :return: dict
-    """
-    if "videos" in node:
-        for stream_node in node["videos"]:
-            stream_info = node["videos"][stream_node]
-            if not isinstance(stream_info, dict):
-                continue
-            stream_id = int(stream_info["Index"])
-            streams[stream_id]['VideoCodec'] = stream_info['Codec']
-            streams['xVideoCodec'] = stream_info['Codec']
-            streams[stream_id]['width'] = stream_info['Width']
-            if 'width' not in streams:
-                streams['width'] = stream_info['Width']
-            streams['xVideoResolution'] = str(stream_info['Width'])
-            streams[stream_id]['height'] = stream_info['Height']
-            if 'height' not in streams:
-                streams['height'] = stream_info['Height']
-                streams[stream_id]['aspect'] = round(int(streams['width']) / int(streams['height']), 2)
-            streams['xVideoResolution'] += "x" + str(stream_info['Height'])
-            streams[stream_id]['duration'] = int(round(float(stream_info.get('Duration', 0)) / 1000, 0))
-    return streams
-
-
-def get_audio_streams(node, streams):
-    """
-    Process given 'node' and parse it to create proper file information dictionary 'detail_dict'
-    :param node: node that contains file
-    :param streams: dictionary for output
-    :return: dict
-    """
-    if "audios" in node:
-        for stream_node in node["audios"]:
-            stream_info = node["audios"][stream_node]
-            if not isinstance(stream_info, dict):
-                continue
-            stream_id = int(stream_info["Index"])
-            streams[stream_id]['AudioCodec'] = stream_info["Codec"]
-            streams['xAudioCodec'] = streams[stream_id]['AudioCodec']
-            streams[stream_id]['AudioLanguage'] = stream_info["LanguageCode"] if "LanguageCode" in stream_info \
-                else "unk"
-            streams[stream_id]['AudioChannels'] = int(stream_info["Channels"]) if "Channels" in stream_info else 1
-            streams['xAudioChannels'] = nt.safe_int(streams[stream_id]['AudioChannels'])
-    return streams
-
-
-def get_sub_streams(node, streams):
-    """
-    Process given 'node' and parse it to create proper file information dictionary 'detail_dict'
-    :param node: node that contains file
-    :param streams: dictionary for output
-    :return: dict
-    """
-    if "subtitles" in node:
-        i = 0
-        for stream_node in node["subtitles"]:
-            stream_info = node["subtitles"][stream_node]
-            if not isinstance(stream_info, dict):
-                continue
-            try:
-                stream_id = int(stream_node)
-            except:
-                stream_id = i
-            streams[stream_id]['SubtitleLanguage'] = stream_info["LanguageCode"] if "LanguageCode" in stream_info else "unk"
             i += 1
     return streams
 
@@ -366,7 +306,7 @@ def get_cast_info(json_node):
             return result_list
 
 
-def get_date(json_node):
+def get_airdate(json_node):
     """
     get the air from json, removing default value
     :param json_node: the json response
@@ -377,3 +317,68 @@ def get_date(json_node):
     if air == '0001-01-01' or air == '01-01-0001':
         air = ''
     return air
+
+
+def get_date(date):
+    """
+    get date format from air date
+    :param date: 'air'
+    :type date: str
+    :return:
+    """
+    temp_date = date.split('-')
+    if len(temp_date) == 3:  # format is 2016-01-24, we want it 24.01.2016
+        return temp_date[1] + '.' + temp_date[2] + '.' + temp_date[0]
+    return None
+
+
+def get_sort_name(episode):
+    """
+    gets the sort name from an episode
+    :param episode:
+    :type episode: Episode
+    :return:
+    """
+    return str(episode.episode_number).zfill(3) + ' ' + episode.name
+
+
+# noinspection Duplicates
+def set_stream_info(listitem, file):
+    """
+    :param listitem: the ListItem to set data
+    :type listitem: ListItem
+    :param file: the file object to pull data from
+    :type file: File
+    """
+    listitem.setProperty('TotalTime', str(file.duration))
+
+    video = file.video_streams
+    if video is not None and len(video) > 0:
+        video = video[0]
+        listitem.addStreamInfo('video', video)
+        listitem.setProperty('VideoResolution', str(video.get('xVideoResolution', '')))
+        listitem.setProperty('VideoCodec', video.get('xVideoCodec', ''))
+        listitem.setProperty('VideoAspect', str(video.get('aspect', '')))
+
+    audio = file.audio_streams
+    if audio is not None and len(audio) > 0:
+        listitem.setProperty('AudioCodec', audio.get('xAudioCodec', ''))
+        listitem.setProperty('AudioChannels', str(audio.get('xAudioChannels', '')))
+        for stream in audio:
+            if not isinstance(audio[stream], dict):
+                continue
+            listitem.setProperty('AudioCodec.' + str(stream), str(audio[stream]['AudioCodec']))
+            listitem.setProperty('AudioChannels.' + str(stream), str(audio[stream]['AudioChannels']))
+            audio_codec = dict()
+            audio_codec['codec'] = str(audio[stream]['AudioCodec'])
+            audio_codec['channels'] = int(audio[stream]['AudioChannels'])
+            audio_codec['language'] = str(audio[stream]['AudioLanguage'])
+            listitem.addStreamInfo('audio', audio_codec)
+
+    subs = file.sub_streams
+    if subs is not None and len(subs) > 0:
+        for stream2 in subs:
+            listitem.setProperty('SubtitleLanguage.' + str(stream2), str(subs[stream2]['SubtitleLanguage']))
+            subtitle_codec = dict()
+            subtitle_codec['language'] = str(subs[stream2]['SubtitleLanguage'])
+            listitem.addStreamInfo('subtitle', subtitle_codec)

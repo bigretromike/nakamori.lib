@@ -8,7 +8,7 @@ from collections import defaultdict
 import nakamoriplugin
 from kodi_models.kodi_models import ListItem
 from nakamori_utils.globalvars import *
-from nakamori_utils import nakamoritools as nt
+from nakamori_utils import nakamoritools as nt, infolabel_utils
 from nakamori_utils import model_utils
 
 from proxy.kodi_version_proxy import kodi_proxy
@@ -131,6 +131,7 @@ class Filter(Directory):
         Directory.__init__(self, json_node)
         if build_full_object:
             json_node = self.get_full_object()
+            Directory.__init__(self, json_node)
         # check again, as we might have replaced it above
         if isinstance(json_node, (str, int, unicode)):
             return
@@ -211,6 +212,7 @@ class Group(Directory):
         Directory.__init__(self, json_node)
         if build_full_object:
             json_node = self.get_full_object()
+            Directory.__init__(self, json_node)
         if filter_id != 0 and filter_id != '0':
             self.filter_id = filter_id
 
@@ -219,7 +221,7 @@ class Group(Directory):
             return
 
         self.actors = model_utils.get_cast_info(json_node)
-        self.date = model_utils.get_date(json_node)
+        self.date = model_utils.get_airdate(json_node)
 
         self.process_children(json_node)
 
@@ -274,13 +276,16 @@ class Series(Directory):
         Directory.__init__(self, json_node)
         if build_full_object:
             json_node = self.get_full_object()
+            Directory.__init__(self, json_node)
         self.episode_types = []
         # check again, as we might have replaced it above
         if isinstance(json_node, (str, int, unicode)):
             return
 
+        self.overview = pyproxy.decode(json_node.get('summary', ''))
+
         self.season = json_node.get('season', '1')
-        self.date = model_utils.get_date(json_node)
+        self.date = model_utils.get_airdate(json_node)
         self.actors = model_utils.get_cast_info(json_node)
         self.process_children(json_node)
 
@@ -359,26 +364,25 @@ class Episode(Directory):
         Directory.__init__(self, json_node)
         if build_full_object:
             json_node = self.get_full_object()
+            Directory.__init__(self, json_node)
         # check again, as we might have replaced it above
         if isinstance(json_node, (str, int, unicode)):
             return
 
+        self.episode_number = nt.safe_int(json_node.get('epnumber', ''))
         self.episode_type = json_node.get('eptype', 'Other')
-        self.date = model_utils.get_date(json_node)
+        self.date = model_utils.get_airdate(json_node)
         self.tvdb_episode = json_node.get('season', '0x0')
 
-        try:
-            for _file in json_node['files']:
-                self.items.append(File(_file))
-        except:
-            pass
+        self.process_children(json_node)
 
         if self.name is None:
             self.name = 'Episode ' + str(json_node.get('epnumber', '??'))
+        self.alternate_name = model_utils.get_title(json_node, 'x-jat', 'main')
 
         self.watched = json_node.get("view", '0') != '0'
         self.year = nt.safe_int(json_node.get('year', ''))
-        self.episode_number = nt.safe_int(json_node.get('epnumber', ''))
+
         self.rating = float(str(json_node.get('rating', '0')).replace(',', '.'))
         self.user_rating = float(str(json_node.get('UserRating', '0')).replace(',', '.'))
         self.overview = nt.remove_anidb_links(pyproxy.decode(json_node.get('summary', '')))
@@ -411,9 +415,22 @@ class Episode(Directory):
         url = self.get_plugin_url()
         li = ListItem(self.name, path=url)
         li.setPath(url)
-        li.setInfo(type="Video", infoLabels={"Title": self.name, "Plot": self.overview})
+        infolabels = infolabel_utils.get_infolabels_for_episode(self)
+        li.setInfo(type="Video", infoLabels=infolabels)
+        li.set_watched_flags(self)
         li.set_art(self)
+        file = self.items[0] if len(self.items) > 0 else None  # type: File
+        if file is not None:
+            model_utils.set_stream_info(li, file)
+
         return li
+
+    def process_children(self, json_node):
+        for _file in json_node['files']:
+            try:
+                self.items.append(File(_file, True))
+            except:
+                pass
 
     def get_context_menu_items(self):
         pass
@@ -433,32 +450,38 @@ class File(Directory):
         Directory.__init__(self, json_node)
         if build_full_object:
             json_node = self.get_full_object()
+            Directory.__init__(self, json_node)
         # check again, as we might have replaced it above
         if isinstance(json_node, (str, int, unicode)):
             return
 
+        self.resume_time = int(int(json_node.get('offset', '0')) / 1000)
+
         # Check for empty duration from MediaInfo check fail and handle it properly
-        duration = json_node.get('duration', '1')
+        duration = json_node.get('duration', 1) / 1000
         if duration != 1:
             duration = kodi_proxy.duration(duration)
-
-        self.size = nt.safe_int(json_node.get('size', '0'))
         self.duration = duration
-        self.resume_time = int(int(json_node.get('offset', '0')) / 1000)
+
+        self.size = nt.safe_int(json_node.get('size', 0))
         self.url = json_node.get('url', '')
 
-        video_streams = defaultdict(dict)
-        audio_streams = defaultdict(dict)
-        sub_streams = defaultdict(dict)
+        self.date_added = pyproxy.decode(json_node.get('created', '')).replace('T', ' ')
 
         try:
             # Information about streams inside json_node file
             if len(json_node.get("media", {})) > 0:
-                self.video_streams = model_utils.get_video_streams(json_node['media'], video_streams)
-                self.audio_streams = model_utils.get_audio_streams(json_node['media'], audio_streams)
-                self.sub_streams = model_utils.get_sub_streams(json_node['media'], sub_streams)
-        except:
-            pass
+                self.video_streams = model_utils.get_video_streams(json_node['media'])
+                self.audio_streams = model_utils.get_audio_streams(json_node['media'])
+                self.sub_streams = model_utils.get_sub_streams(json_node['media'])
+            else:
+                self.video_streams = {}
+                self.audio_streams = {}
+                self.sub_streams = {}
+        except Exception as ex:
+            self.video_streams = {}
+            self.audio_streams = {}
+            self.sub_streams = {}
 
     def get_api_url(self):
         url = self.base_url()

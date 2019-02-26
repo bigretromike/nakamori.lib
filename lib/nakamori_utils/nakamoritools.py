@@ -139,10 +139,14 @@ def safe_int(object_body):
     :return: int
     """
     try:
-        if object_body is not None and object_body != '':
+        if object_body is None:
+            return 0
+        if isinstance(object_body, int):
+            return object_body
+        if isinstance(object_body, (str, unicode)) and object_body != '':
             return int(object_body)
         else:
-            return 0
+            return int(object_body)
     except:
         return 0
 
