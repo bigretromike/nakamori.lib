@@ -4,8 +4,10 @@ import pstats
 import sys
 from nakamori_utils import nakamoritools as nt
 from nakamori_utils.globalvars import *
-# TODO This errors with io.StringIO, so I need to find a python 3 compatible solution
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 has_line_profiler = False
 try:
