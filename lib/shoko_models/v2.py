@@ -24,7 +24,7 @@ class Directory(object):
     """
     A directory object, the base for Groups, Series, Episodes, etc
     """
-    def __init__(self, json_node):
+    def __init__(self, json_node, get_children=False):
         """
         Create a directory object from a json node, containing only what is needed to form a ListItem.
         :param json_node: the json response from things like api/serie
@@ -36,6 +36,7 @@ class Directory(object):
         self.poster = ''
         self.banner = ''
         self.size = -1
+        self.get_children = get_children
         if isinstance(json_node, (str, int, unicode)):
             self.id = json_node
             return
@@ -124,11 +125,11 @@ class Filter(Directory):
         :param json_node: the json response from things like api/filter
         :type json_node: Union[list,dict]
         """
-        Directory.__init__(self, json_node)
+        Directory.__init__(self, json_node, get_children)
         # don't redownload info on an okay object
         if build_full_object and (self.size < 0 or get_children):
             json_node = self.get_full_object()
-            Directory.__init__(self, json_node)
+            Directory.__init__(self, json_node, get_children)
         # check again, as we might have replaced it above
         if isinstance(json_node, (str, int, unicode)):
             return
@@ -142,7 +143,7 @@ class Filter(Directory):
 
     def get_api_url(self):
         url = self.base_url()
-        url = nt.add_default_parameters(url, self.id, 1)
+        url = nt.add_default_parameters(url, self.id, 1 if self.get_children else 0)
         return url
 
     def url_prefix(self):
@@ -217,11 +218,11 @@ class Group(Directory):
         :type filter_id: int
         """
         self.filter_id = 0
-        Directory.__init__(self, json_node)
+        Directory.__init__(self, json_node, get_children)
         # don't redownload info on an okay object
         if build_full_object and (self.size < 0 or get_children):
             json_node = self.get_full_object()
-            Directory.__init__(self, json_node)
+            Directory.__init__(self, json_node, get_children)
         if filter_id != 0 and filter_id != '0':
             self.filter_id = filter_id
 
@@ -237,7 +238,7 @@ class Group(Directory):
 
     def get_api_url(self):
         url = self.base_url()
-        url = nt.add_default_parameters(url, self.id, 1)
+        url = nt.add_default_parameters(url, self.id, 1 if self.get_children else 0)
         if self.filter_id != 0:
             url = pyproxy.set_parameter(url, 'filter', self.filter_id)
         return url
@@ -283,11 +284,11 @@ class Series(Directory):
         :param json_node: the json response from things like api/serie
         :type json_node: Union[list,dict]
         """
-        Directory.__init__(self, json_node)
+        Directory.__init__(self, json_node, get_children)
         # don't redownload info on an okay object
         if build_full_object and (self.size < 0 or get_children):
             json_node = self.get_full_object()
-            Directory.__init__(self, json_node)
+            Directory.__init__(self, json_node, get_children)
         self.episode_types = []
         # check again, as we might have replaced it above
         if isinstance(json_node, (str, int, unicode)):
@@ -303,7 +304,7 @@ class Series(Directory):
 
     def get_api_url(self):
         url = self.base_url()
-        url = nt.add_default_parameters(url, self.id, 2)
+        url = nt.add_default_parameters(url, self.id, 2 if self.get_children else 0)
         return url
 
     def url_prefix(self):
@@ -344,7 +345,7 @@ class SeriesTypeList(Series):
     The Episode Type List for a series
     """
     def __init__(self, json_node, episode_type):
-        Directory.__init__(self, json_node)
+        Directory.__init__(self, json_node, True)
         json_node = self.get_full_object()
         self.name = episode_type
 
@@ -373,7 +374,7 @@ class Episode(Directory):
         :param json_node: the json response from things like api/serie.eps[]
         :type json_node: Union[list,dict]
         """
-        Directory.__init__(self, json_node)
+        Directory.__init__(self, json_node, True)
         # don't redownload info on an okay object
         if build_full_object and self.size < 0:
             json_node = self.get_full_object()

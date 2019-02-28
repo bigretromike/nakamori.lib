@@ -38,9 +38,9 @@ def profile_this(func):
         finally:
 
             stream = StringIO()
-            sort_by = u'time'
+            sort_by = u'cumulative'
             ps = pstats.Stats(profile, stream=stream).sort_stats(sort_by)
-            ps.print_stats()
+            ps.print_stats(20)
             xbmc.log(u'Profiled Function: ' + func.__name__ + u'\n' + stream.getvalue(), xbmc.LOGWARNING)
     return profiled_func
 
