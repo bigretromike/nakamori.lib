@@ -3,7 +3,6 @@
 import json
 
 from abc import abstractmethod
-from collections import defaultdict
 
 import nakamoriplugin
 from kodi_models.kodi_models import ListItem
@@ -31,24 +30,21 @@ class Directory(object):
         :param json_node: the json response from things like api/serie
         :type json_node: Union[list,dict]
         """
-        if isinstance(json_node, (str, int, unicode)):
-            self.id = json_node
+        self.name = None
         self.items = []
         self.fanart = ''
         self.poster = ''
         self.banner = ''
-        
-        # check again, as we might have replaced it above
+        self.size = -1
         if isinstance(json_node, (str, int, unicode)):
+            self.id = json_node
             return
 
         self.id = json_node.get('id', 0)
         self.name = model_utils.get_title(json_node)
-        self.size = json_node.get('size', 0)
+        self.size = int(json_node.get('size', '0'))
 
         self.process_art(json_node)
-
-        self.items = []
 
     @abstractmethod
     def get_api_url(self):
@@ -121,7 +117,7 @@ class Filter(Directory):
     """
     A filter object, contains a unified method of representing a filter, with convenient converters
     """
-    def __init__(self, json_node, build_full_object=False):
+    def __init__(self, json_node, build_full_object=False, get_children=False):
         """
         Create a filter object from a json node, containing everything that is relevant to a ListItem.
         You can also pass an ID for a small helper object.
@@ -129,7 +125,8 @@ class Filter(Directory):
         :type json_node: Union[list,dict]
         """
         Directory.__init__(self, json_node)
-        if build_full_object:
+        # don't redownload info on an okay object
+        if build_full_object and (self.size < 0 or get_children):
             json_node = self.get_full_object()
             Directory.__init__(self, json_node)
         # check again, as we might have replaced it above
@@ -140,7 +137,8 @@ class Filter(Directory):
         self.directory_filter = json_node.get('type', 'filter') == 'filters'
 
         self.apply_built_in_overrides()
-        self.process_children(json_node)
+        if get_children:
+            self.process_children(json_node)
 
     def get_api_url(self):
         url = self.base_url()
@@ -167,20 +165,30 @@ class Filter(Directory):
         items = json_node.get('filters', [])
         for i in items:
             try:
-                self.items.append(Filter(i))
+                self.items.append(Filter(i, build_full_object=True))
             except:
                 pass
         items = json_node.get('groups', [])
         for i in items:
             try:
-                group = Group(i)
-                if len(group.items) == 1 and group.items[0] is not None:
-                    group = group.items[0]
-                    if group.name is None:
-                        group = Series(group.id, True)
+                group = self.get_collapsed_group(i)
                 self.items.append(group)
             except:
                 pass
+
+    def get_collapsed_group(self, json_node):
+        group = Group(json_node, build_full_object=True, filter_id=self.id)
+        if group.size == 1:
+            if len(group.items) == 1 and group.items[0] is not None:
+                group = group.items[0]
+                if group.size < 0:
+                    group = Series(group.id, True)
+            else:
+                group = Group(json_node, build_full_object=True, get_children=True, filter_id=self.id)
+                group = group.items[0]
+                if group.size < 0:
+                    group = Series(group.id, build_full_object=True)
+        return group
 
     def get_listitem(self):
         url = self.get_plugin_url()
@@ -199,7 +207,7 @@ class Group(Directory):
     """
     A group object, contains a unified method of representing a group, with convenient converters
     """
-    def __init__(self, json_node, build_full_object=False, filter_id=0):
+    def __init__(self, json_node, build_full_object=False, get_children=False, filter_id=0):
         """
         Create a group object from a json node, containing everything that is relevant to a ListItem.
         You can also pass an ID for a small helper object.
@@ -210,7 +218,8 @@ class Group(Directory):
         """
         self.filter_id = 0
         Directory.__init__(self, json_node)
-        if build_full_object:
+        # don't redownload info on an okay object
+        if build_full_object and (self.size < 0 or get_children):
             json_node = self.get_full_object()
             Directory.__init__(self, json_node)
         if filter_id != 0 and filter_id != '0':
@@ -223,7 +232,8 @@ class Group(Directory):
         self.actors = model_utils.get_cast_info(json_node)
         self.date = model_utils.get_airdate(json_node)
 
-        self.process_children(json_node)
+        if get_children:
+            self.process_children(json_node)
 
     def get_api_url(self):
         url = self.base_url()
@@ -254,7 +264,7 @@ class Group(Directory):
         items = json_node.get('series', [])
         for i in items:
             try:
-                self.items.append(Series(i))
+                self.items.append(Series(i, build_full_object=True))
             except:
                 pass
 
@@ -267,14 +277,15 @@ class Series(Directory):
     """
     A series object, contains a unified method of representing a series, with convenient converters
     """
-    def __init__(self, json_node, build_full_object=False):
+    def __init__(self, json_node, build_full_object=False, get_children=False):
         """
         Create a series object from a json node, containing everything that is relevant to a ListItem
         :param json_node: the json response from things like api/serie
         :type json_node: Union[list,dict]
         """
         Directory.__init__(self, json_node)
-        if build_full_object:
+        # don't redownload info on an okay object
+        if build_full_object and (self.size < 0 or get_children):
             json_node = self.get_full_object()
             Directory.__init__(self, json_node)
         self.episode_types = []
@@ -287,7 +298,8 @@ class Series(Directory):
         self.season = json_node.get('season', '1')
         self.date = model_utils.get_airdate(json_node)
         self.actors = model_utils.get_cast_info(json_node)
-        self.process_children(json_node)
+        if get_children:
+            self.process_children(json_node)
 
     def get_api_url(self):
         url = self.base_url()
@@ -313,7 +325,7 @@ class Series(Directory):
         episode_types = []
         for i in items:
             try:
-                episode = Episode(i)
+                episode = Episode(i, build_full_object=True)
                 self.items.append(episode)
                 if episode.episode_type not in episode_types:
                     episode_types.append(episode.episode_type)
@@ -362,7 +374,8 @@ class Episode(Directory):
         :type json_node: Union[list,dict]
         """
         Directory.__init__(self, json_node)
-        if build_full_object:
+        # don't redownload info on an okay object
+        if build_full_object and self.size < 0:
             json_node = self.get_full_object()
             Directory.__init__(self, json_node)
         # check again, as we might have replaced it above
@@ -448,7 +461,8 @@ class File(Directory):
         :type json_node: Union[list,dict]
         """
         Directory.__init__(self, json_node)
-        if build_full_object:
+        # don't redownload info on an okay object
+        if build_full_object and self.size < 0:
             json_node = self.get_full_object()
             Directory.__init__(self, json_node)
         # check again, as we might have replaced it above
