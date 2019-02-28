@@ -1,17 +1,17 @@
 import gzip
 import sys
-from abc import abstractmethod
-from urllib import quote, unquote_plus, quote_plus, urlencode
 from io import BytesIO
+from abc import abstractmethod
 
 from nakamori_utils.globalvars import plugin_addon
 from proxy import kodi_version_proxy
 
 try:
-    from urllib.parse import urlparse
+    from urllib.parse import urlparse, quote, unquote_plus, quote_plus, urlencode
     from urllib.request import urlopen, Request
     from urllib.error import HTTPError
 except ImportError:
+    from urllib import quote, unquote_plus, quote_plus, urlencode
     from urlparse import urlparse
     from urllib2 import urlopen, Request, HTTPError, URLError
 
