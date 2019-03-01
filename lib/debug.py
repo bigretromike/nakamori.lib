@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import cProfile
+import json
 import pstats
 import sys
-from nakamori_utils import nakamoritools as nt
 from nakamori_utils.globalvars import *
 try:
     from StringIO import StringIO
@@ -49,24 +49,34 @@ def profile_this(func):
 
 def debug_init():
     """
-    start debugger is there is needed one
+    start debugger if it's enabled
     also dump argv if spamLog
     :return:
     """
     if plugin_addon.getSetting('spamLog') == "true":
-        nt.dump_dictionary(sys.argv, 'sys.argv')
+        xbmc.log('Nakamori: sys.argv = ' + json.dumps(sys.argv))
 
     if plugin_addon.getSetting('remote_debug') == 'true':
         # try pycharm first
         try:
             import pydevd
-            pydevd.settrace(host=plugin_addon.getSetting("remote_ip"), stdoutToServer=True, stderrToServer=True,
-                            port=5678, suspend=False)
-        except:
-            xbmc.log('unable to start pycharm debugger, falling back on the web-pdb')
+            # try to connect multiple times...in case we forgot to start it
+            # TODO Show a message to the user that we are waiting on the debugger
+            connected = False
+            tries = 0
+            while not connected and tries < 60:
+                try:
+                    pydevd.settrace(host=plugin_addon.getSetting("remote_ip"), stdoutToServer=True, stderrToServer=True,
+                                    port=5678, suspend=False)
+                    connected = True
+                except:
+                    tries += 1
+                    xbmc.sleep(1000)
+        except ImportError:
+            xbmc.log('unable to start pycharm debugger, falling back on the web-pdb', xbmc.LOGINFO)
             try:
                 import web_pdb
                 web_pdb.set_trace()
             except Exception as ex:
-                nt.error('Unable to start debugger, disabling', str(ex))
+                xbmc.log('Unable to start debugger, disabling' + str(ex), xbmc.LOGERROR)
                 plugin_addon.setSetting('remote_debug', 'false')

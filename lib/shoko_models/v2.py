@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import json
+import time
 
 from abc import abstractmethod
 
@@ -17,6 +18,10 @@ from proxy.python_version_proxy import python_proxy as pyproxy
 # TODO better listitem info for series and groups
 # TODO stream info
 # TODO playing files
+
+
+localize = plugin_addon.getLocalizedString
+url_for = nakamoriplugin.routing_plugin.url_for
 
 
 # noinspection Duplicates
@@ -96,6 +101,21 @@ class Directory(object):
     def process_children(self, json_node):
         pass
 
+    def set_watched_status(self, watched):
+        url = self.base_url()
+        url += '/watch' if watched else '/unwatch'
+        pyproxy.set_parameter(url, 'id', self.id)
+        if plugin_addon.getSetting('syncwatched') == "true":
+            nt.get_json(url)
+        else:
+            xbmc.executebuiltin('XBMC.Action(ToggleWatched)')
+
+        if plugin_addon.getSetting("watchedbox") == "true":
+            msg = localize(30201) + ' ' + localize(30202) if watched else localize(30203)
+            xbmc.executebuiltin('XBMC.Notification(' + localize(30200) + ', ' + msg + ', 2000,' +
+                                plugin_addon.getAddonInfo('icon') + ')')
+        nt.refresh()
+
     @abstractmethod
     def get_listitem(self):
         """
@@ -104,9 +124,10 @@ class Directory(object):
         """
         pass
 
-    @abstractmethod
     def get_context_menu_items(self):
-        pass
+        context_menu = [('  ', 'empty'), (plugin_addon.getLocalizedString(30147), 'empty'),
+                        (plugin_addon.getLocalizedString(30148), 'empty')]
+        return context_menu
 
     def __iter__(self):
         for i in self.items:
@@ -200,6 +221,9 @@ class Filter(Directory):
         return li
 
     def get_context_menu_items(self):
+        pass
+
+    def set_watched_status(self, watched):
         pass
 
 
@@ -368,12 +392,13 @@ class Episode(Directory):
     """
     An episode object, contains a unified method of representing an episode, with convenient converters
     """
-    def __init__(self, json_node, build_full_object=False):
+    def __init__(self, json_node, series_id=0, build_full_object=False):
         """
         Create an episode object from a json node, containing everything that is relevant to a ListItem
         :param json_node: the json response from things like api/serie.eps[]
         :type json_node: Union[list,dict]
         """
+        self.series_id = series_id
         Directory.__init__(self, json_node, True)
         # don't redownload info on an okay object
         if build_full_object and self.size < 0:
@@ -412,6 +437,15 @@ class Episode(Directory):
             season = '0'
         self.season = nt.safe_int(season)
 
+    def get_file(self):
+        """
+        :return: the first file in the list, or None if not populated
+        :rtype: File
+        """
+        if len(self.items) > 0 and self.items[0] is not None:
+            return self.items[0]
+        return None
+
     def get_api_url(self):
         # this one doesn't matter much atm, but I'll prolly copy and paste for APIv3, so I'll leave it in
         url = self.base_url()
@@ -422,7 +456,7 @@ class Episode(Directory):
         return 'ep'
 
     def get_plugin_url(self):
-        return nakamoriplugin.routing_plugin.url_for(nakamoriplugin.show_filter_menu, self.id)
+        return nakamoriplugin.routing_plugin.url_for(nakamoriplugin.play_video, self.id, self.get_file().id)
 
     def get_listitem(self):
         # TODO more ListItem info for files
@@ -433,21 +467,79 @@ class Episode(Directory):
         li.setInfo(type="Video", infoLabels=infolabels)
         li.set_watched_flags(self)
         li.set_art(self)
-        file = self.items[0] if len(self.items) > 0 else None  # type: File
+        file = self.get_file()  # type: File
         if file is not None:
             model_utils.set_stream_info(li, file)
+        li.addContextMenuItems(self.get_context_menu_items())
 
         return li
 
     def process_children(self, json_node):
-        for _file in json_node['files']:
+        for _file in json_node.get('files', []):
             try:
                 self.items.append(File(_file, True))
             except:
                 pass
 
     def get_context_menu_items(self):
-        pass
+        context_menu = []
+        # Play
+        if plugin_addon.getSetting('context_show_play') == 'true':
+            context_menu.append((localize(30065), 'Action(Select)'))
+
+        # Resume
+        if self.get_file() is not None and self.get_file().resume_time > 0 \
+                and plugin_addon.getSetting("file_resume") == "true":
+            label = localize(30141) + ' (%s)' % time.strftime('%H:%M:%S', time.gmtime(self.get_file().resume_time))
+            url = url_for(nakamoriplugin.resume_video, self.id, self.series_id, self.get_file().resume_time)
+            context_menu.append((label, url))
+
+        # Play (No Scrobble)
+        if plugin_addon.getSetting('context_show_play_no_watch') == 'true':
+            context_menu.append((localize(30132), url_for(nakamoriplugin.play_video_without_marking, self.get_file().id, self.id)))
+
+        # Inspect
+        if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
+            context_menu.append((localize(30133), 'REPLACE ME'))
+
+        # Mark as watched/unwatched
+        watched_item = (localize(30128), url_for(nakamoriplugin.set_episode_watched_status, self.id, False))
+        unwatched_item = (localize(30129), url_for(nakamoriplugin.set_episode_watched_status, self.id, True))
+        if plugin_addon.getSetting('context_krypton_watched') == 'true':
+            if self.watched:
+                context_menu.append(unwatched_item)
+            else:
+                context_menu.append(watched_item)
+        else:
+            context_menu.append(watched_item)
+            context_menu.append(unwatched_item)
+
+        # Playlist Mode
+        if plugin_addon.getSetting('context_playlist') == 'true':
+            context_menu.append((localize(30130), 'REPLACE ME'))
+
+        # Vote Episode
+        if plugin_addon.getSetting('context_show_vote_Episode') == 'true':
+            context_menu.append((localize(30125), ))
+
+        # Vote Series
+        if plugin_addon.getSetting('context_show_vote_Series') == 'true' and self.series_id != 0:
+            context_menu.append((localize(30124), 'REPLACE ME'))
+
+        # Metadata
+        if plugin_addon.getSetting('context_show_info') == 'true':
+            context_menu.append((localize(30123), 'Action(Info)'))
+
+        if plugin_addon.getSetting('context_view_cast') == 'true' and self.series_id != 0:
+            context_menu.append((localize(30134), 'RunPlugin(%s&cmd=viewCast)'))
+
+        if plugin_addon.getSetting('context_refresh') == 'true':
+            context_menu.append((localize(30131), 'REPLACE ME'))
+
+        # the default ones that say the rest are kodi's
+        context_menu += Directory.get_context_menu_items(self)
+
+        return context_menu
 
 
 # noinspection Duplicates
@@ -507,7 +599,7 @@ class File(Directory):
         return 'file'
 
     def get_plugin_url(self):
-        return nakamoriplugin.routing_plugin.url_for(nakamoriplugin.show_filter_menu, self.id)
+        return ''
 
     def get_listitem(self):
         """
@@ -523,3 +615,8 @@ class File(Directory):
     def get_context_menu_items(self):
         pass
 
+    def set_watched_status(self, watched):
+        if watched:
+            return
+        nt.sync_offset(self.id, 0)
+        # this isn't really supported atm, so no need for the rest of the stuff here
