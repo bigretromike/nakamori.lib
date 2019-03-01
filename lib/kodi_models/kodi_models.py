@@ -63,7 +63,8 @@ class ListItem(xbmcgui.ListItem):
             properties = {
                 'ResumeTime': str(file.resume_time)
             }
-            self.setProperties(properties)
+            for prop in properties:
+                self.setProperty(prop, properties[prop])
 
 
 class DirectoryListing(list):

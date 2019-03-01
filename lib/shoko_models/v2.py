@@ -491,7 +491,7 @@ class Episode(Directory):
         if self.get_file() is not None and self.get_file().resume_time > 0 \
                 and plugin_addon.getSetting("file_resume") == "true":
             label = localize(30141) + ' (%s)' % time.strftime('%H:%M:%S', time.gmtime(self.get_file().resume_time))
-            url = url_for(nakamoriplugin.resume_video, self.id, self.series_id, self.get_file().resume_time)
+            url = url_for(nakamoriplugin.resume_video, self.id, self.series_id)
             context_menu.append((label, url))
 
         # Play (No Scrobble)
