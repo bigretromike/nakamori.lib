@@ -24,9 +24,9 @@ def get_tags(tag_node):
                 if isinstance(tag, str) or isinstance(tag, unicode):
                     temp_genres.append(tag)
                 else:
-                    temp_genre = pyproxy.decode(tag["tag"]).strip()
+                    temp_genre = pyproxy.decode(tag['tag']).strip()
                     temp_genres.append(temp_genre)
-            temp_genre = " | ".join(temp_genres)
+            temp_genre = ' | '.join(temp_genres)
             return temp_genre
         else:
             return ''
@@ -46,9 +46,9 @@ def get_cast_and_role_new(data):
     result_list = []
     if data is not None and len(data) > 0:
         for char in data:
-            char_charname = char.get("character", "")
-            char_seiyuuname = char.get("staff", "")
-            char_seiyuupic = server + char.get("character_image", "")
+            char_charname = char.get('character', '')
+            char_seiyuuname = char.get('staff', '')
+            char_seiyuupic = server + char.get('character_image', '')
 
             # only add it if it has data
             # reorder these to match the convention (Actor is cast, character is role, in that order)
@@ -76,9 +76,9 @@ def get_cast_and_role(data):
     result_list = []
     if data is not None and len(data) > 0:
         for char in data:
-            char_charname = char["role"]
+            char_charname = char['role']
             char_seiyuuname = char['name']
-            char_seiyuupic = char["rolepic"]
+            char_seiyuupic = char['rolepic']
 
             # only add it if it has data
             # reorder these to match the convention (Actor is cast, character is role, in that order)
@@ -158,34 +158,58 @@ def get_title(data, lang=None, title_type=None):
             return pyproxy.decode(data.get('name', ''))
 
         if lang is None:
-            lang = plugin_addon.getSetting("displaylang")
+            lang = plugin_addon.getSetting('displaylang')
         if title_type is None:
-            title_type = plugin_addon.getSetting("title_type")
+            title_type = plugin_addon.getSetting('title_type')
 
-        try:
-            for title_tag in data.get("titles", []):
-                title = pyproxy.decode(title_tag.get("Title", ""))
-                if pyproxy.decode(title_tag.get("Title", "")) == "":
-                    continue
+        # try to match
+        title = match_title(data, lang, title_type)
+        if title is not None:
+            return title
 
-                if title_tag.get("Language", "").lower() == lang.lower():
-                    # does it match the proper type
-                    if title_tag.get("Type", "").lower() == title_type.lower():
-                        return title
-                    # fallback on language any title
-                    if title_tag.get("Type", "").lower() != 'short':
-                        return title
-                    # fallback on x-jat main title
-                    if title_tag.get("Type", "").lower() == 'main' and title_tag.get("Language", "").lower() == "x-jat":
-                        return title
-            # fallback on directory title
-            return pyproxy.decode(data.get('name', ''))
-        except Exception as ex1:
-            nt.error('util.error thrown on getting title', str(ex1))
-            return pyproxy.decode(data.get('name', ''))
+        # fallback on any type of same language
+        title = match_title(data, lang, '!short')
+        if title is not None:
+            return title
+
+        # fallback on x-jat main title
+        title = match_title(data, 'x-jat', 'main')
+        if title is not None:
+            return title
+
+        # fallback on directory title
+        return pyproxy.decode(data.get('name', ''))
     except Exception as ex2:
-        nt.error("get_title Exception", str(ex2))
+        nt.error('get_title Exception', str(ex2))
         return 'util.error'
+
+
+def match_title(data, lang, title_type):
+    try:
+        exclude = False
+        if title_type.startswith('!'):
+            title_type = title_type[1:]
+            exclude = True
+
+        for title_tag in data.get('titles', []):
+            title = pyproxy.decode(title_tag.get('Title', ''))
+            if pyproxy.decode(title_tag.get('Title', '')) == '':
+                continue
+
+            if title_tag.get('Language', '').lower() != lang.lower():
+                continue
+            # does it match the proper type
+            if exclude and title_tag.get('Type', '').lower() == title_type.lower():
+                continue
+
+            if not exclude and title_tag.get('Type', '').lower() != title_type.lower():
+                continue
+
+            return title
+        return None
+    except Exception as ex1:
+        nt.error('util.error thrown on getting title', str(ex1))
+        return None
 
 
 def set_watch_flag(extra_data, details):
@@ -223,12 +247,12 @@ def get_video_streams(node):
     :return: dict
     """
     streams = defaultdict(dict)
-    if "videos" in node:
-        for stream_node in node["videos"]:
-            stream_info = node["videos"][stream_node]
+    if 'videos' in node:
+        for stream_node in node['videos']:
+            stream_info = node['videos'][stream_node]
             if not isinstance(stream_info, dict):
                 continue
-            stream_id = int(stream_info["Index"])
+            stream_id = int(stream_info['Index'])
             streams[stream_id]['VideoCodec'] = stream_info['Codec']
             streams['xVideoCodec'] = stream_info['Codec']
             streams[stream_id]['width'] = stream_info['Width']
@@ -239,7 +263,7 @@ def get_video_streams(node):
             if 'height' not in streams:
                 streams['height'] = stream_info['Height']
                 streams[stream_id]['aspect'] = round(int(streams['width']) / int(streams['height']), 2)
-            streams['xVideoResolution'] += "x" + str(stream_info['Height'])
+            streams['xVideoResolution'] += 'x' + str(stream_info['Height'])
             streams[stream_id]['duration'] = int(round(float(stream_info.get('Duration', 0)) / 1000, 0))
     return streams
 
@@ -251,17 +275,17 @@ def get_audio_streams(node):
     :return: dict
     """
     streams = defaultdict(dict)
-    if "audios" in node:
-        for stream_node in node["audios"]:
-            stream_info = node["audios"][stream_node]
+    if 'audios' in node:
+        for stream_node in node['audios']:
+            stream_info = node['audios'][stream_node]
             if not isinstance(stream_info, dict):
                 continue
-            stream_id = int(stream_info["Index"])
-            streams[stream_id]['AudioCodec'] = stream_info["Codec"]
+            stream_id = int(stream_info['Index'])
+            streams[stream_id]['AudioCodec'] = stream_info['Codec']
             streams['xAudioCodec'] = streams[stream_id]['AudioCodec']
-            streams[stream_id]['AudioLanguage'] = stream_info["LanguageCode"] if "LanguageCode" in stream_info \
-                else "unk"
-            streams[stream_id]['AudioChannels'] = int(stream_info["Channels"]) if "Channels" in stream_info else 1
+            streams[stream_id]['AudioLanguage'] = stream_info['LanguageCode'] if 'LanguageCode' in stream_info \
+                else 'unk'
+            streams[stream_id]['AudioChannels'] = int(stream_info['Channels']) if 'Channels' in stream_info else 1
             streams['xAudioChannels'] = nt.safe_int(streams[stream_id]['AudioChannels'])
     return streams
 
@@ -273,18 +297,18 @@ def get_sub_streams(node):
     :return: dict
     """
     streams = defaultdict(dict)
-    if "subtitles" in node:
+    if 'subtitles' in node:
         i = 0
-        for stream_node in node["subtitles"]:
-            stream_info = node["subtitles"][stream_node]
+        for stream_node in node['subtitles']:
+            stream_info = node['subtitles'][stream_node]
             if not isinstance(stream_info, dict):
                 continue
             try:
                 stream_id = int(stream_node)
             except:
                 stream_id = i
-            streams[stream_id]['SubtitleLanguage'] = stream_info["LanguageCode"] if "LanguageCode" in stream_info \
-                else "unk"
+            streams[stream_id]['SubtitleLanguage'] = stream_info['LanguageCode'] if 'LanguageCode' in stream_info \
+                else 'unk'
             i += 1
     return streams
 
@@ -297,9 +321,9 @@ def get_cast_info(json_node):
     :rtype:
     """
     if 'roles' in json_node:
-        cast_nodes = json_node.get("roles", {})
+        cast_nodes = json_node.get('roles', {})
         if len(cast_nodes) > 0:
-            if cast_nodes[0].get("character", "") != "":
+            if cast_nodes[0].get('character', '') != '':
                 result_list = get_cast_and_role_new(cast_nodes)
             else:
                 result_list = get_cast_and_role(cast_nodes)

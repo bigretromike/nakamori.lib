@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import json
+import os
 import time
 
 from abc import abstractmethod
 
 import nakamoriplugin
-from kodi_models.kodi_models import ListItem
+from kodi_models.kodi_models import ListItem, WatchedStatus
 from nakamori_utils.globalvars import *
 from nakamori_utils import nakamoritools as nt, infolabel_utils
 from nakamori_utils import model_utils
@@ -54,6 +55,11 @@ class Directory(object):
 
     @abstractmethod
     def get_api_url(self):
+        """
+        Gets the URL for retrieving data on this object from the API
+        :return:
+        :rtype: str
+        """
         pass
 
     @abstractmethod
@@ -78,19 +84,19 @@ class Directory(object):
         fanart = ''
         banner = ''
         try:
-            if len(json_node["art"]["thumb"]) > 0:
-                thumb = json_node["art"]["thumb"][0]["url"]
-                if thumb is not None and ":" not in thumb:
+            if len(json_node['art']['thumb']) > 0:
+                thumb = json_node['art']['thumb'][0]['url']
+                if thumb is not None and ':' not in thumb:
                     thumb = server + thumb
 
-            if len(json_node["art"]["fanart"]) > 0:
-                fanart = json_node["art"]["fanart"][0]["url"]
-                if fanart is not None and ":" not in fanart:
+            if len(json_node['art']['fanart']) > 0:
+                fanart = json_node['art']['fanart'][0]['url']
+                if fanart is not None and ':' not in fanart:
                     fanart = server + fanart
 
-            if len(json_node["art"]["banner"]) > 0:
-                banner = json_node["art"]["banner"][0]["url"]
-                if banner is not None and ":" not in banner:
+            if len(json_node['art']['banner']) > 0:
+                banner = json_node['art']['banner'][0]['url']
+                if banner is not None and ':' not in banner:
                     banner = server + banner
         except:
             pass
@@ -105,12 +111,12 @@ class Directory(object):
         url = self.base_url()
         url += '/watch' if watched else '/unwatch'
         pyproxy.set_parameter(url, 'id', self.id)
-        if plugin_addon.getSetting('syncwatched') == "true":
+        if plugin_addon.getSetting('syncwatched') == 'true':
             nt.get_json(url)
         else:
             xbmc.executebuiltin('XBMC.Action(ToggleWatched)')
 
-        if plugin_addon.getSetting("watchedbox") == "true":
+        if plugin_addon.getSetting('watchedbox') == 'true':
             msg = localize(30201) + ' ' + localize(30202) if watched else localize(30203)
             xbmc.executebuiltin('XBMC.Notification(' + localize(30200) + ', ' + msg + ', 2000,' +
                                 plugin_addon.getAddonInfo('icon') + ')')
@@ -216,7 +222,7 @@ class Filter(Directory):
         url = self.get_plugin_url()
         li = ListItem(self.name, path=url)
         li.setPath(url)
-        li.setInfo(type="Video", infoLabels={"Title": self.name, "Plot": self.name})
+        li.setInfo(type='video', infoLabels={'Title': self.name, 'Plot': self.name})
         li.set_art(self)
         return li
 
@@ -281,7 +287,7 @@ class Group(Directory):
         url = self.get_plugin_url()
         li = ListItem(self.name, path=url)
         li.setPath(url)
-        li.setInfo(type="Video", infoLabels={"Title": self.name, "Plot": self.name})
+        li.setInfo(type='video', infoLabels={'Title': self.name, 'Plot': self.name})
         li.set_art(self)
         return li
 
@@ -341,7 +347,7 @@ class Series(Directory):
         url = self.get_plugin_url()
         li = ListItem(self.name, path=url)
         li.setPath(url)
-        li.setInfo(type="Video", infoLabels={"Title": self.name, "Plot": self.name})
+        li.setInfo(type='video', infoLabels={'Title': self.name, 'Plot': self.name})
         li.set_art(self)
         return li
 
@@ -419,7 +425,7 @@ class Episode(Directory):
             self.name = 'Episode ' + str(json_node.get('epnumber', '??'))
         self.alternate_name = model_utils.get_title(json_node, 'x-jat', 'main')
 
-        self.watched = json_node.get("view", '0') != '0'
+        self.watched = json_node.get('view', '0') != '0'
         self.year = nt.safe_int(json_node.get('year', ''))
 
         self.rating = float(str(json_node.get('rating', '0')).replace(',', '.'))
@@ -446,6 +452,19 @@ class Episode(Directory):
             return self.items[0]
         return None
 
+    def get_file_with_id(self, file_id):
+        """
+        :param file_id: a file ID
+        :return: the file with the given ID
+        :rtype: File
+        """
+        for f in self.items:
+            if f is None:
+                continue
+            if f.id == int(file_id):
+                return f
+        return None
+
     def get_api_url(self):
         # this one doesn't matter much atm, but I'll prolly copy and paste for APIv3, so I'll leave it in
         url = self.base_url()
@@ -459,17 +478,29 @@ class Episode(Directory):
         return nakamoriplugin.routing_plugin.url_for(nakamoriplugin.play_video, self.id, self.get_file().id)
 
     def get_listitem(self):
-        # TODO more ListItem info for files
+        """
+
+        :return:
+        :rtype: ListItem
+        """
         url = self.get_plugin_url()
         li = ListItem(self.name, path=url)
         li.setPath(url)
         infolabels = infolabel_utils.get_infolabels_for_episode(self)
-        li.setInfo(type="Video", infoLabels=infolabels)
-        li.set_watched_flags(self)
+
+        # set watched flags
+        if self.watched:
+            li.set_watched_flags(infolabels, WatchedStatus.WATCHED)
+        elif not self.watched:
+            li.set_watched_flags(infolabels, WatchedStatus.UNWATCHED)
+        elif self.get_file() is not None and self.get_file().resume_time > 0:
+            li.set_watched_flags(infolabels, WatchedStatus.PARTIAL, self.get_file().resume_time)
+
+        li.setInfo(type='video', infoLabels=infolabels)
         li.set_art(self)
-        file = self.get_file()  # type: File
-        if file is not None:
-            model_utils.set_stream_info(li, file)
+        f = self.get_file()
+        if f is not None:
+            model_utils.set_stream_info(li, f)
         li.addContextMenuItems(self.get_context_menu_items())
 
         return li
@@ -489,14 +520,15 @@ class Episode(Directory):
 
         # Resume
         if self.get_file() is not None and self.get_file().resume_time > 0 \
-                and plugin_addon.getSetting("file_resume") == "true":
+                and plugin_addon.getSetting('file_resume') == 'true':
             label = localize(30141) + ' (%s)' % time.strftime('%H:%M:%S', time.gmtime(self.get_file().resume_time))
             url = url_for(nakamoriplugin.resume_video, self.id, self.series_id)
             context_menu.append((label, url))
 
         # Play (No Scrobble)
         if plugin_addon.getSetting('context_show_play_no_watch') == 'true':
-            context_menu.append((localize(30132), url_for(nakamoriplugin.play_video_without_marking, self.get_file().id, self.id)))
+            context_menu.append((localize(30132), url_for(nakamoriplugin.play_video_without_marking, self.get_file().id,
+                                                          self.id)))
 
         # Inspect
         if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
@@ -571,13 +603,14 @@ class File(Directory):
         self.duration = duration
 
         self.size = nt.safe_int(json_node.get('size', 0))
-        self.url = json_node.get('url', '')
+        self.file_url = json_node.get('url', '')
+        self.server_path = json_node.get('server_path', '')
 
         self.date_added = pyproxy.decode(json_node.get('created', '')).replace('T', ' ')
 
         try:
             # Information about streams inside json_node file
-            if len(json_node.get("media", {})) > 0:
+            if len(json_node.get('media', {})) > 0:
                 self.video_streams = model_utils.get_video_streams(json_node['media'])
                 self.audio_streams = model_utils.get_audio_streams(json_node['media'])
                 self.sub_streams = model_utils.get_sub_streams(json_node['media'])
@@ -585,7 +618,7 @@ class File(Directory):
                 self.video_streams = {}
                 self.audio_streams = {}
                 self.sub_streams = {}
-        except Exception as ex:
+        except Exception:
             self.video_streams = {}
             self.audio_streams = {}
             self.sub_streams = {}
@@ -601,6 +634,14 @@ class File(Directory):
     def get_plugin_url(self):
         return ''
 
+    @property
+    def url_for_player(self):
+        if os.path.isfile(self.server_path):
+            if self.server_path.startswith(u'\\\\'):
+                return u'smb:' + self.server_path.replace('\\', '/')
+            return self.server_path
+        return self.file_url
+
     def get_listitem(self):
         """
         This should only be used as a temp object to feed to the player or it is unrecognized
@@ -608,7 +649,13 @@ class File(Directory):
         url = self.get_plugin_url()
         li = ListItem(self.name, path=url)
         li.setPath(url)
-        li.setInfo(type="Video", infoLabels={"Title": self.name, "Plot": self.name})
+        li.setInfo(type='video', infoLabels={'Title': self.name, 'Plot': self.name})
+
+        # Files don't have watched states in the API, so this is all that's needed
+        if self.resume_time > 0 and plugin_addon.getSetting('file_resume') == 'true':
+            li.setProperty('ResumeTime', str(self.resume_time))
+
+        model_utils.set_stream_info(li, self)
         li.set_art(self)
         return li
 

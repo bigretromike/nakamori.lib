@@ -65,11 +65,11 @@ def get_kodi_setting_bool(setting):
         # {"id":1,"jsonrpc":"2.0","result":{"value":false}} or true if ".." is displayed on list
 
         result = json.loads(parent_setting)
-        if "result" in result:
-            if "value" in result["result"]:
-                return result["result"]["value"]
+        if 'result' in result:
+            if 'value' in result['result']:
+                return result['result']['value']
     except Exception as exc:
-        error("jsonrpc_error: " + str(exc))
+        error('jsonrpc_error: ' + str(exc))
     return False
 
 
@@ -81,11 +81,11 @@ def get_kodi_setting_int(setting):
         # {"id":1,"jsonrpc":"2.0","result":{"value":false}} or true if ".." is displayed on list
 
         result = json.loads(parent_setting)
-        if "result" in result:
-            if "value" in result["result"]:
-                return int(result["result"]["value"])
+        if 'result' in result:
+            if 'value' in result['result']:
+                return int(result['result']['value'])
     except Exception as exc:
-        error("jsonrpc_error: " + str(exc))
+        error('jsonrpc_error: ' + str(exc))
     return -1
 
 
@@ -103,7 +103,7 @@ def move_position_on_list(control_list, position=0, force=False):
         if plugin_addon.getSetting('show_continue') == 'true':
             position = int(position + 1)
 
-        if get_kodi_setting_bool("filelists.showparentdiritems"):
+        if get_kodi_setting_bool('filelists.showparentdiritems'):
             position = int(position + 1)
 
     try:
@@ -117,7 +117,7 @@ def move_position_on_list(control_list, position=0, force=False):
             xbmc.log('position: ' + str(position), xbmc.LOGWARNING)
 
 
-def remove_anidb_links(data=""):
+def remove_anidb_links(data=''):
     """
     Remove anidb links from descriptions
     Args:
@@ -146,10 +146,8 @@ def safe_int(object_body):
             return 0
         if isinstance(object_body, int):
             return object_body
-        if isinstance(object_body, (str, unicode)) and object_body != '':
-            return int(object_body)
-        else:
-            return int(object_body)
+
+        return int(object_body)
     except:
         return 0
 
@@ -169,11 +167,11 @@ def trakt_scrobble(ep_id, status, progress, movie, notification):
         note_text = 'Stopping Scrobble'
 
     if notification:
-        xbmc.executebuiltin("XBMC.Notification(%s, %s %s, 7500, %s)" % ('Trakt.tv', note_text, '',
+        xbmc.executebuiltin('XBMC.Notification(%s, %s %s, 7500, %s)' % ('Trakt.tv', note_text, '',
                                                                         plugin_addon.getAddonInfo('icon')))
 
-    get_json(server + "/api/ep/scrobble?id=" + str(ep_id) + "&ismovie=" + str(movie) +
-             "&status=" + str(status) + "&progress=" + str(progress))
+    get_json(server + '/api/ep/scrobble?id=' + str(ep_id) + '&ismovie=' + str(movie) +
+             '&status=' + str(status) + '&progress=' + str(progress))
 
 
 def sync_offset(file_id, current_time):
@@ -183,7 +181,7 @@ def sync_offset(file_id, current_time):
     :param current_time: current time in seconds
     """
 
-    offset_url = server + "/api/file/offset"
+    offset_url = server + '/api/file/offset'
     offset_body = '"id":' + str(file_id) + ',"offset":' + str(current_time * 1000)
     try:
         pyproxy.post_json(offset_url, offset_body)
@@ -201,24 +199,24 @@ def mark_watch_status(params):
     group_id = params.get('group_id', '')
     file_id = params.get('file_id', 0)
     watched = bool(params['watched'])
-    key = server + "/api"
+    key = server + '/api'
 
     if watched is True:
-        watched_msg = "watched"
+        watched_msg = 'watched'
         if episode_id != '':
-            key += "/ep/watch"
+            key += '/ep/watch'
         elif anime_id != '':
-            key += "/serie/watch"
+            key += '/serie/watch'
         elif group_id != '':
-            key += "/group/watch"
+            key += '/group/watch'
     else:
-        watched_msg = "unwatched"
+        watched_msg = 'unwatched'
         if episode_id != '':
-            key += "/ep/unwatch"
+            key += '/ep/unwatch'
         elif anime_id != '':
-            key += "/serie/unwatch"
+            key += '/serie/unwatch'
         elif group_id != '':
-            key += "/group/unwatch"
+            key += '/group/unwatch'
 
     if file_id != 0:
         sync_offset(file_id, 0)
@@ -231,8 +229,8 @@ def mark_watch_status(params):
         xbmc.log('key: ' + key, xbmc.LOGWARNING)
 
     # sync mark flags
-    sync = plugin_addon.getSetting("syncwatched")
-    if sync == "true":
+    sync = plugin_addon.getSetting('syncwatched')
+    if sync == 'true':
         if episode_id != '':
             body = '?id=' + episode_id
             get_json(key + body)
@@ -245,9 +243,9 @@ def mark_watch_status(params):
     else:
         xbmc.executebuiltin('XBMC.Action(ToggleWatched)')
 
-    box = plugin_addon.getSetting("watchedbox")
-    if box == "true":
-        xbmc.executebuiltin("XBMC.Notification(%s, %s %s, 2000, %s)" % (localize(30024),
+    box = plugin_addon.getSetting('watchedbox')
+    if box == 'true':
+        xbmc.executebuiltin('XBMC.Notification(%s, %s %s, 2000, %s)' % (localize(30024),
                                                                         localize(30025),
                                                                         watched_msg,
                                                                         plugin_addon.getAddonInfo('icon')))
@@ -290,9 +288,9 @@ def set_user_sort_method(place):
     }
 
     place_setting = {
-        'filter': plugin_addon.getSetting("default_sort_filter"),
-        'group': plugin_addon.getSetting("default_sort_group_series"),
-        'episode': plugin_addon.getSetting("default_sort_episodes")
+        'filter': plugin_addon.getSetting('default_sort_filter'),
+        'group': plugin_addon.getSetting('default_sort_group_series'),
+        'episode': plugin_addon.getSetting('default_sort_episodes')
     }
 
     user_sort_method = place_setting.get(place, 'Server')
@@ -314,8 +312,8 @@ def vote_series(series_id):
     elif my_vote != 0:
         vote_value = str(vote_list[my_vote])
         body = '?id=' + series_id + '&score=' + vote_value
-        get_json(server + "/api/serie/vote" + body)
-        xbmc.executebuiltin("XBMC.Notification(%s, %s %s, 7500, %s)" % (localize(30021),
+        get_json(server + '/api/serie/vote' + body)
+        xbmc.executebuiltin('XBMC.Notification(%s, %s %s, 7500, %s)' % (localize(30021),
                                                                         localize(30022),
                                                                         vote_value, plugin_addon.getAddonInfo('icon')))
 
@@ -334,8 +332,8 @@ def vote_episode(ep_id):
     elif my_vote != 0:
         vote_value = str(vote_list[my_vote])
         body = '?id=' + ep_id + '&score=' + vote_value
-        get_json(server + "/api/ep/vote" + body)
-        xbmc.executebuiltin("XBMC.Notification(%s, %s %s, 7500, %s)" % (localize(30023),
+        get_json(server + '/api/ep/vote' + body)
+        xbmc.executebuiltin('XBMC.Notification(%s, %s %s, 7500, %s)' % (localize(30023),
                                                                         localize(30022),
                                                                         vote_value, plugin_addon.getAddonInfo('icon')))
 
@@ -350,8 +348,8 @@ def get_data(url_in, referer, data_type):
 
     Returns: The response from the server in forced type (.json or .xml)
     """
-    if data_type != "json":
-        data_type = "xml"
+    if data_type != 'json':
+        data_type = 'xml'
 
     url = url_in
 
@@ -366,7 +364,7 @@ def get_data(url_in, referer, data_type):
 def parse_possible_error(data, data_type):
     if data_type == 'json':
         stream = json.loads(data)
-        if "StatusCode" in stream:
+        if 'StatusCode' in stream:
             code = stream.get('StatusCode')
             if code != '200':
                 error_msg = code
@@ -392,28 +390,28 @@ def get_json(url_in, direct=False):
     """
     try:
         if direct:
-            body = get_data(url_in, None, "json")
+            body = get_data(url_in, None, 'json')
         else:
-            if (plugin_addon.getSetting("enableCache") == "true") and ("file?id" not in url_in):
+            if (plugin_addon.getSetting('enableCache') == 'true') and ('file?id' not in url_in):
                 import cache
                 db_row = cache.check_in_database(url_in)
                 if db_row is None:
                     db_row = 0
                 if db_row > 0:
                     expire_second = time.time() - float(db_row)
-                    if expire_second > int(plugin_addon.getSetting("expireCache")):
+                    if expire_second > int(plugin_addon.getSetting('expireCache')):
                         # expire, get new date
-                        body = get_data(url_in, None, "json")
+                        body = get_data(url_in, None, 'json')
                         params = {'extras': 'single-delete', 'name': url_in}
                         cache.remove_cache(params)
                         cache.add_cache(url_in, json.dumps(body))
                     else:
                         body = cache.get_data_from_cache(url_in)
                 else:
-                    body = get_data(url_in, None, "json")
+                    body = get_data(url_in, None, 'json')
                     cache.add_cache(url_in, json.dumps(body))
             else:
-                body = get_data(url_in, None, "json")
+                body = get_data(url_in, None, 'json')
             # if code does not exist, then assume we are receiving proper data
             # if str(body.get('code', '200')) != '200':
             #    raise HTTPError(url_in, body.get('code', '0'), body.get('message', ''), None, None)
@@ -434,7 +432,7 @@ def error(msg, error_type='Error', silent=False):
         error_type: Type of Error
         silent: disable visual notification
     """
-    xbmc.log("Nakamori " + str(addonversion) + " id: " + str(addonid), xbmc.LOGERROR)
+    xbmc.log('Nakamori ' + str(addonversion) + ' id: ' + str(addonid), xbmc.LOGERROR)
     xbmc.log('---' + msg + '---', xbmc.LOGERROR)
     key = sys.argv[0]
     if len(sys.argv) > 2 and sys.argv[2] != '':
@@ -443,12 +441,12 @@ def error(msg, error_type='Error', silent=False):
     try:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         if exc_type is not None and exc_obj is not None and exc_tb is not None:
-            xbmc.log(str(exc_type) + " at line " + str(exc_tb.tb_lineno) + " in file " + str(
+            xbmc.log(str(exc_type) + ' at line ' + str(exc_tb.tb_lineno) + ' in file ' + str(
                 os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]), xbmc.LOGERROR)
             traceback.print_exc()
     except Exception as e:
-        xbmc.log("There was an error catching the error. WTF.", xbmc.LOGERROR)
-        xbmc.log("The error message: " + str(e), xbmc.LOGERROR)
+        xbmc.log('There was an error catching the error. WTF.', xbmc.LOGERROR)
+        xbmc.log('The error message: ' + str(e), xbmc.LOGERROR)
         traceback.print_exc()
     if not silent:
         xbmc.executebuiltin('XBMC.Notification(%s, %s %s, 2000, %s)' % (error_type, ' ', msg,
@@ -465,19 +463,19 @@ def valid_user():
     :return: bool True if all completes successfully
     """
 
-    if plugin_addon.getSetting("apikey") != "" and plugin_addon.getSetting("login") == "":
-        return True, plugin_addon.getSetting("apikey")
+    if plugin_addon.getSetting('apikey') != '' and plugin_addon.getSetting('login') == '':
+        return True, plugin_addon.getSetting('apikey')
     else:
         xbmc.log('-- apikey empty --', xbmc.LOGWARNING)
         try:
-            if plugin_addon.getSetting("login") != "" and plugin_addon.getSetting("device") != "":
-                _server = "http://" + plugin_addon.getSetting("ipaddress") + ":" + plugin_addon.getSetting("port")
-                body = '{"user":"' + plugin_addon.getSetting("login") + '",' + \
-                       '"device":"' + plugin_addon.getSetting("device") + '",' + \
-                       '"pass":"' + plugin_addon.getSetting("password") + '"}'
-                post_body = pyproxy.post_data(_server + "/api/auth", body)
+            if plugin_addon.getSetting('login') != '' and plugin_addon.getSetting('device') != '':
+                _server = 'http://' + plugin_addon.getSetting('ipaddress') + ':' + plugin_addon.getSetting('port')
+                body = '{"user":"' + plugin_addon.getSetting('login') + '",' + \
+                       '"device":"' + plugin_addon.getSetting('device') + '",' + \
+                       '"pass":"' + plugin_addon.getSetting('password') + '"}'
+                post_body = pyproxy.post_data(_server + '/api/auth', body)
                 auth = json.loads(post_body)
-                if "apikey" in auth:
+                if 'apikey' in auth:
                     apikey_found_in_auth = str(auth['apikey'])
                     plugin_addon.setSetting(id='login', value='')
                     plugin_addon.setSetting(id='password', value='')
@@ -495,24 +493,24 @@ def valid_user():
 
 
 def dump_dictionary(details, name):
-    if plugin_addon.getSetting("spamLog") == 'true':
+    if plugin_addon.getSetting('spamLog') == 'true':
         if details is not None:
-            xbmc.log("---- " + name + ' ----', xbmc.LOGWARNING)
+            xbmc.log('---- ' + name + ' ----', xbmc.LOGWARNING)
 
             for i in details:
                 if isinstance(details, dict):
                     a = details.get(pyproxy.decode(i))
                     if a is None:
-                        temp_log = "\'unset\'"
+                        temp_log = '\'unset\''
                     elif isinstance(a, collections.Iterable):
                         # easier for recursion and pretty
                         temp_log = json.dumps(a, sort_keys=True, indent=4, separators=(',', ': '))
                     else:
                         temp_log = str(a)
-                    xbmc.log("-" + str(i) + "- " + temp_log, xbmc.LOGWARNING)
+                    xbmc.log('-' + str(i) + '- ' + temp_log, xbmc.LOGWARNING)
                 elif isinstance(details, collections.Iterable):
                     temp_log = json.dumps(i, sort_keys=True, indent=4, separators=(',', ': '))
-                    xbmc.log("-" + temp_log, xbmc.LOGWARNING)
+                    xbmc.log('-' + temp_log, xbmc.LOGWARNING)
 
 
 def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon.getSetting('port')):
@@ -534,7 +532,7 @@ def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon
             # Another possible circumstance is the user has something other than Shoko
             # running on port 8111 (or whatever they put)
             version = get_version(ip, port, True)
-            if version == LooseVersion("0.0"):
+            if version == LooseVersion('0.0'):
                 message_box('Connection Error', 'There was an error connecting to Shoko Server',
                             'If you have set up Shoko Server,', 'feel free to ask for advice on our discord')
                 return False
@@ -633,7 +631,7 @@ def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon
         return False
 
 
-def get_version(ip=plugin_addon.getSetting("ipaddress"), port=plugin_addon.getSetting("port"), force=False):
+def get_version(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon.getSetting('port'), force=False):
     legacy = LooseVersion('0.0')
     version = ''
     try:
@@ -642,7 +640,7 @@ def get_version(ip=plugin_addon.getSetting("ipaddress"), port=plugin_addon.getSe
         if not force:
             if _shoko_version != LooseVersion('0.1') and _good_ip == ip:
                 return _shoko_version
-        json_file = get_json("http://" + str(ip) + ":" + str(port) + "/api/version", direct=True)
+        json_file = get_json('http://' + str(ip) + ':' + str(port) + '/api/version', direct=True)
         if json_file is None:
             return legacy
         try:
@@ -651,8 +649,8 @@ def get_version(ip=plugin_addon.getSetting("ipaddress"), port=plugin_addon.getSe
             return legacy
 
         for module in data:
-            if module["name"] == "server":
-                version = module["version"]
+            if module['name'] == 'server':
+                version = module['version']
                 break
 
         plugin_addon.setSetting(id='good_ip', value=ip)
@@ -677,7 +675,7 @@ def post_dict(url, body):
         error('Failed to send data')
 
 
-def add_dir(name, url, mode, iconimage='DefaultTVShows.png', plot="", poster="DefaultVideo.png", filename="none",
+def add_dir(name, url, mode, iconimage='DefaultTVShows.png', plot='', poster='DefaultVideo.png', filename='none',
             offset=''):
     # u=sys.argv[0]+"?url="+url+"&mode="+str(mode)+"&name="+quote_plus(name)+"&poster_file="+quote_plus(poster)+"&filename="+quote_plus(filename)
     u = sys.argv[0]
@@ -692,9 +690,9 @@ def add_dir(name, url, mode, iconimage='DefaultTVShows.png', plot="", poster="De
     if url is not '':
         u = pyproxy.set_parameter(u, 'url', url)
 
-    liz = xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=iconimage)
-    liz.setInfo(type="Video", infoLabels={"Title": name, "Plot": plot})
-    liz.setProperty("Poster_Image", iconimage)
+    liz = xbmcgui.ListItem(name, iconImage='DefaultVideo.png', thumbnailImage=iconimage)
+    liz.setInfo(type='Video', infoLabels={'Title': name, 'Plot': plot})
+    liz.setProperty('Poster_Image', iconimage)
     if mode is not '':
         if mode == 7:
             ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz, isFolder=False)
@@ -743,7 +741,7 @@ def kodi_jsonrpc(request):
         result = json.loads(return_data)
         return result
     except Exception as exc:
-        error("jsonrpc_error: " + str(exc))
+        error('jsonrpc_error: ' + str(exc))
 
 
 def add_default_parameters(url, obj_id, level):

@@ -13,7 +13,7 @@ service_addon = xbmcaddon.Addon('service.nakamori')
 script_addon = xbmcaddon.Addon('script.module.nakamori')
 plugin_home = xbmc.translatePath(plugin_addon.getAddonInfo('path'))
 
-server = "http://" + plugin_addon.getSetting("ipaddress") + ":" + plugin_addon.getSetting("port")
+server = 'http://' + plugin_addon.getSetting('ipaddress') + ':' + plugin_addon.getSetting('port')
 
 tag_setting_flags = 0
 tag_setting_flags |= 0b000001 if plugin_addon.getSetting('hideMiscTags') == 'true' else 0

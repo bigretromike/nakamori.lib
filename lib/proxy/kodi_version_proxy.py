@@ -7,7 +7,7 @@ from nakamori_utils.globalvars import plugin_addon
 
 class Kodi16Proxy:
     def __init__(self):
-        plugin_addon.setSetting('kodi18', "false")
+        plugin_addon.setSetting('kodi18', 'false')
 
     def user_agent(self):
         """
@@ -50,7 +50,7 @@ class Kodi17Proxy(Kodi16Proxy):
 class Kodi18Proxy(Kodi17Proxy):
     def __init__(self):
         Kodi17Proxy.__init__(self)
-        plugin_addon.setSetting('kodi18', "true")
+        plugin_addon.setSetting('kodi18', 'true')
 
     def duration(self, time_s):
         return str(datetime.timedelta(seconds=time_s))

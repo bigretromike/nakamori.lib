@@ -43,7 +43,7 @@ db_cursor = db_connection.cursor()
 # create table
 try:
     # noinspection PyTypeChecker
-    db_cursor.execute("CREATE TABLE IF NOT EXISTS [cache] ([url] TEXT NULL, [json] TEXT NULL, [created] FLOAT NULL);")
+    db_cursor.execute('CREATE TABLE IF NOT EXISTS [cache] ([url] TEXT NULL, [json] TEXT NULL, [created] FLOAT NULL);')
 except:
     pass
 
@@ -63,7 +63,7 @@ def get_cached_data():
         db_connection = database.connect(db_file)
         db_cursor = db_connection.cursor()
         # noinspection PyTypeChecker
-        db_cursor.execute("SELECT url, json, created FROM cache")
+        db_cursor.execute('SELECT url, json, created FROM cache')
         faves = db_cursor.fetchall()
         for a_row in faves:
             if len(a_row) > 0:
@@ -83,7 +83,7 @@ def get_data_from_cache(url):
         db_connection = database.connect(db_file)
         db_cursor = db_connection.cursor()
         # noinspection PyTypeChecker
-        db_cursor.execute("SELECT json FROM cache WHERE url=?", (url,))
+        db_cursor.execute('SELECT json FROM cache WHERE url=?', (url,))
         items = db_cursor.fetchone()
         items = json.loads(items[0])
     except:
@@ -103,7 +103,7 @@ def add_cache(url, json_body):
     db_connection = database.connect(db_file)
     db_cursor = db_connection.cursor()
     # noinspection PyTypeChecker
-    db_cursor.execute("INSERT INTO cache (url, json, created) VALUES (?, ?, ?)", (url, json_body, date))
+    db_cursor.execute('INSERT INTO cache (url, json, created) VALUES (?, ?, ?)', (url, json_body, date))
     db_connection.commit()
     db_connection.close()
 
@@ -118,12 +118,12 @@ def remove_cache(params):
     db_connection = database.connect(db_file)
     db_cursor = db_connection.cursor()
     try:
-        if params["extras"] == "single-delete":
+        if params['extras'] == 'single-delete':
             # noinspection PyTypeChecker
-            db_cursor.execute("DELETE FROM cache WHERE url=?", (params['name'],))
+            db_cursor.execute('DELETE FROM cache WHERE url=?', (params['name'],))
     except:
         # noinspection PyTypeChecker
-        db_cursor.execute("DELETE FROM cache")
+        db_cursor.execute('DELETE FROM cache')
     db_connection.commit()
     db_connection.close()
 
@@ -140,7 +140,7 @@ def check_in_database(term):
         db_connection = database.connect(db_file)
         db_cursor = db_connection.cursor()
         # noinspection PyTypeChecker
-        db_cursor.execute("SELECT created FROM cache WHERE url=?", (term,))
+        db_cursor.execute('SELECT created FROM cache WHERE url=?', (term,))
         items = db_cursor.fetchone()
         items = items[0]
     except:
@@ -149,7 +149,7 @@ def check_in_database(term):
 
 
 def clear_cache(params):
-    do_clean = xbmcgui.Dialog().yesno("Confirm Delete", "Are you sure you want to Clear CACHE?")
+    do_clean = xbmcgui.Dialog().yesno('Confirm Delete', 'Are you sure you want to Clear CACHE?')
     if do_clean:
         remove_cache(params)
         # noinspection PyTypeChecker

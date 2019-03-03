@@ -44,10 +44,10 @@ class BasePythonProxy:
         req.add_header('apikey', apikey)
 
         if referer is not None:
-            referer = quote(self.encode(referer)).replace("%3A", ":")
+            referer = quote(self.encode(referer)).replace('%3A', ':')
             if len(referer) > 1:
                 req.add_header('Referer', referer)
-        if "127.0.0.1" not in url and "localhost" not in url:
+        if '127.0.0.1' not in url and 'localhost' not in url:
             req.add_header('Accept-encoding', 'gzip')
         data = None
         response = urlopen(req, timeout=int(timeout))
@@ -103,7 +103,7 @@ class BasePythonProxy:
 
         array1 = url.split('?')
         if (parameter + '=') not in array1[1]:
-            return url + "&" + parameter + '=' + value
+            return url + '&' + parameter + '=' + value
 
         url = array1[0] + '?'
         array2 = array1[1].split('&')
@@ -138,7 +138,7 @@ class BasePythonProxy:
         """
         if data_in is not None:
             req = Request(self.encode(url), self.encode(data_in), {'Content-Type': 'application/json'})
-            req.add_header('apikey', plugin_addon.getSetting("apikey"))
+            req.add_header('apikey', plugin_addon.getSetting('apikey'))
             req.add_header('Accept', 'application/json')
             data_out = None
             try:
@@ -177,7 +177,7 @@ class BasePythonProxy:
             split_parameters = input_string[p1 + 1:].split('&')
             for name_value_pair in split_parameters:
                 # xbmc.log("parseParameter detected Value: " + str(name_value_pair))
-                if (len(name_value_pair) > 0) & ("=" in name_value_pair):
+                if (len(name_value_pair) > 0) & ('=' in name_value_pair):
                     pair = name_value_pair.split('=')
                     key = pair[0]
                     value = self.decode(unquote_plus(pair[1]))
@@ -211,19 +211,19 @@ class Python2Proxy(BasePythonProxy):
             else:
                 return str(i)
         except:
-            pass  # nt.error("Unicode Error", error_type='Unicode Error')
+            pass  # nt.error('Unicode Error', error_type='Unicode Error')
             return ''
 
     def decode(self, i):
         try:
             if isinstance(i, str):
-                return i.decode("utf-8")
+                return i.decode('utf-8')
             elif isinstance(i, unicode):
                 return i
             else:
                 return unicode(i)
         except:
-            # error("Unicode Error", error_type='Unicode Error')
+            # error('Unicode Error', error_type='Unicode Error')
             return ''\
 
 
@@ -244,19 +244,19 @@ class Python3Proxy(BasePythonProxy):
             else:
                 return str(i).encode('utf-8')
         except:
-            pass  # nt.error("Unicode Error", error_type='Unicode Error')
+            pass  # nt.error('Unicode Error', error_type='Unicode Error')
             return ''
 
     def decode(self, i):
         try:
             if isinstance(i, bytes):
-                return i.decode("utf-8")
+                return i.decode('utf-8')
             elif isinstance(i, str):
                 return i
             else:
                 return str(i)
         except:
-            # error("Unicode Error", error_type='Unicode Error')
+            # error('Unicode Error', error_type='Unicode Error')
             return ''
 
     def isnumeric(self, value):

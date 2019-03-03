@@ -53,7 +53,7 @@ def debug_init():
     also dump argv if spamLog
     :return:
     """
-    if plugin_addon.getSetting('spamLog') == "true":
+    if plugin_addon.getSetting('spamLog') == 'true':
         xbmc.log('Nakamori: sys.argv = ' + json.dumps(sys.argv))
 
     if plugin_addon.getSetting('remote_debug') == 'true':
@@ -66,7 +66,7 @@ def debug_init():
             tries = 0
             while not connected and tries < 60:
                 try:
-                    pydevd.settrace(host=plugin_addon.getSetting("remote_ip"), stdoutToServer=True, stderrToServer=True,
+                    pydevd.settrace(host=plugin_addon.getSetting('remote_ip'), stdoutToServer=True, stderrToServer=True,
                                     port=5678, suspend=False)
                     connected = True
                 except:

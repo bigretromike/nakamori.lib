@@ -5,6 +5,12 @@ import xbmcplugin
 from nakamori_utils.globalvars import *
 
 
+class WatchedStatus(object):
+    UNWATCHED = 0
+    PARTIAL = 1
+    WATCHED = 2
+
+
 class ListItem(xbmcgui.ListItem):
     def __init__(self):
         xbmcgui.ListItem.__init__(self)
@@ -27,48 +33,49 @@ class ListItem(xbmcgui.ListItem):
             self.set_banner(dir_obj.banner)
 
     def set_thumb(self, thumb):
-        xbmcgui.ListItem.setArt(self, {"thumb": thumb})
-        xbmcgui.ListItem.setArt(self, {"icon": thumb})
-        xbmcgui.ListItem.setArt(self, {"poster": thumb})
+        xbmcgui.ListItem.setArt(self, {'thumb': thumb})
+        xbmcgui.ListItem.setArt(self, {'icon': thumb})
+        xbmcgui.ListItem.setArt(self, {'poster': thumb})
 
     def set_fanart(self, fanart):
-        xbmcgui.ListItem.setArt(self, {"fanart": fanart})
-        xbmcgui.ListItem.setArt(self, {"clearart": fanart})
+        xbmcgui.ListItem.setArt(self, {'fanart': fanart})
+        xbmcgui.ListItem.setArt(self, {'clearart': fanart})
 
     def set_banner(self, banner):
-        xbmcgui.ListItem.setArt(self, {"banner": banner})
+        xbmcgui.ListItem.setArt(self, {'banner': banner})
 
-    def set_watched_flags(self, episode):
+    def set_watched_flags(self, infolabels, flag, resume_time=0):
         """
         set the needed flags on a listitem for watched or resume icons
         :param self:
-        :param episode:
+        :param infolabels
+        :param flag:
+        :type flag: WatchedStatus
         :return:
         """
-        if episode.watched:
-            infolabels = {
-                "playcount": '1',
-                "overlay": '5',
-                "watched": 'True'
-            }
-            self.setInfo("Video", infolabels)
+        if flag == WatchedStatus.UNWATCHED:
+            infolabels['playcount'] = 0
+            infolabels['overlay'] = 4
+        elif flag == WatchedStatus.WATCHED:
+            infolabels['playcount'] = 1
+            infolabels['overlay'] = 5
+        elif flag == WatchedStatus.PARTIAL and plugin_addon.getSetting('file_resume') == 'true':
+            infolabels['playcount'] = 0
+            infolabels['overlay'] = 7
+            self.setProperty('ResumeTime', str(resume_time))
+
+    def set_resume(self):
+        resume = self.getProperty('ResumeTime')
+        if resume is None or resume == '':
             return
-        file = episode.items[0] if len(episode.items) > 0 else None
-        if file is not None and file.resume_time > 0 and plugin_addon.getSetting("file_resume") == "true":
-            infolabels = {
-                "overlay": '7',
-                "watched": 'True'
-            }
-            self.setInfo("Video", infolabels)
-            properties = {
-                'ResumeTime': str(file.resume_time)
-            }
-            for prop in properties:
-                self.setProperty(prop, properties[prop])
+        self.setProperty('StartOffset', resume)
 
 
 class DirectoryListing(list):
-    """An optimized list to add directory items. There may be a speedup by calling `del dir_list`"""
+    """
+    An optimized list to add directory items.
+    There may be a speedup by calling `del dir_list`, but Kodi's GC is pretty aggressive
+    """
     def __init__(self, content_type):
         list.__init__(self)
         self.pending = []
@@ -76,17 +83,37 @@ class DirectoryListing(list):
         xbmcplugin.setContent(self.handle, content_type)
 
     def extend(self, iterable):
+        # first handle pending items
         if len(self.pending) > 0:
             xbmcplugin.addDirectoryItems(self.handle, self.pending, self.__len__() + self.pending.__len__())
             self.pending = []
-        list.extend(self, iterable)
-        xbmcplugin.addDirectoryItems(self.handle, iterable, self.__len__())
+        # we pass a list of listitems, (listitem, bool). or (str, listitem, bool)
+        result_list = []
+        for item in iterable:
+            result = get_tuple(item)
+            if result is not None:
+                result_list.append(result)
+        list.extend(self, result_list)
+        xbmcplugin.addDirectoryItems(self.handle, result_list, self.__len__())
 
-    def append(self, item):
-        self.pending.append((item.getPath(), item, True))
-        list.append(self, item)
+    def append(self, item, folder=True):
+        result = get_tuple(item)
+        if result is not None:
+            self.pending.append(result)
+            list.append(self, result)
 
     def __del__(self):
         if len(self.pending) > 0:
             xbmcplugin.addDirectoryItems(self.handle, self.pending, self.__len__() + self.pending.__len__())
         xbmcplugin.endOfDirectory(self.handle, cacheToDisc=False)
+
+
+def get_tuple(item):
+    if isinstance(item, ListItem):
+        return item.getPath(), item, True
+    if isinstance(item, tuple):
+        if len(item) == 2:
+            return item[0].getPath(), item[0], item[1]
+        if len(item) == 3:
+            return item[0], item[1], item[2]
+    return None
