@@ -252,18 +252,13 @@ def get_video_streams(node):
             if not isinstance(stream_info, dict):
                 continue
             stream_id = int(stream_info['Index'])
-            streams[stream_id]['VideoCodec'] = stream_info['Codec']
-            streams['xVideoCodec'] = stream_info['Codec']
+            streams[stream_id]['codec'] = stream_info['Codec']
             streams[stream_id]['width'] = stream_info['Width']
-            if 'width' not in streams:
-                streams['width'] = stream_info['Width']
-            streams['xVideoResolution'] = str(stream_info['Width'])
             streams[stream_id]['height'] = stream_info['Height']
-            if 'height' not in streams:
+            if 'width' not in streams or 'height' not in streams:
+                streams['width'] = stream_info['Width']
                 streams['height'] = stream_info['Height']
-                streams[stream_id]['aspect'] = round(int(streams['width']) / int(streams['height']), 2)
-            streams['xVideoResolution'] += 'x' + str(stream_info['Height'])
-            streams[stream_id]['duration'] = int(round(float(stream_info.get('Duration', 0)) / 1000, 0))
+            streams[stream_id]['aspect'] = round(int(streams['width']) / int(streams['height']), 2)
     return streams
 
 
@@ -280,12 +275,10 @@ def get_audio_streams(node):
             if not isinstance(stream_info, dict):
                 continue
             stream_id = int(stream_info['Index'])
-            streams[stream_id]['AudioCodec'] = stream_info['Codec']
-            streams['xAudioCodec'] = streams[stream_id]['AudioCodec']
-            streams[stream_id]['AudioLanguage'] = stream_info['LanguageCode'] if 'LanguageCode' in stream_info \
-                else 'unk'
-            streams[stream_id]['AudioChannels'] = int(stream_info['Channels']) if 'Channels' in stream_info else 1
-            streams['xAudioChannels'] = nt.safe_int(streams[stream_id]['AudioChannels'])
+            # there are some codecs like AC3 that are really called AC3+, but Kodi doesn't do the +
+            streams[stream_id]['codec'] = stream_info['Codec'].replace('+', '')
+            streams[stream_id]['language'] = stream_info['LanguageCode'] if 'LanguageCode' in stream_info else 'unk'
+            streams[stream_id]['channels'] = int(stream_info['Channels']) if 'Channels' in stream_info else 1
     return streams
 
 
@@ -306,8 +299,7 @@ def get_sub_streams(node):
                 stream_id = int(stream_node)
             except:
                 stream_id = i
-            streams[stream_id]['SubtitleLanguage'] = stream_info['LanguageCode'] if 'LanguageCode' in stream_info \
-                else 'unk'
+            streams[stream_id]['language'] = stream_info['LanguageCode'] if 'LanguageCode' in stream_info else 'unk'
             i += 1
     return streams
 
@@ -365,43 +357,47 @@ def get_sort_name(episode):
     return str(episode.episode_number).zfill(3) + ' ' + episode.name
 
 
+def get_first(iterable):
+    if isinstance(iterable, list) and len(iterable) > 0:
+        return next((i for i in iterable if isinstance(i, (list, dict, defaultdict))))
+    if isinstance(iterable, (dict, defaultdict)) and len(iterable) > 0:
+        return next((v for k, v in iterable.items() if isinstance(v, (list, dict, defaultdict))))
+    return iterable
+
+
 # noinspection Duplicates
-def set_stream_info(listitem, file):
+def set_stream_info(listitem, f):
     """
     :param listitem: the ListItem to set data
     :type listitem: ListItem
-    :param file: the file object to pull data from
-    :type file: File
+    :param f: the file object to pull data from
+    :type f: File
     """
-    listitem.setProperty('TotalTime', str(file.duration))
+    listitem.setProperty('TotalTime', str(f.duration))
 
-    video = file.video_streams
+    video = f.video_streams
     if video is not None and len(video) > 0:
-        video = video[0]
+        video = get_first(video)
         listitem.addStreamInfo('video', video)
-        listitem.setProperty('VideoResolution', str(video.get('xVideoResolution', '')))
-        listitem.setProperty('VideoCodec', video.get('xVideoCodec', ''))
+
+        listitem.setProperty('VideoResolution', str(video.get('height', '')))
+        listitem.setProperty('VideoCodec', video.get('codec', ''))
         listitem.setProperty('VideoAspect', str(video.get('aspect', '')))
 
-    audio = file.audio_streams
+    audio = f.audio_streams
     if audio is not None and len(audio) > 0:
-        listitem.setProperty('AudioCodec', audio.get('xAudioCodec', ''))
-        listitem.setProperty('AudioChannels', str(audio.get('xAudioChannels', '')))
+        first = get_first(audio)
+        listitem.setProperty('AudioCodec', first.get('codec', ''))
+        listitem.setProperty('AudioChannels', str(first.get('channels', '')))
         for stream in audio:
             if not isinstance(audio[stream], dict):
                 continue
-            listitem.setProperty('AudioCodec.' + str(stream), str(audio[stream]['AudioCodec']))
-            listitem.setProperty('AudioChannels.' + str(stream), str(audio[stream]['AudioChannels']))
-            audio_codec = dict()
-            audio_codec['codec'] = str(audio[stream]['AudioCodec'])
-            audio_codec['channels'] = int(audio[stream]['AudioChannels'])
-            audio_codec['language'] = str(audio[stream]['AudioLanguage'])
-            listitem.addStreamInfo('audio', audio_codec)
+            listitem.setProperty('AudioCodec.' + str(stream), str(audio[stream]['codec']))
+            listitem.setProperty('AudioChannels.' + str(stream), str(audio[stream]['channels']))
+            listitem.addStreamInfo('audio', audio[stream])
 
-    subs = file.sub_streams
+    subs = f.sub_streams
     if subs is not None and len(subs) > 0:
         for stream2 in subs:
-            listitem.setProperty('SubtitleLanguage.' + str(stream2), str(subs[stream2]['SubtitleLanguage']))
-            subtitle_codec = dict()
-            subtitle_codec['language'] = str(subs[stream2]['SubtitleLanguage'])
-            listitem.addStreamInfo('subtitle', subtitle_codec)
+            listitem.setProperty('SubtitleLanguage.' + str(stream2), str(subs[stream2]['language']))
+            listitem.addStreamInfo('subtitle', subs[stream2])
