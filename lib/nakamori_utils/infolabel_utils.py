@@ -3,7 +3,18 @@ from nakamori_utils import model_utils
 
 
 def get_infolabels_for_group(group):
-    infolabels = {}
+    infolabels = {
+        'aired': group.date,
+        'date': model_utils.get_date(group.date),
+        'genre': group.tags,
+        'plot': group.overview,
+        'premiered': group.date,
+        'rating': group.rating,
+        'title': group.name,
+        'userrating': group.user_rating,
+        'path': group.get_plugin_url(),
+        'mediatype': 'tvshow',
+    }
 
     return infolabels
 
@@ -13,13 +24,13 @@ def get_infolabels_for_series(series):
         'aired': series.date,
         'date': model_utils.get_date(series.date),
         'originaltitle': series.alternate_name,
+        'genre': series.tags,
         'plot': series.overview,
         'premiered': series.date,
         'rating': series.rating,
         'season': series.season,
         'title': series.name,
         'userrating': series.user_rating,
-        #'votes': series.votes,
         'path': series.get_plugin_url(),
         'mediatype': 'tvshow',
     }
@@ -55,4 +66,16 @@ def get_infolabels_for_episode(episode):
         }
         for key in more_infolabels:
             infolabels[key] = more_infolabels[key]
+    return infolabels
+
+
+def get_infolabels_for_file(f):
+
+    infolabels = {
+        'path': f.get_plugin_url(),
+        'mediatype': 'episode',
+        'duration': f.duration,
+        'size': f.size,
+        'dateadded': f.date_added
+    }
     return infolabels

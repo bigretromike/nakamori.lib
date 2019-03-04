@@ -109,17 +109,20 @@ class Directory(object):
         pass
 
     def set_watched_status(self, watched):
+        if isinstance(watched, str) or isinstance(watched, unicode):
+            watched = watched.lower() != 'false'
+
         url = self.base_url()
         url += '/watch' if watched else '/unwatch'
-        pyproxy.set_parameter(url, 'id', self.id)
+        url = pyproxy.set_parameter(url, 'id', self.id)
         if plugin_addon.getSetting('syncwatched') == 'true':
             nt.get_json(url)
         else:
             xbmc.executebuiltin('XBMC.Action(ToggleWatched)')
 
         if plugin_addon.getSetting('watchedbox') == 'true':
-            msg = localize(30201) + ' ' + localize(30202) if watched else localize(30203)
-            xbmc.executebuiltin('XBMC.Notification(' + localize(30200) + ', ' + msg + ', 2000,' +
+            msg = localize(30201) + ' ' + (localize(30202) if watched else localize(30203))
+            xbmc.executebuiltin('XBMC.Notification(' + localize(30200) + ', ' + msg + ', 2000, ' +
                                 plugin_addon.getAddonInfo('icon') + ')')
         nt.refresh()
 
@@ -204,7 +207,7 @@ class Filter(Directory):
         elif self.name == 'Unsort':
             self.name = 'Unsorted Files'
             self.sort_index = 6
-            self.plugin_url = url_for(nakamoriplugin.show_unsorted_menu, False)
+            self.plugin_url = url_for(nakamoriplugin.show_unsorted_menu)
 
     def process_children(self, json_node):
         items = json_node.get('filters', [])
@@ -277,8 +280,13 @@ class Group(Directory):
         if isinstance(json_node, (str, int, unicode)):
             return
 
-        self.actors = model_utils.get_cast_info(json_node)
         self.date = model_utils.get_airdate(json_node)
+        self.rating = float(str(json_node.get('rating', '0')).replace(',', '.'))
+        self.user_rating = float(str(json_node.get('userrating', '0')).replace(',', '.'))
+        self.actors = model_utils.get_cast_info(json_node)
+        self.sizes = get_sizes(json_node)
+        self.tags = model_utils.get_tags(json_node.get('tags', {}))
+        self.overview = pyproxy.decode(json_node.get('summary', ''))
 
         if get_children:
             self.process_children(json_node)
@@ -303,8 +311,10 @@ class Group(Directory):
     def get_listitem(self):
         url = self.get_plugin_url()
         li = ListItem(self.name, path=url)
+        infolabels = infolabel_utils.get_infolabels_for_group(self)
         li.setPath(url)
-        li.setInfo(type='video', infoLabels={'Title': self.name, 'Plot': self.name})
+        li.set_watched_flags(infolabels, is_watched(self), 1)
+        li.setInfo(type='video', infoLabels=infolabels)
         li.set_art(self)
         return li
 
@@ -349,72 +359,10 @@ class Series(Directory):
         self.rating = float(str(json_node.get('rating', '0')).replace(',', '.'))
         self.user_rating = float(str(json_node.get('userrating', '0')).replace(',', '.'))
         self.actors = model_utils.get_cast_info(json_node)
-        self.sizes = self.get_sizes(json_node)
+        self.sizes = get_sizes(json_node)
+        self.tags = model_utils.get_tags(json_node.get('tags', {}))
         if get_children:
             self.process_children(json_node)
-
-    def get_sizes(self, json_node):
-        result = Sizes()
-        local_sizes = json_node.get('local_sizes', {})
-        result.local_episodes = nt.safe_int(local_sizes.get('Episodes', 0))
-        result.local_specials = nt.safe_int(local_sizes.get('Specials', 0))
-        result.local_total = nt.safe_int(json_node.get('localsize', 0))
-        watched_sizes = json_node.get('watched_sizes', {})
-        result.watched_episodes = nt.safe_int(watched_sizes.get('Episodes', 0))
-        result.watched_specials = nt.safe_int(watched_sizes.get('Specials', 0))
-        result.watched_total = nt.safe_int(json_node.get('watchedsize', 0))
-        total_sizes = json_node.get('total_sizes', {})
-        result.total_episodes = nt.safe_int(total_sizes.get('Episodes', 0))
-        result.total_specials = nt.safe_int(total_sizes.get('Specials', 0))
-        result.total = nt.safe_int(json_node.get('size', 0))
-        return result
-
-    def is_watched(self):
-        local_only = plugin_addon.getSetting('local_total') == 'true'
-        no_specials = nt.get_kodi_setting_bool('ignore_specials_watched')
-        sizes = self.sizes
-        # count only local episodes
-        if local_only and no_specials:
-            # 0 is unwatched
-            if sizes.watched_episodes == 0:
-                return WatchedStatus.UNWATCHED
-            # Should never be greater, but meh
-            if sizes.watched_episodes >= sizes.local_episodes:
-                return WatchedStatus.WATCHED
-            # if it's between 0 and total, then it's partial
-            return WatchedStatus.PARTIAL
-
-        # count local episodes and specials
-        if local_only:
-            # 0 is unwatched
-            if (sizes.watched_episodes + sizes.watched_specials) == 0:
-                return WatchedStatus.UNWATCHED
-            # Should never be greater, but meh
-            if (sizes.watched_episodes + sizes.watched_specials) >= (sizes.local_episodes + sizes.local_specials):
-                return WatchedStatus.WATCHED
-            # if it's between 0 and total, then it's partial
-            return WatchedStatus.PARTIAL
-
-        # count episodes, including ones we don't have
-        if no_specials:
-            # 0 is unwatched
-            if sizes.watched_episodes == 0:
-                return WatchedStatus.UNWATCHED
-            # Should never be greater, but meh
-            if sizes.watched_episodes >= sizes.total_episodes:
-                return WatchedStatus.WATCHED
-            # if it's between 0 and total, then it's partial
-            return WatchedStatus.PARTIAL
-
-        # count episodes and specials, including ones we don't have
-        # 0 is unwatched
-        if (sizes.watched_episodes + sizes.watched_specials) == 0:
-            return WatchedStatus.UNWATCHED
-        # Should never be greater, but meh
-        if (sizes.watched_episodes + sizes.watched_specials) >= (sizes.total_episodes + sizes.total_specials):
-            return WatchedStatus.WATCHED
-        # if it's between 0 and total, then it's partial
-        return WatchedStatus.PARTIAL
 
     def get_api_url(self):
         url = self.base_url()
@@ -432,6 +380,7 @@ class Series(Directory):
         li = ListItem(self.name, path=url)
         infolabels = infolabel_utils.get_infolabels_for_series(self)
         li.setPath(url)
+        li.set_watched_flags(infolabels, is_watched(self), 1)
         li.setInfo(type='video', infoLabels=infolabels)
         li.set_art(self)
         return li
@@ -510,7 +459,7 @@ class Episode(Directory):
             self.name = 'Episode ' + str(json_node.get('epnumber', '??'))
         self.alternate_name = model_utils.get_title(json_node, 'x-jat', 'main')
 
-        self.watched = json_node.get('view', '0') != '0'
+        self.watched = nt.safe_int(json_node.get('view', 0)) != 0
         self.year = nt.safe_int(json_node.get('year', ''))
 
         self.rating = float(str(json_node.get('rating', '0')).replace(',', '.'))
@@ -620,8 +569,8 @@ class Episode(Directory):
             context_menu.append((localize(30133), 'REPLACE ME'))
 
         # Mark as watched/unwatched
-        watched_item = (localize(30128), RunPlugin(url_for(nakamoriplugin.set_episode_watched_status, self.id, False)))
-        unwatched_item = (localize(30129), RunPlugin(url_for(nakamoriplugin.set_episode_watched_status, self.id, True)))
+        watched_item = (localize(30128), RunPlugin(url_for(nakamoriplugin.set_episode_watched_status, self.id, True)))
+        unwatched_item = (localize(30129), RunPlugin(url_for(nakamoriplugin.set_episode_watched_status, self.id, False)))
         if plugin_addon.getSetting('context_krypton_watched') == 'true':
             if self.watched:
                 context_menu.append(unwatched_item)
@@ -719,7 +668,7 @@ class File(Directory):
         return 'file'
 
     def get_plugin_url(self):
-        return ''
+        return url_for(nakamoriplugin.play_video_without_marking, 0, self.id)
 
     @property
     def url_for_player(self):
@@ -755,6 +704,72 @@ class File(Directory):
         nt.sync_offset(self.id, 0)
         # this isn't really supported atm, so no need for the rest of the stuff here
 
+
+def is_watched(dir_obj):
+    local_only = plugin_addon.getSetting('local_total') == 'true'
+    no_specials = nt.get_kodi_setting_bool('ignore_specials_watched')
+    sizes = dir_obj.sizes
+    # count only local episodes
+    if local_only and no_specials:
+        # 0 is unwatched
+        if sizes.watched_episodes == 0:
+            return WatchedStatus.UNWATCHED
+        # Should never be greater, but meh
+        if sizes.watched_episodes >= sizes.local_episodes:
+            return WatchedStatus.WATCHED
+        # if it's between 0 and total, then it's partial
+        return WatchedStatus.PARTIAL
+
+    # count local episodes and specials
+    if local_only:
+        # 0 is unwatched
+        if (sizes.watched_episodes + sizes.watched_specials) == 0:
+            return WatchedStatus.UNWATCHED
+        # Should never be greater, but meh
+        if (sizes.watched_episodes + sizes.watched_specials) >= (sizes.local_episodes + sizes.local_specials):
+            return WatchedStatus.WATCHED
+        # if it's between 0 and total, then it's partial
+        return WatchedStatus.PARTIAL
+
+    # count episodes, including ones we don't have
+    if no_specials:
+        # 0 is unwatched
+        if sizes.watched_episodes == 0:
+            return WatchedStatus.UNWATCHED
+        # Should never be greater, but meh
+        if sizes.watched_episodes >= sizes.total_episodes:
+            return WatchedStatus.WATCHED
+        # if it's between 0 and total, then it's partial
+        return WatchedStatus.PARTIAL
+
+    # count episodes and specials, including ones we don't have
+    # 0 is unwatched
+    if (sizes.watched_episodes + sizes.watched_specials) == 0:
+        return WatchedStatus.UNWATCHED
+    # Should never be greater, but meh
+    if (sizes.watched_episodes + sizes.watched_specials) >= (sizes.total_episodes + sizes.total_specials):
+        return WatchedStatus.WATCHED
+    # if it's between 0 and total, then it's partial
+    return WatchedStatus.PARTIAL
+
+
+def get_sizes(json_node):
+    result = Sizes()
+    local_sizes = json_node.get('local_sizes', {})
+    result.local_episodes = nt.safe_int(local_sizes.get('Episodes', 0))
+    result.local_specials = nt.safe_int(local_sizes.get('Specials', 0))
+    result.local_total = nt.safe_int(json_node.get('localsize', 0))
+    watched_sizes = json_node.get('watched_sizes', {})
+    result.watched_episodes = nt.safe_int(watched_sizes.get('Episodes', 0))
+    result.watched_specials = nt.safe_int(watched_sizes.get('Specials', 0))
+    result.watched_total = nt.safe_int(json_node.get('watchedsize', 0))
+    total_sizes = json_node.get('total_sizes', {})
+    result.total_episodes = nt.safe_int(total_sizes.get('Episodes', 0))
+    result.total_specials = nt.safe_int(total_sizes.get('Specials', 0))
+    result.total = nt.safe_int(json_node.get('size', 0))
+    return result
+
+
 class Sizes(object):
     def __init__(self):
         self.local_episodes = 0
@@ -770,4 +785,3 @@ class Sizes(object):
 
 def RunPlugin(url):
     return 'RunPlugin(' + url + ')'
-

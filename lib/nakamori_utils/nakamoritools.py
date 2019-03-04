@@ -182,7 +182,7 @@ def sync_offset(file_id, current_time):
     """
 
     offset_url = server + '/api/file/offset'
-    offset_body = '"id":' + str(file_id) + ',"offset":' + str(current_time * 1000)
+    offset_body = '"id":' + str(file_id) + ',"offset":' + str(int(current_time * 1000))
     try:
         pyproxy.post_json(offset_url, offset_body)
     except:
@@ -245,8 +245,8 @@ def mark_watch_status(params):
 
     box = plugin_addon.getSetting('watchedbox')
     if box == 'true':
-        xbmc.executebuiltin('XBMC.Notification(%s, %s %s, 2000, %s)' % (localize(30024),
-                                                                        localize(30025),
+        xbmc.executebuiltin('XBMC.Notification(%s, %s %s, 2000, %s)' % (plugin_addon.getLocalizedString(30200),
+                                                                        plugin_addon.getLocalizedString(30201),
                                                                         watched_msg,
                                                                         plugin_addon.getAddonInfo('icon')))
     refresh()

@@ -18,18 +18,17 @@ def get_tags(tag_node):
     try:
         if tag_node is None:
             return ''
-        if len(tag_node) > 0:
-            temp_genres = []
-            for tag in tag_node:
-                if isinstance(tag, str) or isinstance(tag, unicode):
-                    temp_genres.append(tag)
-                else:
-                    temp_genre = pyproxy.decode(tag['tag']).strip()
-                    temp_genres.append(temp_genre)
-            temp_genre = ' | '.join(temp_genres)
-            return temp_genre
-        else:
+        if len(tag_node) == 0:
             return ''
+        temp_genres = []
+        for tag in tag_node:
+            if isinstance(tag, str) or isinstance(tag, unicode):
+                temp_genres.append(tag)
+            else:
+                temp_genre = pyproxy.decode(tag['tag']).strip()
+                temp_genres.append(temp_genre)
+        temp_genre = ' | '.join(temp_genres)
+        return temp_genre
     except Exception as exc:
         nt.error('util.error generating tags', str(exc))
         return ''

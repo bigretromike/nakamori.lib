@@ -43,7 +43,7 @@ class ErrorPriority(object):
 
 
 def kodi_log(text):
-    xbmc.log(text, xbmc.LOGINFO)
+    xbmc.log(text, xbmc.LOGNOTICE)
 
 
 def kodi_error(text):
@@ -69,7 +69,7 @@ def __get_basic_prefix():
 
 
 def log(text):
-    kodi_log(__get_basic_prefix() + text)
+    kodi_log(__get_caller_prefix() + text)
 
 
 def error(text):
