@@ -9,7 +9,20 @@ def get_infolabels_for_group(group):
 
 
 def get_infolabels_for_series(series):
-    infolabels = {}
+    infolabels = {
+        'aired': series.date,
+        'date': model_utils.get_date(series.date),
+        'originaltitle': series.alternate_name,
+        'plot': series.overview,
+        'premiered': series.date,
+        'rating': series.rating,
+        'season': series.season,
+        'title': series.name,
+        'userrating': series.user_rating,
+        #'votes': series.votes,
+        'path': series.get_plugin_url(),
+        'mediatype': 'tvshow',
+    }
 
     return infolabels
 
@@ -29,6 +42,7 @@ def get_infolabels_for_episode(episode):
         'sorttitle': model_utils.get_sort_name(episode),
         'userrating': episode.user_rating,
         'votes': episode.votes,
+        'path': episode.get_plugin_url(),
         'mediatype': 'episode',
     }
 

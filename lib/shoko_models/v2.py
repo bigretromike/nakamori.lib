@@ -43,6 +43,7 @@ class Directory(object):
         self.banner = ''
         self.size = -1
         self.get_children = get_children
+        self.sort_index = 0
         if isinstance(json_node, (str, int, unicode)):
             self.id = json_node
             return
@@ -152,11 +153,15 @@ class Filter(Directory):
         :param json_node: the json response from things like api/filter
         :type json_node: Union[list,dict]
         """
+        # we are making this overrideable for Unsorted and such
+
         Directory.__init__(self, json_node, get_children)
+        self.plugin_url = self.get_plugin_url()
         # don't redownload info on an okay object
         if build_full_object and (self.size < 0 or get_children):
             json_node = self.get_full_object()
             Directory.__init__(self, json_node, get_children)
+
         # check again, as we might have replaced it above
         if isinstance(json_node, (str, int, unicode)):
             return
@@ -181,13 +186,25 @@ class Filter(Directory):
         return 'filter'
 
     def get_plugin_url(self):
-        return nakamoriplugin.routing_plugin.url_for(nakamoriplugin.show_filter_menu, self.id)
+        """
+        :type: str
+        """
+        return url_for(nakamoriplugin.show_filter_menu, self.id)
 
     def apply_built_in_overrides(self):
+        # {'Airing Today': 0, 'Calendar': 1, 'Seasons': 2, 'Years': 3, 'Tags': 4, 'Unsort': 5}
         if self.name == 'Continue Watching (SYSTEM)':
             self.name = 'Continue Watching'
+        elif self.name == 'Seasons':
+            self.sort_index = 3
+        elif self.name == 'Years':
+            self.sort_index = 4
+        elif self.name == 'Tags':
+            self.sort_index = 5
         elif self.name == 'Unsort':
             self.name = 'Unsorted Files'
+            self.sort_index = 6
+            self.plugin_url = url_for(nakamoriplugin.show_unsorted_menu, False)
 
     def process_children(self, json_node):
         items = json_node.get('filters', [])
@@ -219,7 +236,7 @@ class Filter(Directory):
         return group
 
     def get_listitem(self):
-        url = self.get_plugin_url()
+        url = self.plugin_url
         li = ListItem(self.name, path=url)
         li.setPath(url)
         li.setInfo(type='video', infoLabels={'Title': self.name, 'Plot': self.name})
@@ -281,7 +298,7 @@ class Group(Directory):
         return 'group'
 
     def get_plugin_url(self):
-        return nakamoriplugin.routing_plugin.url_for(nakamoriplugin.show_group_menu, self.id, self.filter_id)
+        return url_for(nakamoriplugin.show_group_menu, self.id, self.filter_id)
 
     def get_listitem(self):
         url = self.get_plugin_url()
@@ -324,13 +341,80 @@ class Series(Directory):
         if isinstance(json_node, (str, int, unicode)):
             return
 
+        self.alternate_name = model_utils.get_title(json_node, 'en', 'official')
         self.overview = pyproxy.decode(json_node.get('summary', ''))
 
         self.season = json_node.get('season', '1')
         self.date = model_utils.get_airdate(json_node)
+        self.rating = float(str(json_node.get('rating', '0')).replace(',', '.'))
+        self.user_rating = float(str(json_node.get('userrating', '0')).replace(',', '.'))
         self.actors = model_utils.get_cast_info(json_node)
+        self.sizes = self.get_sizes(json_node)
         if get_children:
             self.process_children(json_node)
+
+    def get_sizes(self, json_node):
+        result = Sizes()
+        local_sizes = json_node.get('local_sizes', {})
+        result.local_episodes = nt.safe_int(local_sizes.get('Episodes', 0))
+        result.local_specials = nt.safe_int(local_sizes.get('Specials', 0))
+        result.local_total = nt.safe_int(json_node.get('localsize', 0))
+        watched_sizes = json_node.get('watched_sizes', {})
+        result.watched_episodes = nt.safe_int(watched_sizes.get('Episodes', 0))
+        result.watched_specials = nt.safe_int(watched_sizes.get('Specials', 0))
+        result.watched_total = nt.safe_int(json_node.get('watchedsize', 0))
+        total_sizes = json_node.get('total_sizes', {})
+        result.total_episodes = nt.safe_int(total_sizes.get('Episodes', 0))
+        result.total_specials = nt.safe_int(total_sizes.get('Specials', 0))
+        result.total = nt.safe_int(json_node.get('size', 0))
+        return result
+
+    def is_watched(self):
+        local_only = plugin_addon.getSetting('local_total') == 'true'
+        no_specials = nt.get_kodi_setting_bool('ignore_specials_watched')
+        sizes = self.sizes
+        # count only local episodes
+        if local_only and no_specials:
+            # 0 is unwatched
+            if sizes.watched_episodes == 0:
+                return WatchedStatus.UNWATCHED
+            # Should never be greater, but meh
+            if sizes.watched_episodes >= sizes.local_episodes:
+                return WatchedStatus.WATCHED
+            # if it's between 0 and total, then it's partial
+            return WatchedStatus.PARTIAL
+
+        # count local episodes and specials
+        if local_only:
+            # 0 is unwatched
+            if (sizes.watched_episodes + sizes.watched_specials) == 0:
+                return WatchedStatus.UNWATCHED
+            # Should never be greater, but meh
+            if (sizes.watched_episodes + sizes.watched_specials) >= (sizes.local_episodes + sizes.local_specials):
+                return WatchedStatus.WATCHED
+            # if it's between 0 and total, then it's partial
+            return WatchedStatus.PARTIAL
+
+        # count episodes, including ones we don't have
+        if no_specials:
+            # 0 is unwatched
+            if sizes.watched_episodes == 0:
+                return WatchedStatus.UNWATCHED
+            # Should never be greater, but meh
+            if sizes.watched_episodes >= sizes.total_episodes:
+                return WatchedStatus.WATCHED
+            # if it's between 0 and total, then it's partial
+            return WatchedStatus.PARTIAL
+
+        # count episodes and specials, including ones we don't have
+        # 0 is unwatched
+        if (sizes.watched_episodes + sizes.watched_specials) == 0:
+            return WatchedStatus.UNWATCHED
+        # Should never be greater, but meh
+        if (sizes.watched_episodes + sizes.watched_specials) >= (sizes.total_episodes + sizes.total_specials):
+            return WatchedStatus.WATCHED
+        # if it's between 0 and total, then it's partial
+        return WatchedStatus.PARTIAL
 
     def get_api_url(self):
         url = self.base_url()
@@ -341,13 +425,14 @@ class Series(Directory):
         return 'serie'
 
     def get_plugin_url(self):
-        return nakamoriplugin.routing_plugin.url_for(nakamoriplugin.show_series_menu, self.id)
+        return url_for(nakamoriplugin.show_series_menu, self.id)
 
     def get_listitem(self):
         url = self.get_plugin_url()
         li = ListItem(self.name, path=url)
+        infolabels = infolabel_utils.get_infolabels_for_series(self)
         li.setPath(url)
-        li.setInfo(type='video', infoLabels={'Title': self.name, 'Plot': self.name})
+        li.setInfo(type='video', infoLabels=infolabels)
         li.set_art(self)
         return li
 
@@ -390,7 +475,7 @@ class SeriesTypeList(Series):
                 pass
 
     def get_plugin_url(self):
-        return nakamoriplugin.routing_plugin.url_for(nakamoriplugin.show_series_episode_types_menu, self.id, self.name)
+        return url_for(nakamoriplugin.show_series_episode_types_menu, self.id, self.name)
 
 
 # noinspection Duplicates
@@ -475,7 +560,7 @@ class Episode(Directory):
         return 'ep'
 
     def get_plugin_url(self):
-        return nakamoriplugin.routing_plugin.url_for(nakamoriplugin.play_video, self.id, self.get_file().id)
+        return url_for(nakamoriplugin.play_video, self.id, self.get_file().id)
 
     def get_listitem(self):
         """
@@ -522,21 +607,21 @@ class Episode(Directory):
         if self.get_file() is not None and self.get_file().resume_time > 0 \
                 and plugin_addon.getSetting('file_resume') == 'true':
             label = localize(30141) + ' (%s)' % time.strftime('%H:%M:%S', time.gmtime(self.get_file().resume_time))
-            url = url_for(nakamoriplugin.resume_video, self.id, self.series_id)
+            url = RunPlugin(url_for(nakamoriplugin.resume_video, self.id, self.get_file().id))
             context_menu.append((label, url))
 
         # Play (No Scrobble)
         if plugin_addon.getSetting('context_show_play_no_watch') == 'true':
-            context_menu.append((localize(30132), url_for(nakamoriplugin.play_video_without_marking, self.get_file().id,
-                                                          self.id)))
+            context_menu.append((localize(30132), RunPlugin(url_for(nakamoriplugin.play_video_without_marking, self.get_file().id,
+                                                            self.id))))
 
         # Inspect
         if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
             context_menu.append((localize(30133), 'REPLACE ME'))
 
         # Mark as watched/unwatched
-        watched_item = (localize(30128), url_for(nakamoriplugin.set_episode_watched_status, self.id, False))
-        unwatched_item = (localize(30129), url_for(nakamoriplugin.set_episode_watched_status, self.id, True))
+        watched_item = (localize(30128), RunPlugin(url_for(nakamoriplugin.set_episode_watched_status, self.id, False)))
+        unwatched_item = (localize(30129), RunPlugin(url_for(nakamoriplugin.set_episode_watched_status, self.id, True)))
         if plugin_addon.getSetting('context_krypton_watched') == 'true':
             if self.watched:
                 context_menu.append(unwatched_item)
@@ -552,7 +637,7 @@ class Episode(Directory):
 
         # Vote Episode
         if plugin_addon.getSetting('context_show_vote_Episode') == 'true':
-            context_menu.append((localize(30125), ))
+            context_menu.append((localize(30125), 'REPLACE ME'))
 
         # Vote Series
         if plugin_addon.getSetting('context_show_vote_Series') == 'true' and self.series_id != 0:
@@ -594,6 +679,8 @@ class File(Directory):
         if isinstance(json_node, (str, int, unicode)):
             return
 
+        self.name = pyproxy.decode(json_node.get('filename', 'None'))
+        self.name = os.path.split(self.name)[-1]
         self.resume_time = int(int(json_node.get('offset', '0')) / 1000)
 
         # Check for empty duration from MediaInfo check fail and handle it properly
@@ -667,3 +754,20 @@ class File(Directory):
             return
         nt.sync_offset(self.id, 0)
         # this isn't really supported atm, so no need for the rest of the stuff here
+
+class Sizes(object):
+    def __init__(self):
+        self.local_episodes = 0
+        self.local_specials = 0
+        self.local_total = 0
+        self.watched_episodes = 0
+        self.watched_specials = 0
+        self.watched_total = 0
+        self.total_episodes = 0
+        self.total_specials = 0
+        self.total = 0
+
+
+def RunPlugin(url):
+    return 'RunPlugin(' + url + ')'
+
