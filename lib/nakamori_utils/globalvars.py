@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import os
+
 import xbmc
 import xbmcaddon
 
@@ -11,6 +13,7 @@ import xbmcaddon
 plugin_addon = xbmcaddon.Addon('plugin.video.nakamori')
 plugin_version = plugin_addon.getAddonInfo('version')
 plugin_home = xbmc.translatePath(plugin_addon.getAddonInfo('path'))
+plugin_img_path = os.path.join(xbmcaddon.Addon(plugin_addon.getSetting('icon_pack')).getAddonInfo('path'), 'resources', 'media')
 
 service_addon = xbmcaddon.Addon('service.nakamori')
 script_addon = xbmcaddon.Addon('script.module.nakamori')

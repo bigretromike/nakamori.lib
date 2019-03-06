@@ -269,29 +269,29 @@ def print_exceptions(exes):
     plural = True if len(exes) > 1 else False
     pluralized_msg = 'were errors' if plural else 'was an error'
     msg = 'There ' + pluralized_msg + ' while executing Nakamori.'
-    error(msg)
+    kodi_error(__get_basic_prefix() + msg)
 
     msg = 'Nakamori Version ' + str(plugin_version)
-    error(msg)
+    kodi_error(__get_basic_prefix() + msg)
 
     url = sys.argv[0]
     if len(sys.argv) > 2 and sys.argv[2] != '':
         url += sys.argv[2]
     msg = 'The url accessed was ' + pp.unquote(url)
-    error(msg)
+    kodi_error(__get_basic_prefix() + msg)
 
     for ex in exes:
         key, value = ex  # type: NakamoriError, int
         msg = key.exc_message + ' -- Exception: ' + key.exc_type + ' at ' + key.exc_trace[0] + '#L' + \
             str(key.exc_trace[1])
-        error(msg)
+        kodi_error(__get_basic_prefix() + msg)
         if len(key.exc_full_trace) > 0:
             for line in key.exc_full_trace:
-                error(line)
+                kodi_error(__get_basic_prefix() + line)
 
         if value > 1:
             msg = 'This error occurred ' + str(value) + ' times.'
-            error(msg)
+            kodi_error(__get_basic_prefix() + msg)
 
 
 def show_dialog_for_exception(ex):

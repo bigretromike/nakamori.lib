@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import json
-import os
 import time
 
 from abc import abstractmethod
@@ -53,6 +52,11 @@ class Directory(object):
         self.size = int(json_node.get('size', '0'))
 
         self.process_art(json_node)
+
+    def apply_image_override(self, image):
+        self.fanart = os.path.join(plugin_img_path, 'backgrounds', image)
+        self.poster = os.path.join(plugin_img_path, 'icons', image)
+        self.banner = os.path.join(plugin_img_path, 'banners', image)
 
     @abstractmethod
     def get_api_url(self):
@@ -126,13 +130,17 @@ class Directory(object):
                                 plugin_addon.getAddonInfo('icon') + ')')
         nt.refresh()
 
-    @abstractmethod
     def get_listitem(self):
         """
-        This creates a ListItem based on the model.
+        This creates a ListItem based on the model
         :return:
         """
-        pass
+        url = self.get_plugin_url()
+        li = ListItem(self.name, path=url)
+        li.setPath(url)
+        li.setInfo(type='video', infoLabels={'Title': self.name, 'Plot': self.name})
+        li.set_art(self)
+        return li
 
     def get_context_menu_items(self):
         context_menu = [('  ', 'empty'), (plugin_addon.getLocalizedString(30147), 'empty'),
@@ -142,6 +150,47 @@ class Directory(object):
     def __iter__(self):
         for i in self.items:
             yield i
+
+
+class CustomItem(Directory):
+    def __init__(self, name, image, plugin_url, sort_index):
+        """
+        Create a custom menu item for the main menu
+        :param name: the text of the item
+        :type name: str
+        :param image: image name, such as calendar.png
+        :param plugin_url: the url to call to invoke it
+        :type plugin_url: str
+        """
+        # we are making this overrideable for Unsorted and such
+
+        Directory.__init__(self, 0, False)
+        self.name = name
+        self.plugin_url = plugin_url
+        self.image = image
+        self.apply_image_override(image)
+
+        self.size = 0
+        self.sort_index = sort_index
+        self.directory_filter = False
+
+    def get_api_url(self):
+        return None
+
+    def url_prefix(self):
+        return None
+
+    def get_plugin_url(self):
+        """
+        :type: str
+        """
+        return self.plugin_url
+
+    def get_context_menu_items(self):
+        pass
+
+    def set_watched_status(self, watched):
+        pass
 
 
 # noinspection Duplicates
@@ -159,7 +208,7 @@ class Filter(Directory):
         # we are making this overrideable for Unsorted and such
 
         Directory.__init__(self, json_node, get_children)
-        self.plugin_url = self.get_plugin_url()
+        self.plugin_url = url_for(nakamoriplugin.show_filter_menu, self.id)
         # don't redownload info on an okay object
         if build_full_object and (self.size < 0 or get_children):
             json_node = self.get_full_object()
@@ -192,21 +241,26 @@ class Filter(Directory):
         """
         :type: str
         """
-        return url_for(nakamoriplugin.show_filter_menu, self.id)
+        return self.plugin_url
 
     def apply_built_in_overrides(self):
-        # {'Airing Today': 0, 'Calendar': 1, 'Seasons': 2, 'Years': 3, 'Tags': 4, 'Unsort': 5}
+        # { 'Airing Today': 0, 'Calendar': 1, 'Seasons': 2, 'Years': 3, 'Tags': 4, 'Unsort': 5, 'Settings': 6,
+        # 'Shoko Menu': 7, 'Search': 8 }
         if self.name == 'Continue Watching (SYSTEM)':
             self.name = 'Continue Watching'
         elif self.name == 'Seasons':
             self.sort_index = 3
+            self.apply_image_override('seasons.png')
         elif self.name == 'Years':
             self.sort_index = 4
+            self.apply_image_override('years.png')
         elif self.name == 'Tags':
             self.sort_index = 5
+            self.apply_image_override('tags.png')
         elif self.name == 'Unsort':
             self.name = 'Unsorted Files'
             self.sort_index = 6
+            self.apply_image_override('unsort.png')
             self.plugin_url = url_for(nakamoriplugin.show_unsorted_menu)
 
     def process_children(self, json_node):
@@ -237,14 +291,6 @@ class Filter(Directory):
                 if group.size < 0:
                     group = Series(group.id, build_full_object=True)
         return group
-
-    def get_listitem(self):
-        url = self.plugin_url
-        li = ListItem(self.name, path=url)
-        li.setPath(url)
-        li.setInfo(type='video', infoLabels={'Title': self.name, 'Plot': self.name})
-        li.set_art(self)
-        return li
 
     def get_context_menu_items(self):
         pass

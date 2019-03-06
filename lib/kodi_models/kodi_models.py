@@ -32,6 +32,12 @@ class ListItem(xbmcgui.ListItem):
         if dir_obj.banner is not None:
             self.set_banner(dir_obj.banner)
 
+    def set_internal_image(self, image_name):
+        icon = os.path.join(plugin_img_path, 'icons', image_name)
+        fanart = os.path.join(plugin_img_path, 'backgrounds', image_name)
+        self.set_thumb(icon)
+        self.set_fanart(fanart)
+
     def set_thumb(self, thumb):
         xbmcgui.ListItem.setArt(self, {'thumb': thumb})
         xbmcgui.ListItem.setArt(self, {'icon': thumb})
