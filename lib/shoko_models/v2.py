@@ -16,12 +16,11 @@ from proxy.python_version_proxy import python_proxy as pyproxy
 
 # TODO Context menu handlers
 # TODO better listitem info for series and groups
-# TODO stream info
-# TODO playing files
 
 
 localize = plugin_addon.getLocalizedString
-url_for = nakamoriplugin.routing_plugin.url_for
+# This puts a dependency on plugin, which is a no no. It'll need to be replaced later
+puf = nakamoriplugin.routing_plugin.url_for
 
 
 # noinspection Duplicates
@@ -208,7 +207,7 @@ class Filter(Directory):
         # we are making this overrideable for Unsorted and such
 
         Directory.__init__(self, json_node, get_children)
-        self.plugin_url = url_for(nakamoriplugin.show_filter_menu, self.id)
+        self.plugin_url = puf(nakamoriplugin.show_filter_menu, self.id)
         # don't redownload info on an okay object
         if build_full_object and (self.size < 0 or get_children):
             json_node = self.get_full_object()
@@ -261,7 +260,7 @@ class Filter(Directory):
             self.name = 'Unsorted Files'
             self.sort_index = 6
             self.apply_image_override('unsort.png')
-            self.plugin_url = url_for(nakamoriplugin.show_unsorted_menu)
+            self.plugin_url = puf(nakamoriplugin.show_unsorted_menu)
 
     def process_children(self, json_node):
         items = json_node.get('filters', [])
@@ -352,7 +351,7 @@ class Group(Directory):
         return 'group'
 
     def get_plugin_url(self):
-        return url_for(nakamoriplugin.show_group_menu, self.id, self.filter_id)
+        return puf(nakamoriplugin.show_group_menu, self.id, self.filter_id)
 
     def get_listitem(self):
         url = self.get_plugin_url()
@@ -419,7 +418,7 @@ class Series(Directory):
         return 'serie'
 
     def get_plugin_url(self):
-        return url_for(nakamoriplugin.show_series_menu, self.id)
+        return puf(nakamoriplugin.show_series_menu, self.id)
 
     def get_listitem(self):
         url = self.get_plugin_url()
@@ -470,7 +469,7 @@ class SeriesTypeList(Series):
                 pass
 
     def get_plugin_url(self):
-        return url_for(nakamoriplugin.show_series_episode_types_menu, self.id, self.name)
+        return puf(nakamoriplugin.show_series_episode_types_menu, self.id, self.name)
 
 
 # noinspection Duplicates
@@ -555,7 +554,7 @@ class Episode(Directory):
         return 'ep'
 
     def get_plugin_url(self):
-        return url_for(nakamoriplugin.play_video, self.id, self.get_file().id)
+        return puf(nakamoriplugin.play_video, self.id, self.get_file().id)
 
     def get_listitem(self):
         """
@@ -602,21 +601,21 @@ class Episode(Directory):
         if self.get_file() is not None and self.get_file().resume_time > 0 \
                 and plugin_addon.getSetting('file_resume') == 'true':
             label = localize(30141) + ' (%s)' % time.strftime('%H:%M:%S', time.gmtime(self.get_file().resume_time))
-            url = RunPlugin(url_for(nakamoriplugin.resume_video, self.id, self.get_file().id))
+            url = puf(nakamoriplugin.resume_video, self.id, self.get_file().id)
             context_menu.append((label, url))
 
         # Play (No Scrobble)
         if plugin_addon.getSetting('context_show_play_no_watch') == 'true':
-            context_menu.append((localize(30132), RunPlugin(url_for(nakamoriplugin.play_video_without_marking, self.get_file().id,
-                                                            self.id))))
+            context_menu.append((localize(30132), RunScript('/episode/%s/file/%s/play_without_marking' %
+                                                            (str(self.id), str(self.get_file().id)))))
 
         # Inspect
         if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
-            context_menu.append((localize(30133), 'REPLACE ME'))
+            context_menu.append((localize(30133), 'TO BE ADDED TO SCRIPT'))
 
         # Mark as watched/unwatched
-        watched_item = (localize(30128), RunPlugin(url_for(nakamoriplugin.set_episode_watched_status, self.id, True)))
-        unwatched_item = (localize(30129), RunPlugin(url_for(nakamoriplugin.set_episode_watched_status, self.id, False)))
+        watched_item = (localize(30128), RunScript('/episode/%s/set_watched/%s' % (str(self.id), 'True')))
+        unwatched_item = (localize(30129), RunScript('/episode/%s/set_watched/%s' % (str(self.id), 'False')))
         if plugin_addon.getSetting('context_krypton_watched') == 'true':
             if self.watched:
                 context_menu.append(unwatched_item)
@@ -628,15 +627,15 @@ class Episode(Directory):
 
         # Playlist Mode
         if plugin_addon.getSetting('context_playlist') == 'true':
-            context_menu.append((localize(30130), 'REPLACE ME'))
+            context_menu.append((localize(30130), 'TO BE ADDED TO SCRIPT'))
 
         # Vote Episode
         if plugin_addon.getSetting('context_show_vote_Episode') == 'true':
-            context_menu.append((localize(30125), 'REPLACE ME'))
+            context_menu.append((localize(30125), 'TO BE ADDED TO SCRIPT'))
 
         # Vote Series
         if plugin_addon.getSetting('context_show_vote_Series') == 'true' and self.series_id != 0:
-            context_menu.append((localize(30124), 'REPLACE ME'))
+            context_menu.append((localize(30124), 'TO BE ADDED TO SCRIPT'))
 
         # Metadata
         if plugin_addon.getSetting('context_show_info') == 'true':
@@ -645,8 +644,9 @@ class Episode(Directory):
         if plugin_addon.getSetting('context_view_cast') == 'true' and self.series_id != 0:
             context_menu.append((localize(30134), 'RunPlugin(%s&cmd=viewCast)'))
 
+        # Refresh
         if plugin_addon.getSetting('context_refresh') == 'true':
-            context_menu.append((localize(30131), 'REPLACE ME'))
+            context_menu.append((localize(30131), 'TO BE ADDED TO SCRIPT'))
 
         # the default ones that say the rest are kodi's
         context_menu += Directory.get_context_menu_items(self)
@@ -714,7 +714,7 @@ class File(Directory):
         return 'file'
 
     def get_plugin_url(self):
-        return url_for(nakamoriplugin.play_video_without_marking, 0, self.id)
+        return puf(nakamoriplugin.play_video_without_marking, 0, self.id)
 
     @property
     def url_for_player(self):
@@ -739,10 +739,13 @@ class File(Directory):
 
         model_utils.set_stream_info(li, self)
         li.set_art(self)
+        li.addContextMenuItems(self.get_context_menu_items())
         return li
 
     def get_context_menu_items(self):
-        pass
+        context_menu = []
+
+        return context_menu
 
     def set_watched_status(self, watched):
         if watched:
@@ -831,3 +834,7 @@ class Sizes(object):
 
 def RunPlugin(url):
     return 'RunPlugin(' + url + ')'
+
+
+def RunScript(url):
+    return 'RunScript(script.module.nakamori,' + url + ')'

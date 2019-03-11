@@ -209,7 +209,7 @@ def exception_internal(exc_type, exc_obj, exc_tb, priority, message=''):
         if message == '':
             message = exc_obj.message
         ex = NakamoriError(message, exc_type, (place, exc_tb.tb_lineno))
-        if priority == ErrorPriority.BLOCKING or plugin_addon.setSetting('spamLog') == 'true':
+        if priority == ErrorPriority.BLOCKING or plugin_addon.getSetting('spamLog') == 'true':
             for line in traceback.format_exc().replace('\r', '\n').split('\n'):
                 # skip empty lines
                 if len(line) == 0:
