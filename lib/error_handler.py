@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import inspect
+import json
 import os
 import sys
 import time
@@ -131,60 +132,43 @@ def __get_basic_prefix():
     return 'Nakamori|Logger -> '
 
 
-# see this for handling the re-raises below
-# https://stackoverflow.com/questions/6598053/python-global-exception-handling
-def try_2_do(error_priority, message, func, *args, **kwargs):
+def spam(*args):
+    if plugin_addon.getSetting('spamLog') == 'true':
+        log(*args)
+
+
+def log(*args):
     """
-    Try a function, then catch it cleanly
-    :param func: the function to attempt
-    :param error_priority: the priority of the error
-    :type error_priority: ErrorPriority
-    :param message: a custom message to show
-    :type message: str
+    Print a message on the NOTICE stream, with a simple traceback.
+    This is for readable messages that are expected.
+    If you want to log a full traceback use exception()
+    :param args: some objects to log
     :return:
     """
-    try:
-        func(*args, **kwargs)
-        return True
-    except Exception as ex:
-        exception(error_priority, message)
-        if error_priority == ErrorPriority.BLOCKING:
-            raise ex
-        return True
+    text = ''
+    for arg in args:
+        text = text.strip()
+        if not isinstance(arg, (str, unicode, bytes)):
+            text += ' ' + json.dumps(arg)
+        text += ' ' + arg
+    kodi_log(__get_caller_prefix() + pp.encode(text))
 
 
-def try_2_get(error_priority, message, func, *args, **kwargs):
-    """
-    Try a function, then catch it cleanly
-    :param func: the function to attempt
-    :param error_priority: the priority of the error
-    :type error_priority: ErrorPriority
-    :param message: a custom message to show
-    :type message: str
-    :return:
-    """
-    try:
-        return func(*args, **kwargs)
-    except Exception as ex:
-        exception(error_priority, message)
-        if error_priority == ErrorPriority.BLOCKING:
-            raise ex
-        return None
-
-
-def log(text):
-    kodi_log(__get_caller_prefix() + text)
-
-
-def error(text):
+def error(*args):
     """
     Print a message on the ERROR stream, with a simple traceback.
     This is for readable messages that are expected, such as connection errors.
     If you want to log a full traceback use exception()
-    :param text:
+    :param args: some objects to log
     :return:
     """
-    kodi_error(__get_caller_prefix() + text)
+    text = ''
+    for arg in args:
+        text = text.strip()
+        if not isinstance(arg, (str, unicode, bytes)):
+            text += ' ' + json.dumps(arg)
+        text += ' ' + arg
+    kodi_error(__get_caller_prefix() + pp.encode(text))
 
 
 def exception(priority, message=''):

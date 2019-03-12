@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 import cProfile
-import json
 import pstats
 import sys
 from nakamori_utils.globalvars import *
+import error_handler as eh
+from error_handler import ErrorPriority
 try:
     from StringIO import StringIO
 except ImportError:
@@ -53,8 +54,7 @@ def debug_init():
     also dump argv if spamLog
     :return:
     """
-    if plugin_addon.getSetting('spamLog') == 'true':
-        xbmc.log('Nakamori: sys.argv = ' + json.dumps(sys.argv))
+    eh.spam('argv:', sys.argv)
 
     if plugin_addon.getSetting('remote_debug') == 'true':
         # try pycharm first
@@ -68,15 +68,20 @@ def debug_init():
                 try:
                     pydevd.settrace(host=plugin_addon.getSetting('remote_ip'), stdoutToServer=True, stderrToServer=True,
                                     port=5678, suspend=False)
+                    eh.spam('Connected to debugger')
                     connected = True
                 except:
                     tries += 1
+                    # we keep this message the same, as kodi will merge them into Previous line repeats...
+                    eh.spam('Failed to connect to debugger')
                     xbmc.sleep(1000)
         except ImportError:
-            xbmc.log('unable to start pycharm debugger, falling back on the web-pdb', xbmc.LOGINFO)
+            eh.log('unable to import pycharm debugger, falling back on the web-pdb')
             try:
                 import web_pdb
                 web_pdb.set_trace()
-            except Exception as ex:
-                xbmc.log('Unable to start debugger, disabling' + str(ex), xbmc.LOGERROR)
+            except Exception:
+                eh.exception(ErrorPriority.NORMAL, 'Unable to start debugger, disabling it')
                 plugin_addon.setSetting('remote_debug', 'false')
+        except:
+            eh.exception(ErrorPriority.HIGHEST, 'Unable to start debugger')

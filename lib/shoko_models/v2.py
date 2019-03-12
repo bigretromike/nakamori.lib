@@ -11,6 +11,7 @@ from nakamori_utils.globalvars import *
 from nakamori_utils import nakamoritools as nt, infolabel_utils
 from nakamori_utils import model_utils
 
+import error_handler as eh
 from proxy.kodi_version_proxy import kodi_proxy
 from proxy.python_version_proxy import python_proxy as pyproxy
 
@@ -215,6 +216,7 @@ class Filter(Directory):
 
         # check again, as we might have replaced it above
         if isinstance(json_node, (str, int, unicode)):
+            eh.spam(self)
             return
 
         self.size = int(json_node.get('size', '0'))
@@ -223,6 +225,8 @@ class Filter(Directory):
         self.apply_built_in_overrides()
         if get_children:
             self.process_children(json_node)
+
+        eh.spam(self)
 
     def get_api_url(self):
         url = self.base_url()
@@ -323,6 +327,7 @@ class Group(Directory):
 
         # check again, as we might have replaced it above
         if isinstance(json_node, (str, int, unicode)):
+            eh.spam(self)
             return
 
         self.date = model_utils.get_airdate(json_node)
@@ -335,6 +340,8 @@ class Group(Directory):
 
         if get_children:
             self.process_children(json_node)
+
+        eh.spam(self)
 
     def get_api_url(self):
         url = self.base_url()
@@ -394,6 +401,7 @@ class Series(Directory):
         self.episode_types = []
         # check again, as we might have replaced it above
         if isinstance(json_node, (str, int, unicode)):
+            eh.spam(self)
             return
 
         self.alternate_name = model_utils.get_title(json_node, 'en', 'official')
@@ -408,6 +416,8 @@ class Series(Directory):
         self.tags = model_utils.get_tags(json_node.get('tags', {}))
         if get_children:
             self.process_children(json_node)
+
+        eh.spam(self)
 
     def get_api_url(self):
         url = self.base_url()
@@ -468,6 +478,8 @@ class SeriesTypeList(Series):
             except:
                 pass
 
+        eh.spam(self)
+
     def get_plugin_url(self):
         return puf(nakamoriplugin.show_series_episode_types_menu, self.id, self.name)
 
@@ -491,6 +503,7 @@ class Episode(Directory):
             Directory.__init__(self, json_node)
         # check again, as we might have replaced it above
         if isinstance(json_node, (str, int, unicode)):
+            eh.spam(self)
             return
 
         self.episode_number = nt.safe_int(json_node.get('epnumber', ''))
@@ -521,6 +534,8 @@ class Episode(Directory):
         else:
             season = '0'
         self.season = nt.safe_int(season)
+
+        eh.spam(self)
 
     def get_file(self):
         """
@@ -672,6 +687,7 @@ class File(Directory):
             Directory.__init__(self, json_node)
         # check again, as we might have replaced it above
         if isinstance(json_node, (str, int, unicode)):
+            eh.spam(self)
             return
 
         self.name = pyproxy.decode(json_node.get('filename', 'None'))
@@ -704,6 +720,8 @@ class File(Directory):
             self.video_streams = {}
             self.audio_streams = {}
             self.sub_streams = {}
+
+        eh.spam(self)
 
     def get_api_url(self):
         url = self.base_url()

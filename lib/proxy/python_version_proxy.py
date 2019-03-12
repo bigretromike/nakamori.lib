@@ -39,6 +39,7 @@ class BasePythonProxy:
         pass
 
     def get_data(self, url, accept_type, referer, timeout, apikey):
+        import error_handler as eh
         req = Request(self.encode(url))
         req.add_header('Accept', 'application/' + accept_type)
         req.add_header('apikey', apikey)
@@ -50,6 +51,11 @@ class BasePythonProxy:
         if '127.0.0.1' not in url and 'localhost' not in url:
             req.add_header('Accept-encoding', 'gzip')
         data = None
+
+        eh.spam('Getting data...')
+        eh.spam('Url: ', url)
+        eh.spam('Headers:')
+        eh.spam(req.headers)
         response = urlopen(req, timeout=int(timeout))
         if response.info().get('Content-Encoding') == 'gzip':
             try:
@@ -61,6 +67,9 @@ class BasePythonProxy:
         else:
             data = response.read()
         response.close()
+
+        eh.spam(data)
+
         return data
 
     def head(self, url_in):
@@ -136,7 +145,10 @@ class BasePythonProxy:
 
         Returns: The response from the server
         """
+        import error_handler as eh
+        from error_handler import ErrorPriority
         if data_in is not None:
+            eh.spam(data_in)
             req = Request(self.encode(url), self.encode(data_in), {'Content-Type': 'application/json'})
             req.add_header('apikey', plugin_addon.getSetting('apikey'))
             req.add_header('Accept', 'application/json')
@@ -145,11 +157,12 @@ class BasePythonProxy:
                 response = urlopen(req, timeout=int(plugin_addon.getSetting('timeout')))
                 data_out = response.read()
                 response.close()
+                eh.spam(data_out)
             except Exception as ex:
-                pass  # nt.error('Connection Failed in post_data', str(ex))
+                eh.exception(ErrorPriority.HIGH)
             return data_out
         else:
-            pass  # nt.error('post_data body is None')
+            eh.error('Tried to POST data with no body')
             return None
 
     def post(self, url, data, headers=None):
