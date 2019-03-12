@@ -223,14 +223,15 @@ class Filter(Directory):
         self.directory_filter = json_node.get('type', 'filter') == 'filters'
 
         self.apply_built_in_overrides()
-        if get_children:
-            self.process_children(json_node)
+        self.process_children(json_node)
 
         eh.spam(self)
 
     def get_api_url(self):
         url = self.base_url()
         url = nt.add_default_parameters(url, self.id, 1 if self.get_children else 0)
+        if self.id == 0:
+            url = pyproxy.set_parameter(url, 'notag', 1)
         return url
 
     def url_prefix(self):
