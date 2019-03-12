@@ -4,14 +4,23 @@ import json
 import time
 
 from abc import abstractmethod
+import error_handler as eh
 
-import nakamoriplugin
+try:
+    import nakamoriplugin
+    # This puts a dependency on plugin, which is a no no. It'll need to be replaced later
+    puf = nakamoriplugin.routing_plugin.url_for
+except:
+    import sys
+    if len(sys.argv) > 2:
+        eh.exception(eh.ErrorPriority.BLOCKING)
+
 from kodi_models.kodi_models import ListItem, WatchedStatus
 from nakamori_utils.globalvars import *
 from nakamori_utils import nakamoritools as nt, infolabel_utils, kodi_utils
 from nakamori_utils import model_utils
 
-import error_handler as eh
+
 from proxy.kodi_version_proxy import kodi_proxy
 from proxy.python_version_proxy import python_proxy as pyproxy
 
@@ -20,8 +29,6 @@ from proxy.python_version_proxy import python_proxy as pyproxy
 
 
 localize = plugin_addon.getLocalizedString
-# This puts a dependency on plugin, which is a no no. It'll need to be replaced later
-puf = nakamoriplugin.routing_plugin.url_for
 
 
 # noinspection Duplicates
@@ -120,7 +127,7 @@ class Directory(object):
         url += '/watch' if watched else '/unwatch'
         url = pyproxy.set_parameter(url, 'id', self.id)
         if plugin_addon.getSetting('syncwatched') == 'true':
-            pyproxy(url)
+            pyproxy.get_json(url)
         else:
             xbmc.executebuiltin('XBMC.Action(ToggleWatched)')
 
@@ -367,6 +374,7 @@ class Group(Directory):
         li.setPath(url)
         li.set_watched_flags(infolabels, is_watched(self), 1)
         li.setInfo(type='video', infoLabels=infolabels)
+        li.addContextMenuItems(self.get_context_menu_items())
         li.set_art(self)
         return li
 
@@ -379,7 +387,25 @@ class Group(Directory):
                 pass
 
     def get_context_menu_items(self):
-        pass
+        context_menu = []
+
+        # Mark as watched/unwatched
+        watched_item = (localize(30126), RunScript('/group/%s/set_watched/%s' % (str(self.id), 'True')))
+        unwatched_item = (localize(30127), RunScript('/group/%s/set_watched/%s' % (str(self.id), 'False')))
+        if plugin_addon.getSetting('context_krypton_watched') == 'true':
+            watched = is_watched(self)
+            if watched == WatchedStatus.WATCHED:
+                context_menu.append(unwatched_item)
+            elif watched == WatchedStatus.UNWATCHED:
+                context_menu.append(watched_item)
+            else:
+                context_menu.append(watched_item)
+                context_menu.append(unwatched_item)
+        else:
+            context_menu.append(watched_item)
+            context_menu.append(unwatched_item)
+
+        return context_menu
 
 
 # noinspection Duplicates
@@ -442,6 +468,7 @@ class Series(Directory):
         li.setPath(url)
         li.set_watched_flags(infolabels, is_watched(self), 1)
         li.setInfo(type='video', infoLabels=infolabels)
+        li.addContextMenuItems(self.get_context_menu_items())
         li.set_art(self)
         return li
 
@@ -460,7 +487,25 @@ class Series(Directory):
             self.episode_types.append(SeriesTypeList(self.id, i))
 
     def get_context_menu_items(self):
-        pass
+        context_menu = []
+
+        # Mark as watched/unwatched
+        watched_item = (localize(30126), RunScript('/series/%s/set_watched/%s' % (str(self.id), 'True')))
+        unwatched_item = (localize(30127), RunScript('/series/%s/set_watched/%s' % (str(self.id), 'False')))
+        if plugin_addon.getSetting('context_krypton_watched') == 'true':
+            watched = is_watched(self)
+            if watched == WatchedStatus.WATCHED:
+                context_menu.append(unwatched_item)
+            elif watched == WatchedStatus.UNWATCHED:
+                context_menu.append(watched_item)
+            else:
+                context_menu.append(watched_item)
+                context_menu.append(unwatched_item)
+        else:
+            context_menu.append(watched_item)
+            context_menu.append(unwatched_item)
+
+        return context_menu
 
 
 # noinspection Duplicates
