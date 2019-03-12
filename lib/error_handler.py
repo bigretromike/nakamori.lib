@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import inspect
-import json
 import os
 import sys
 import time
 import traceback
 from collections import defaultdict, Counter
 
+import class_dump
 import xbmcgui
 from nakamori_utils.globalvars import plugin_addon, plugin_version
 from proxy.python_version_proxy import python_proxy as pp
@@ -116,13 +116,27 @@ def kodi_error(text):
 
 # noinspection PyProtectedMember
 def __get_caller_prefix():
-    # this gets the frame from 2 methods ago.
-    # It is 2 because method_that_errors() -> meh.error() -> __get_caller_prefix()
-    # method_that_errors() is 2 frames above this
-    filepath, line_number, clsname, lines, index = inspect.getframeinfo(sys._getframe(2))
-    filename = 'Nakamori|' + os.path.split(filepath)[1]
+    # this gets the frame that is not in this file
+    filepath, line_number, clsname, class_name, lines, index = '', 0, '', '', [], 0
+    for i in range(2, 5):
+        f = sys._getframe(i)
+        filepath, line_number, clsname, lines, index = inspect.getframeinfo(f)
+        try:
+            class_name = f.f_locals['self'].__class__.__name__
+        except:
+            pass
+
+        frame_path = os.path.split(filepath)[-1]
+        frame_path = os.path.splitext(frame_path)[0]
+        this_path = os.path.split(__file__)[-1]
+        this_path = os.path.splitext(this_path)[0]
+        if frame_path != this_path:
+            break
+    filename = 'Nakamori|' + os.path.split(filepath)[-1]
     if clsname == '<module>':
         prefix = filename + '#L' + str(line_number) + ' -> '
+    elif class_name != '':
+        prefix = filename + '::' + class_name + '::' + clsname + '#L' + str(line_number) + ' -> '
     else:
         prefix = filename + '::' + clsname + '#L' + str(line_number) + ' -> '
     return prefix
@@ -145,12 +159,9 @@ def log(*args):
     :param args: some objects to log
     :return:
     """
-    text = ''
-    for arg in args:
-        text = text.strip()
-        if not isinstance(arg, (str, unicode, bytes)):
-            text += ' ' + json.dumps(arg)
-        text += ' ' + arg
+    text = class_dump.dump_to_text(*args)
+    if text == '':
+        return
     kodi_log(__get_caller_prefix() + pp.encode(text))
 
 
@@ -162,18 +173,16 @@ def error(*args):
     :param args: some objects to log
     :return:
     """
-    text = ''
-    for arg in args:
-        text = text.strip()
-        if not isinstance(arg, (str, unicode, bytes)):
-            text += ' ' + json.dumps(arg)
-        text += ' ' + arg
+    text = class_dump.dump_to_text(*args)
+    if text == '':
+        return
     kodi_error(__get_caller_prefix() + pp.encode(text))
 
 
-def exception(priority, message=''):
+def exception(priority, *args):
     exc_type, exc_obj, exc_tb = sys.exc_info()
-    exception_internal(exc_type, exc_obj, exc_tb, priority, message)
+    text = class_dump.dump_to_text(*args)
+    exception_internal(exc_type, exc_obj, exc_tb, priority, text)
 
 
 def exception_internal(exc_type, exc_obj, exc_tb, priority, message=''):

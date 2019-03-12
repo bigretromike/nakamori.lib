@@ -54,8 +54,6 @@ def debug_init():
     also dump argv if spamLog
     :return:
     """
-    eh.spam('argv:', sys.argv)
-
     if plugin_addon.getSetting('remote_debug') == 'true':
         # try pycharm first
         try:
@@ -85,3 +83,5 @@ def debug_init():
                 plugin_addon.setSetting('remote_debug', 'false')
         except:
             eh.exception(ErrorPriority.HIGHEST, 'Unable to start debugger')
+
+    eh.spam('argv:', sys.argv)
