@@ -8,7 +8,7 @@ from abc import abstractmethod
 import nakamoriplugin
 from kodi_models.kodi_models import ListItem, WatchedStatus
 from nakamori_utils.globalvars import *
-from nakamori_utils import nakamoritools as nt, infolabel_utils
+from nakamori_utils import nakamoritools as nt, infolabel_utils, kodi_utils
 from nakamori_utils import model_utils
 
 import error_handler as eh
@@ -80,7 +80,7 @@ class Directory(object):
 
     def get_full_object(self):
         url = self.get_api_url()
-        json_body = nt.get_json(url)
+        json_body = pyproxy.get_json(url)
         json_node = json.loads(json_body)
         return json_node
 
@@ -120,7 +120,7 @@ class Directory(object):
         url += '/watch' if watched else '/unwatch'
         url = pyproxy.set_parameter(url, 'id', self.id)
         if plugin_addon.getSetting('syncwatched') == 'true':
-            nt.get_json(url)
+            pyproxy(url)
         else:
             xbmc.executebuiltin('XBMC.Action(ToggleWatched)')
 
@@ -128,7 +128,6 @@ class Directory(object):
             msg = localize(30201) + ' ' + (localize(30202) if watched else localize(30203))
             xbmc.executebuiltin('XBMC.Notification(' + localize(30200) + ', ' + msg + ', 2000, ' +
                                 plugin_addon.getAddonInfo('icon') + ')')
-        nt.refresh()
 
     def get_listitem(self):
         """
@@ -780,7 +779,7 @@ class File(Directory):
 
 def is_watched(dir_obj):
     local_only = plugin_addon.getSetting('local_total') == 'true'
-    no_specials = nt.get_kodi_setting_bool('ignore_specials_watched')
+    no_specials = kodi_utils.get_kodi_setting_bool('ignore_specials_watched')
     sizes = dir_obj.sizes
     # count only local episodes
     if local_only and no_specials:

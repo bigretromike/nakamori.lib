@@ -1,5 +1,7 @@
 import gzip
+import json
 import sys
+import time
 from io import BytesIO
 from abc import abstractmethod
 
@@ -38,10 +40,10 @@ class BasePythonProxy:
         """
         pass
 
-    def get_data(self, url, accept_type, referer, timeout, apikey):
+    def get_data(self, url, referer, timeout, apikey):
         import error_handler as eh
         req = Request(self.encode(url))
-        req.add_header('Accept', 'application/' + accept_type)
+        req.add_header('Accept', 'application/json')
         req.add_header('apikey', apikey)
 
         if referer is not None:
@@ -62,13 +64,16 @@ class BasePythonProxy:
                 buf = BytesIO(response.read())
                 f = gzip.GzipFile(fileobj=buf)
                 data = f.read()
-            except Exception as ex:
+            except:
                 pass
         else:
             data = response.read()
         response.close()
 
         eh.spam(data)
+
+        if data is not None and data != '':
+            self.parse_possible_error(data)
 
         return data
 
@@ -158,7 +163,7 @@ class BasePythonProxy:
                 data_out = response.read()
                 response.close()
                 eh.spam(data_out)
-            except Exception as ex:
+            except:
                 eh.exception(ErrorPriority.HIGH)
             return data_out
         else:
@@ -209,6 +214,68 @@ class BasePythonProxy:
     @abstractmethod
     def isnumeric(self, value):
         pass
+
+    def get_json(self, url_in, direct=False):
+        """
+        use 'get' to return json body as string
+        :param url_in:
+        :param direct: force to bypass cache
+        :return:
+        """
+        import error_handler as eh
+        from error_handler import ErrorPriority
+        try:
+            timeout = plugin_addon.getSetting('timeout')
+            apikey = plugin_addon.getSetting('apikey')
+            if 'file?id' in url_in or plugin_addon.getSetting('enableCache') != 'true':
+                direct = True
+            if direct:
+                body = self.get_data(url_in, None, timeout, apikey)
+            else:
+                import cache
+                db_row = cache.check_in_database(url_in)
+                if db_row is None:
+                    db_row = 0
+                if db_row > 0:
+                    expire_second = time.time() - float(db_row)
+                    if expire_second > int(plugin_addon.getSetting('expireCache')):
+                        # expire, get new date
+                        body = self.get_data(url_in, None, timeout, apikey)
+                        params = {'extras': 'single-delete', 'name': url_in}
+                        cache.remove_cache(params)
+                        cache.add_cache(url_in, json.dumps(body))
+                    else:
+                        body = cache.get_data_from_cache(url_in)
+                else:
+                    body = self.get_data(url_in, None, timeout, apikey)
+                    cache.add_cache(url_in, json.dumps(body))
+        except http_error as err:
+            body = err.code
+            return body
+        except:
+            eh.exception(ErrorPriority.HIGH)
+            body = None
+        return body
+
+    def parse_possible_error(self, data):
+        stream = json.loads(data)
+        if 'StatusCode' in stream:
+            code = stream.get('StatusCode')
+            if code != '200':
+                error_msg = code
+                if code == '500':
+                    error_msg = 'Server Error'
+                elif code == '404':
+                    error_msg = 'Invalid URL: Endpoint not Found in Server'
+                elif code == '503':
+                    error_msg = 'Service Unavailable: Check netsh http'
+                elif code == '401' or code == '403':
+                    error_msg = 'The was refused as unauthorized'
+
+                details = ''
+                if stream.get('Details', '') != '':
+                    details = self.encode(stream.get('Details'))
+                raise RuntimeError(error_msg, details)
 
 
 class Python2Proxy(BasePythonProxy):

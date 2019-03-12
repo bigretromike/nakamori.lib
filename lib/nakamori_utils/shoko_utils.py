@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from nakamori_utils import nakamoritools as nt, kodi_utils
+from nakamori_utils import kodi_utils
 from nakamori_utils.globalvars import *
 from proxy.python_version_proxy import python_proxy as pyproxy
 
@@ -38,7 +38,7 @@ def perform_server_action(command, object_id=None, refresh='refresh10', post=Fal
     if post:
         response = pyproxy.post_json(key_url, '')
     else:
-        response = nt.get_json(key_url)
+        response = pyproxy.get_json(key_url)
 
     if plugin_addon.getSetting('spamLog') == 'true':
         xbmc.log('response: ' + response, xbmc.LOGWARNING)
@@ -51,7 +51,7 @@ def perform_server_action(command, object_id=None, refresh='refresh10', post=Fal
     # there's a better way to do this, but I don't feel like trying to make it work in Python
     if refresh != '' and refresh != 'awhile':
         xbmc.sleep(10000)
-        nt.refresh()
+        kodi_utils.refresh()
 
 
 def rescan_file(object_id):

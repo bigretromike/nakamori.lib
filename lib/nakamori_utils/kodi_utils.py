@@ -4,8 +4,9 @@ import sys
 
 import xbmcgui
 
-from nakamori_utils import nakamoritools as nt
 from nakamori_utils.globalvars import *
+import error_handler as eh
+from error_handler import ErrorPriority
 from proxy.python_version_proxy import python_proxy as pyproxy
 
 try:
@@ -13,6 +14,9 @@ try:
 except:
     # noinspection PyUnresolvedReferences
     from pysqlite2 import dbapi2 as database
+
+
+localize = script_addon.getLocalizedString
 
 
 def set_window_heading(window_name):
@@ -30,34 +34,13 @@ def set_window_heading(window_name):
     try:
         window_obj.setProperty('heading', str(window_name))
     except Exception as e:
-        nt.error('set_window_heading Exception', str(e))
+        eh.exception(ErrorPriority.LOW, 'Failed set_window_heading')
         window_obj.clearProperty('heading')
     try:
         window_obj.setProperty('heading2', str(window_name))
     except Exception as e:
-        nt.error('set_window_heading2 Exception', str(e))
+        eh.exception(ErrorPriority.LOW, 'Failed set_window_heading 2')
         window_obj.clearProperty('heading2')
-        
-
-def play_continue_item():
-    """
-    Move to next item that was not marked as watched
-    Essential information are query from Parameters via util lib
-    """
-    params = pyproxy.parse_parameters(sys.argv[2])
-    if 'offset' in params:
-        offset = params['offset']
-        pos = int(offset)
-        if pos == 1:
-            xbmcgui.Dialog().ok(plugin_addon.getLocalizedString(30182), plugin_addon.getLocalizedString(30183))
-        else:
-            wind = xbmcgui.Window(xbmcgui.getCurrentWindowId())
-            control_id = wind.getFocusId()
-            control_list = wind.getControl(control_id)
-            nt.move_position_on_list(control_list, pos)
-            xbmc.sleep(1000)
-    else:
-        pass
 
 
 def file_list_gui(ep_body):
@@ -85,6 +68,27 @@ def file_list_gui(ep_body):
         return 0
 
 
+def show_file_list(files):
+    """
+    Create DialogBox with file list to pick if there is more than 1 file for episode
+    :param files: list of tuples of names to the object
+    :type files: List[Tuple[str,int]]
+    :return: int (id of picked file or 0 if none)
+    """
+    if len(files) > 1:
+        items = [x[0] for x in files]
+        my_file = xbmcgui.Dialog().select(plugin_addon.getLocalizedString(30196), items)
+        if my_file > -1:
+            return files[my_file][1]
+        else:
+            # cancel -1,0
+            return 0
+    elif len(files) == 1:
+        return files[0][1]
+    else:
+        return 0
+
+
 def import_folder_list():
     """
     Create DialogBox with folder list to pick if there
@@ -92,7 +96,7 @@ def import_folder_list():
     """
     pick_folder = []
     get_id = []
-    import_list = json.loads(nt.get_json(nt.server + '/api/folder/list'))
+    import_list = json.loads(pyproxy.get_json(server + '/api/folder/list'))
     if len(import_list) > 1:
         for body in import_list:
             location = str(body['ImportFolderLocation'])
@@ -160,3 +164,126 @@ def clear_image_cache_in_kodi_db():
             db_connection.close()
         if len(db_files) > 0:
             xbmcgui.Dialog().ok('', plugin_addon.getLocalizedString(30138))
+
+
+def search_box():
+    """
+    Shows a keyboard, and returns the text entered
+    :return: the text that was entered
+    """
+    keyb = xbmc.Keyboard('', localize(30026))
+    keyb.doModal()
+    search_text = ''
+
+    if keyb.isConfirmed():
+        search_text = keyb.getText()
+    return search_text
+
+
+def play_continue_item():
+    """
+    Move to next item that was not marked as watched
+    Essential information are query from Parameters via util lib
+    """
+    params = pyproxy.parse_parameters(sys.argv[2])
+    if 'offset' in params:
+        offset = params['offset']
+        pos = int(offset)
+        if pos == 1:
+            xbmcgui.Dialog().ok(plugin_addon.getLocalizedString(30182), plugin_addon.getLocalizedString(30183))
+        else:
+            wind = xbmcgui.Window(xbmcgui.getCurrentWindowId())
+            control_id = wind.getFocusId()
+            control_list = wind.getControl(control_id)
+            move_position_on_list(control_list, pos)
+            xbmc.sleep(1000)
+
+
+def move_to_index(index, absolute=False):
+    wind = xbmcgui.Window(xbmcgui.getCurrentWindowId())
+    control_id = wind.getFocusId()
+    control_list = wind.getControl(control_id)
+    if not isinstance(control_list, xbmcgui.ControlList):
+        return
+    move_position_on_list(control_list, index, absolute)
+
+
+def move_position_on_list(control_list, position=0, absolute=False):
+    """
+    Move to the position in a list - use episode number for position
+    Args:
+        control_list: the list control
+        position: the index of the item not including settings
+        absolute: bypass setting and set position directly
+    """
+    if not absolute:
+        if position < 0:
+            position = 0
+        if plugin_addon.getSetting('show_continue') == 'true':
+            position = int(position + 1)
+
+        if get_kodi_setting_bool('filelists.showparentdiritems'):
+            position = int(position + 1)
+
+    try:
+        control_list.selectItem(position)
+    except:
+        try:
+            control_list.selectItem(position - 1)
+        except:
+            eh.exception(ErrorPriority.HIGH, 'Unable to Select Item')
+
+
+def refresh():
+    """
+    Refresh and re-request data from server
+    refresh watch status as we now mark episode and refresh list so it show real status not kodi_cached
+    Allow time for the ui to reload
+    """
+    xbmc.executebuiltin('Container.Refresh')
+    xbmc.sleep(int(plugin_addon.getSetting('refresh_wait')))
+
+
+def message_box(title, text, text2=None, text3=None):
+    xbmcgui.Dialog().ok(title, text, text2, text3)
+
+
+def kodi_jsonrpc(request):
+    try:
+        return_data = xbmc.executeJSONRPC(request)
+        result = json.loads(return_data)
+        return result
+    except:
+        eh.exception(ErrorPriority.HIGH, 'Unable to Execute JSONRPC to Kodi')
+
+
+def get_kodi_setting_bool(setting):
+    try:
+        parent_setting = xbmc.executeJSONRPC(
+            '{"jsonrpc": "2.0", "method": "Settings.GetSettingValue", "params":' +
+            '{"setting": "' + setting + '"}, "id": 1}')
+        # {"id":1,"jsonrpc":"2.0","result":{"value":false}} or true if ".." is displayed on list
+
+        result = json.loads(parent_setting)
+        if 'result' in result:
+            if 'value' in result['result']:
+                return result['result']['value']
+    except Exception as exc:
+        error('jsonrpc_error: ' + str(exc))
+    return False
+
+
+def get_kodi_setting_int(setting):
+    try:
+        parent_setting = xbmc.executeJSONRPC(
+            '{"jsonrpc": "2.0", "method": "Settings.GetSettingValue", "params":' +
+            '{"setting": "' + setting + '"}, "id": 1}')
+        # {"id":1,"jsonrpc":"2.0","result":{"value":false}} or true if ".." is displayed on list
+
+        result = json.loads(parent_setting)
+        if 'result' in result:
+            if 'value' in result['result']:
+                return int(result['result']['value'])
+    except Exception as exc:
+        error('jsonrpc_error: ' + str(exc))
+    return -1

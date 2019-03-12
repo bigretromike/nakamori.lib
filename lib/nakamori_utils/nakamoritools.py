@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 import sys
+
+from nakamori_utils.kodi_utils import refresh, message_box
+from proxy import python_version_proxy
+
 try:
     from urllib import unquote
 except ImportError:
@@ -8,9 +12,7 @@ except ImportError:
 import xbmcgui
 import xbmcplugin
 import traceback
-import os
 import json
-import time
 import collections
 import re
 
@@ -20,7 +22,6 @@ from nakamori_utils.globalvars import *
 
 # TODO refactor version info out into proxies
 # __ is public, _ is protected
-from proxy import python_version_proxy
 from proxy.python_version_proxy import python_proxy as pyproxy
 
 global addonversion
@@ -41,80 +42,6 @@ icon = plugin_addon.getAddonInfo('icon')
 localize = script_addon.getLocalizedString
 
 pDialog = ''
-
-
-def search_box():
-    """
-    Shows a keyboard, and returns the text entered
-    :return: the text that was entered
-    """
-    keyb = xbmc.Keyboard('', localize(30026))
-    keyb.doModal()
-    search_text = ''
-
-    if keyb.isConfirmed():
-        search_text = keyb.getText()
-    return search_text
-
-
-def get_kodi_setting_bool(setting):
-    try:
-        parent_setting = xbmc.executeJSONRPC(
-            '{"jsonrpc": "2.0", "method": "Settings.GetSettingValue", "params":' +
-            '{"setting": "' + setting + '"}, "id": 1}')
-        # {"id":1,"jsonrpc":"2.0","result":{"value":false}} or true if ".." is displayed on list
-
-        result = json.loads(parent_setting)
-        if 'result' in result:
-            if 'value' in result['result']:
-                return result['result']['value']
-    except Exception as exc:
-        error('jsonrpc_error: ' + str(exc))
-    return False
-
-
-def get_kodi_setting_int(setting):
-    try:
-        parent_setting = xbmc.executeJSONRPC(
-            '{"jsonrpc": "2.0", "method": "Settings.GetSettingValue", "params":' +
-            '{"setting": "' + setting + '"}, "id": 1}')
-        # {"id":1,"jsonrpc":"2.0","result":{"value":false}} or true if ".." is displayed on list
-
-        result = json.loads(parent_setting)
-        if 'result' in result:
-            if 'value' in result['result']:
-                return int(result['result']['value'])
-    except Exception as exc:
-        error('jsonrpc_error: ' + str(exc))
-    return -1
-
-
-def move_position_on_list(control_list, position=0, force=False):
-    """
-    Move to the position in a list - use episode number for position
-    Args:
-        control_list: the list control
-        position: the index of the item not including settings
-        force: bypass setting and set position directly
-    """
-    if not force:
-        if position < 0:
-            position = 0
-        if plugin_addon.getSetting('show_continue') == 'true':
-            position = int(position + 1)
-
-        if get_kodi_setting_bool('filelists.showparentdiritems'):
-            position = int(position + 1)
-
-    try:
-        control_list.selectItem(position)
-    except:
-        try:
-            control_list.selectItem(position - 1)
-        except Exception as e:
-            error('Unable to reselect item', str(e))
-            xbmc.log('control_list: ' + str(control_list.getId()), xbmc.LOGWARNING)
-            xbmc.log('position: ' + str(position), xbmc.LOGWARNING)
 
 
 def remove_anidb_links(data=''):
@@ -170,7 +97,7 @@ def trakt_scrobble(ep_id, status, progress, movie, notification):
         xbmc.executebuiltin('XBMC.Notification(%s, %s %s, 7500, %s)' % ('Trakt.tv', note_text, '',
                                                                         plugin_addon.getAddonInfo('icon')))
 
-    get_json(server + '/api/ep/scrobble?id=' + str(ep_id) + '&ismovie=' + str(movie) +
+    pyproxy.get_json(server + '/api/ep/scrobble?id=' + str(ep_id) + '&ismovie=' + str(movie) +
              '&status=' + str(status) + '&progress=' + str(progress))
 
 
@@ -233,13 +160,13 @@ def mark_watch_status(params):
     if sync == 'true':
         if episode_id != '':
             body = '?id=' + episode_id
-            get_json(key + body)
+            pyproxy.get_json(key + body)
         elif anime_id != '':
             body = '?id=' + anime_id
-            get_json(key + body)
+            pyproxy.get_json(key + body)
         elif group_id != '':
             body = '?id=' + group_id
-            get_json(key + body)
+            pyproxy.get_json(key + body)
     else:
         xbmc.executebuiltin('XBMC.Action(ToggleWatched)')
 
@@ -250,16 +177,6 @@ def mark_watch_status(params):
                                                                         watched_msg,
                                                                         plugin_addon.getAddonInfo('icon')))
     refresh()
-
-
-def refresh():
-    """
-    Refresh and re-request data from server
-    refresh watch status as we now mark episode and refresh list so it show real status not kodi_cached
-    Allow time for the ui to reload
-    """
-    xbmc.executebuiltin('Container.Refresh')
-    xbmc.sleep(int(plugin_addon.getSetting('refresh_wait')))
 
 
 def set_sort_method(int_of_sort_method=0):
@@ -312,7 +229,7 @@ def vote_series(series_id):
     elif my_vote != 0:
         vote_value = str(vote_list[my_vote])
         body = '?id=' + series_id + '&score=' + vote_value
-        get_json(server + '/api/serie/vote' + body)
+        pyproxy.get_json(server + '/api/serie/vote' + body)
         xbmc.executebuiltin('XBMC.Notification(%s, %s %s, 7500, %s)' % (localize(30021),
                                                                         localize(30022),
                                                                         vote_value, plugin_addon.getAddonInfo('icon')))
@@ -332,96 +249,10 @@ def vote_episode(ep_id):
     elif my_vote != 0:
         vote_value = str(vote_list[my_vote])
         body = '?id=' + ep_id + '&score=' + vote_value
-        get_json(server + '/api/ep/vote' + body)
+        pyproxy.get_json(server + '/api/ep/vote' + body)
         xbmc.executebuiltin('XBMC.Notification(%s, %s %s, 7500, %s)' % (localize(30023),
                                                                         localize(30022),
                                                                         vote_value, plugin_addon.getAddonInfo('icon')))
-
-
-def get_data(url_in, referer, data_type):
-    """
-    Send a message to the server and wait for a response
-    Args:
-        url_in: the URL to get data from
-        referer: currently not used always should be None
-        data_type: extension for url (.json or .xml) to force return type
-
-    Returns: The response from the server in forced type (.json or .xml)
-    """
-    if data_type != 'json':
-        data_type = 'xml'
-
-    url = url_in
-
-    data = pyproxy.get_data(url, data_type, referer, plugin_addon.getSetting('timeout'),
-                            plugin_addon.getSetting('apikey'))
-
-    if data is not None and data != '':
-        parse_possible_error(data, data_type)
-    return data
-
-
-def parse_possible_error(data, data_type):
-    if data_type == 'json':
-        stream = json.loads(data)
-        if 'StatusCode' in stream:
-            code = stream.get('StatusCode')
-            if code != '200':
-                error_msg = code
-                if code == '500':
-                    error_msg = 'Server Error'
-                elif code == '404':
-                    error_msg = 'Invalid URL: Endpoint not Found in Server'
-                elif code == '503':
-                    error_msg = 'Service Unavailable: Check netsh http'
-                elif code == '401' or code == '403':
-                    error_msg = 'The was refused as unauthorized'
-                error(error_msg, error_type='Network Error: ' + code)
-                if stream.get('Details', '') != '':
-                    xbmc.log(pyproxy.encode(stream.get('Details')), xbmc.LOGERROR)
-
-
-def get_json(url_in, direct=False):
-    """
-    use 'get' to return json body as string
-    :param url_in:
-    :param direct: force to bypass cache
-    :return:
-    """
-    try:
-        if direct:
-            body = get_data(url_in, None, 'json')
-        else:
-            if (plugin_addon.getSetting('enableCache') == 'true') and ('file?id' not in url_in):
-                import cache
-                db_row = cache.check_in_database(url_in)
-                if db_row is None:
-                    db_row = 0
-                if db_row > 0:
-                    expire_second = time.time() - float(db_row)
-                    if expire_second > int(plugin_addon.getSetting('expireCache')):
-                        # expire, get new date
-                        body = get_data(url_in, None, 'json')
-                        params = {'extras': 'single-delete', 'name': url_in}
-                        cache.remove_cache(params)
-                        cache.add_cache(url_in, json.dumps(body))
-                    else:
-                        body = cache.get_data_from_cache(url_in)
-                else:
-                    body = get_data(url_in, None, 'json')
-                    cache.add_cache(url_in, json.dumps(body))
-            else:
-                body = get_data(url_in, None, 'json')
-            # if code does not exist, then assume we are receiving proper data
-            # if str(body.get('code', '200')) != '200':
-            #    raise HTTPError(url_in, body.get('code', '0'), body.get('message', ''), None, None)
-    except python_version_proxy.http_error as err:
-        body = err.code
-        return body
-    except:
-        xbmc.log('--> body = None, because error in get_json')
-        body = None
-    return body
 
 
 def error(msg, error_type='Error', silent=False):
@@ -451,10 +282,6 @@ def error(msg, error_type='Error', silent=False):
     if not silent:
         xbmc.executebuiltin('XBMC.Notification(%s, %s %s, 2000, %s)' % (error_type, ' ', msg,
                                                                         plugin_addon.getAddonInfo('icon')))
-
-
-def message_box(title, text, text2=None, text3=None):
-    xbmcgui.Dialog().ok(title, text, text2, text3)
 
 
 def valid_user():
@@ -521,7 +348,7 @@ def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon
     """
     try:
         url = 'http://' + ip + ':' + port + '/api/init/status'
-        response = get_json(url, True)
+        response = pyproxy.get_json(url, True)
         if response is None or (safe_int(response) > 200 and safe_int(response) != 503 and safe_int(response) != 404):
             message_box('Connection Error', 'There was an error connecting to Shoko Server',
                         'If you have set up Shoko Server,', 'feel free to ask for advice on our discord')
@@ -550,7 +377,7 @@ def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon
             while not busy.iscanceled() and counter < 30:
                 xbmc.sleep(1000)
                 busy.update(counter * 5)
-                response = get_json(url, True)
+                response = pyproxy.get_json(url, True)
 
                 if response is None or (safe_int(response) > 200 and safe_int(response) != 503):
                     busy.close()
@@ -589,7 +416,7 @@ def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon
         # poll every second until the server gives us a response that we want
         while not busy.iscanceled():
             xbmc.sleep(1000)
-            response = get_json(url, True)
+            response = pyproxy.get_json(url, True)
 
             # this should not happen
             if response is None or safe_int(response) > 200:
@@ -640,7 +467,7 @@ def get_version(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon.getSe
         if not force:
             if _shoko_version != LooseVersion('0.1') and _good_ip == ip:
                 return _shoko_version
-        json_file = get_json('http://' + str(ip) + ':' + str(port) + '/api/version', direct=True)
+        json_file = pyproxy.get_json('http://' + str(ip) + ':' + str(port) + '/api/version', direct=True)
         if json_file is None:
             return legacy
         try:
@@ -733,15 +560,6 @@ def wizard():
 
 
 # not sure if needed
-
-
-def kodi_jsonrpc(request):
-    try:
-        return_data = xbmc.executeJSONRPC(request)
-        result = json.loads(return_data)
-        return result
-    except Exception as exc:
-        error('jsonrpc_error: ' + str(exc))
 
 
 def add_default_parameters(url, obj_id, level):

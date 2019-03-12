@@ -95,7 +95,7 @@ def try_function(error_priority, message=''):
         def try_inner2(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
-            except Exception as ex:
+            except Exception:
                 exception(error_priority, message)
                 if error_priority == ErrorPriority.BLOCKING:
 
