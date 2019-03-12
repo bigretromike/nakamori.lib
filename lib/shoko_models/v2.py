@@ -433,7 +433,12 @@ class Series(Directory):
 
     def get_listitem(self):
         url = self.get_plugin_url()
-        li = ListItem(self.name, path=url)
+
+        # We need to assume not airing, as there is no end date provided in API
+        name = model_utils.title_coloring(self.name, self.sizes.local_episodes, self.sizes.total_episodes,
+                                          self.sizes.local_specials, self.sizes.total_specials, False)
+
+        li = ListItem(name, path=url)
         infolabels = infolabel_utils.get_infolabels_for_series(self)
         li.setPath(url)
         li.set_watched_flags(infolabels, is_watched(self), 1)
