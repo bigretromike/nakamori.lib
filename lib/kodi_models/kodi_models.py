@@ -66,8 +66,8 @@ class ListItem(xbmcgui.ListItem):
             infolabels['playcount'] = 1
             infolabels['overlay'] = 5
         elif flag == WatchedStatus.PARTIAL and plugin_addon.getSetting('file_resume') == 'true':
-            infolabels['playcount'] = 0
-            infolabels['overlay'] = 7
+            # infolabels['playcount'] = 0
+            # infolabels['overlay'] = 7
             self.setProperty('ResumeTime', str(resume_time))
 
     def set_resume(self):
@@ -82,10 +82,11 @@ class DirectoryListing(list):
     An optimized list to add directory items.
     There may be a speedup by calling `del dir_list`, but Kodi's GC is pretty aggressive
     """
-    def __init__(self, content_type):
+    def __init__(self, content_type, cache=False):
         list.__init__(self)
         self.pending = []
         self.handle = int(sys.argv[1])
+        self.cache = cache
         xbmcplugin.setContent(self.handle, content_type)
 
     def extend(self, iterable):
@@ -103,7 +104,7 @@ class DirectoryListing(list):
         xbmcplugin.addDirectoryItems(self.handle, result_list, self.__len__())
 
     def append(self, item, folder=True):
-        result = get_tuple(item)
+        result = get_tuple(item, folder)
         if result is not None:
             self.pending.append(result)
             list.append(self, result)
@@ -111,12 +112,12 @@ class DirectoryListing(list):
     def __del__(self):
         if len(self.pending) > 0:
             xbmcplugin.addDirectoryItems(self.handle, self.pending, self.__len__() + self.pending.__len__())
-        xbmcplugin.endOfDirectory(self.handle, cacheToDisc=False)
+        xbmcplugin.endOfDirectory(self.handle, cacheToDisc=self.cache)
 
 
-def get_tuple(item):
+def get_tuple(item, folder=True):
     if isinstance(item, ListItem):
-        return item.getPath(), item, True
+        return item.getPath(), item, folder
     if isinstance(item, tuple):
         if len(item) == 2:
             return item[0].getPath(), item[0], item[1]

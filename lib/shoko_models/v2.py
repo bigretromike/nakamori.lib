@@ -586,10 +586,10 @@ class Episode(Directory):
         # set watched flags
         if self.watched:
             li.set_watched_flags(infolabels, WatchedStatus.WATCHED)
-        elif not self.watched:
-            li.set_watched_flags(infolabels, WatchedStatus.UNWATCHED)
         elif self.get_file() is not None and self.get_file().resume_time > 0:
             li.set_watched_flags(infolabels, WatchedStatus.PARTIAL, self.get_file().resume_time)
+        else:
+            li.set_watched_flags(infolabels, WatchedStatus.UNWATCHED)
 
         li.setInfo(type='video', infoLabels=infolabels)
         li.set_art(self)
