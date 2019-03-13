@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import re
 from collections import defaultdict
 
 from nakamori_utils import nakamoritools as nt
@@ -440,3 +441,17 @@ def set_stream_info(listitem, f):
         for stream2 in subs:
             listitem.setProperty('SubtitleLanguage.' + str(stream2), str(subs[stream2]['language']))
             listitem.addStreamInfo('subtitle', subs[stream2])
+
+
+def remove_anidb_links(data=''):
+    """
+    Remove anidb links from descriptions
+    Args:
+        data: the strong to remove links from
+
+    Returns: new string without links
+
+    """
+    # remove urls that start with anidb, with the following spaces
+    p = re.compile(r'(http://anidb.net/[0-9A-z/\-_.?=&]+[ ]*\[)([\S ]+?)(\])')
+    return p.sub(r'\2', data)

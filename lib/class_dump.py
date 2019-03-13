@@ -16,7 +16,7 @@ def dump_to_text(*args):
             text += ' ' + arg
         else:
             text += ' ' + dump(arg)
-    return text
+    return text.strip()
 
 
 def dump(obj):

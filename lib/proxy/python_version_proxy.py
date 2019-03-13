@@ -73,7 +73,7 @@ class BasePythonProxy:
         eh.spam(data)
 
         if data is not None and data != '':
-            self.parse_possible_error(data)
+            self.parse_possible_error(req, data)
 
         return data
 
@@ -257,7 +257,15 @@ class BasePythonProxy:
             body = None
         return body
 
-    def parse_possible_error(self, data):
+    def parse_possible_error(self, request, data):
+        """
+
+        :param request:
+        :type request: Request
+        :param data:
+        :type data: srt
+        :return:
+        """
         stream = json.loads(data)
         if 'StatusCode' in stream:
             code = stream.get('StatusCode')
@@ -272,10 +280,24 @@ class BasePythonProxy:
                 elif code == '401' or code == '403':
                     error_msg = 'The was refused as unauthorized'
 
-                details = ''
-                if stream.get('Details', '') != '':
-                    details = self.encode(stream.get('Details'))
-                raise RuntimeError(error_msg, details)
+                code = self.safe_int(code)
+                raise HTTPError(request.get_full_url(), code, error_msg, request.headers, None)
+
+    def safe_int(self, obj):
+        """
+        safe convert type to int to avoid NoneType
+        :param obj:
+        :return: int
+        """
+        try:
+            if obj is None:
+                return 0
+            if isinstance(obj, int):
+                return obj
+
+            return int(obj)
+        except:
+            return 0
 
 
 class Python2Proxy(BasePythonProxy):

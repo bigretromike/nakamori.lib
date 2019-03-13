@@ -30,7 +30,7 @@ from proxy.python_version_proxy import python_proxy as pyproxy
 localize = plugin_addon.getLocalizedString
 
 
-# noinspection Duplicates
+# noinspection Duplicates,PyUnusedFunction
 class Directory(object):
     """
     A directory object, the base for Groups, Series, Episodes, etc
@@ -135,6 +135,12 @@ class Directory(object):
             xbmc.executebuiltin('XBMC.Notification(' + localize(30200) + ', ' + msg + ', 2000, ' +
                                 plugin_addon.getAddonInfo('icon') + ')')
 
+    def vote(self, value):
+        url = self.base_url() + '/vote'
+        url = pyproxy.set_parameter(url, 'id', self.id)
+        url = pyproxy.set_parameter(url, 'score', value)
+        pyproxy.get_json(url)
+
     def get_listitem(self):
         """
         This creates a ListItem based on the model
@@ -215,7 +221,7 @@ class Filter(Directory):
         Directory.__init__(self, json_node, get_children)
         self.plugin_url = puf(nakamoriplugin.show_filter_menu, self.id)
         # don't redownload info on an okay object
-        if build_full_object and (self.size < 0 or get_children):
+        if build_full_object and (self.size < 0 or (get_children and len(self.items) < 1)):
             json_node = self.get_full_object()
             Directory.__init__(self, json_node, get_children)
 
@@ -234,7 +240,7 @@ class Filter(Directory):
 
     def get_api_url(self):
         url = self.base_url()
-        url = nt.add_default_parameters(url, self.id, 1 if self.get_children else 0)
+        url = nt.add_default_parameters(url, self.id, 2 if self.get_children else 0)
         if self.id == 0:
             url = pyproxy.set_parameter(url, 'notag', 1)
         return url
@@ -295,7 +301,7 @@ class Filter(Directory):
                 if group.size < 0:
                     group = Series(group.id, True)
             else:
-                group = Group(json_node, build_full_object=True, get_children=True, filter_id=self.id)
+                group = Group(json_node, build_full_object=True, filter_id=self.id)
                 group = group.items[0]
                 if group.size < 0:
                     group = Series(group.id, build_full_object=True)
@@ -325,7 +331,7 @@ class Group(Directory):
         self.filter_id = 0
         Directory.__init__(self, json_node, get_children)
         # don't redownload info on an okay object
-        if build_full_object and (self.size < 0 or get_children):
+        if build_full_object and (self.size < 0 or (get_children and len(self.items) < 1)):
             json_node = self.get_full_object()
             Directory.__init__(self, json_node, get_children)
         if filter_id != 0 and filter_id != '0':
@@ -342,10 +348,9 @@ class Group(Directory):
         self.actors = model_utils.get_cast_info(json_node)
         self.sizes = get_sizes(json_node)
         self.tags = model_utils.get_tags(json_node.get('tags', {}))
-        self.overview = pyproxy.decode(json_node.get('summary', ''))
+        self.overview = model_utils.remove_anidb_links(pyproxy.decode(json_node.get('summary', '')))
 
-        if get_children:
-            self.process_children(json_node)
+        self.process_children(json_node)
 
         eh.spam(self)
 
@@ -420,7 +425,7 @@ class Series(Directory):
         """
         Directory.__init__(self, json_node, get_children)
         # don't redownload info on an okay object
-        if build_full_object and (self.size < 0 or get_children):
+        if build_full_object and (self.size < 0 or (get_children and len(self.items) < 1)):
             json_node = self.get_full_object()
             Directory.__init__(self, json_node, get_children)
         self.episode_types = []
@@ -430,7 +435,7 @@ class Series(Directory):
             return
 
         self.alternate_name = model_utils.get_title(json_node, 'en', 'official')
-        self.overview = pyproxy.decode(json_node.get('summary', ''))
+        self.overview = model_utils.remove_anidb_links(pyproxy.decode(json_node.get('summary', '')))
 
         self.season = json_node.get('season', '1')
         self.date = model_utils.get_airdate(json_node)
@@ -439,8 +444,7 @@ class Series(Directory):
         self.actors = model_utils.get_cast_info(json_node)
         self.sizes = get_sizes(json_node)
         self.tags = model_utils.get_tags(json_node.get('tags', {}))
-        if get_children:
-            self.process_children(json_node)
+        self.process_children(json_node)
 
         eh.spam(self)
 
@@ -504,7 +508,17 @@ class Series(Directory):
             context_menu.append(watched_item)
             context_menu.append(unwatched_item)
 
+        # Vote Series
+        if plugin_addon.getSetting('context_show_vote_Series') == 'true':
+            context_menu.append((localize(30124), RunScript('/series/%i/vote' % self.id)))
+
         return context_menu
+
+    def vote(self, value):
+        Directory.vote(self, value)
+        xbmc.executebuiltin('XBMC.Notification(%s, %s %s, 7500, %s)' % (script_addon.getLocalizedString(30021),
+                                                                        script_addon.getLocalizedString(30022),
+                                                                        str(value), plugin_addon.getAddonInfo('icon')))
 
 
 # noinspection Duplicates
@@ -555,7 +569,7 @@ class Episode(Directory):
             eh.spam(self)
             return
 
-        self.episode_number = nt.safe_int(json_node.get('epnumber', ''))
+        self.episode_number = pyproxy.safe_int(json_node.get('epnumber', ''))
         self.episode_type = json_node.get('eptype', 'Other')
         self.date = model_utils.get_airdate(json_node)
         self.tvdb_episode = json_node.get('season', '0x0')
@@ -566,13 +580,13 @@ class Episode(Directory):
             self.name = 'Episode ' + str(json_node.get('epnumber', '??'))
         self.alternate_name = model_utils.get_title(json_node, 'x-jat', 'main')
 
-        self.watched = nt.safe_int(json_node.get('view', 0)) != 0
-        self.year = nt.safe_int(json_node.get('year', ''))
+        self.watched = pyproxy.safe_int(json_node.get('view', 0)) != 0
+        self.year = pyproxy.safe_int(json_node.get('year', ''))
 
         self.rating = float(str(json_node.get('rating', '0')).replace(',', '.'))
         self.user_rating = float(str(json_node.get('UserRating', '0')).replace(',', '.'))
-        self.overview = nt.remove_anidb_links(pyproxy.decode(json_node.get('summary', '')))
-        self.votes = nt.safe_int(json_node.get('votes', ''))
+        self.overview = model_utils.remove_anidb_links(pyproxy.decode(json_node.get('summary', '')))
+        self.votes = pyproxy.safe_int(json_node.get('votes', ''))
 
         if str(json_node['eptype']) != 'Special':
             season = str(json_node.get('season', '1'))
@@ -582,7 +596,7 @@ class Episode(Directory):
                     season = '1'
         else:
             season = '0'
-        self.season = nt.safe_int(season)
+        self.season = pyproxy.safe_int(season)
 
         eh.spam(self)
 
@@ -695,11 +709,11 @@ class Episode(Directory):
 
         # Vote Episode
         if plugin_addon.getSetting('context_show_vote_Episode') == 'true':
-            context_menu.append((localize(30125), 'TO BE ADDED TO SCRIPT'))
+            context_menu.append((localize(30125), RunScript('/episode/%i/vote' % self.id)))
 
         # Vote Series
         if plugin_addon.getSetting('context_show_vote_Series') == 'true' and self.series_id != 0:
-            context_menu.append((localize(30124), 'TO BE ADDED TO SCRIPT'))
+            context_menu.append((localize(30124), RunScript('/series/%i/vote' % self.series_id)))
 
         # Metadata
         if plugin_addon.getSetting('context_show_info') == 'true':
@@ -716,6 +730,12 @@ class Episode(Directory):
         context_menu += Directory.get_context_menu_items(self)
 
         return context_menu
+
+    def vote(self, value):
+        Directory.vote(self, value)
+        xbmc.executebuiltin('XBMC.Notification(%s, %s %i, 7500, %s)' % (script_addon.getLocalizedString(30023),
+                                                                        script_addon.getLocalizedString(30022),
+                                                                        value, plugin_addon.getAddonInfo('icon')))
 
 
 # noinspection Duplicates
@@ -751,7 +771,7 @@ class File(Directory):
             duration = kodi_proxy.duration(duration)
         self.duration = duration
 
-        self.size = nt.safe_int(json_node.get('size', 0))
+        self.size = pyproxy.safe_int(json_node.get('size', 0))
         self.file_url = json_node.get('url', '')
         self.server_path = json_node.get('server_path', '')
 
@@ -882,17 +902,17 @@ def is_watched(dir_obj):
 def get_sizes(json_node):
     result = Sizes()
     local_sizes = json_node.get('local_sizes', {})
-    result.local_episodes = nt.safe_int(local_sizes.get('Episodes', 0))
-    result.local_specials = nt.safe_int(local_sizes.get('Specials', 0))
-    result.local_total = nt.safe_int(json_node.get('localsize', 0))
+    result.local_episodes = pyproxy.safe_int(local_sizes.get('Episodes', 0))
+    result.local_specials = pyproxy.safe_int(local_sizes.get('Specials', 0))
+    result.local_total = pyproxy.safe_int(json_node.get('localsize', 0))
     watched_sizes = json_node.get('watched_sizes', {})
-    result.watched_episodes = nt.safe_int(watched_sizes.get('Episodes', 0))
-    result.watched_specials = nt.safe_int(watched_sizes.get('Specials', 0))
-    result.watched_total = nt.safe_int(json_node.get('watchedsize', 0))
+    result.watched_episodes = pyproxy.safe_int(watched_sizes.get('Episodes', 0))
+    result.watched_specials = pyproxy.safe_int(watched_sizes.get('Specials', 0))
+    result.watched_total = pyproxy.safe_int(json_node.get('watchedsize', 0))
     total_sizes = json_node.get('total_sizes', {})
-    result.total_episodes = nt.safe_int(total_sizes.get('Episodes', 0))
-    result.total_specials = nt.safe_int(total_sizes.get('Specials', 0))
-    result.total = nt.safe_int(json_node.get('size', 0))
+    result.total_episodes = pyproxy.safe_int(total_sizes.get('Episodes', 0))
+    result.total_specials = pyproxy.safe_int(total_sizes.get('Specials', 0))
+    result.total = pyproxy.safe_int(json_node.get('size', 0))
     return result
 
 
@@ -907,10 +927,6 @@ class Sizes(object):
         self.total_episodes = 0
         self.total_specials = 0
         self.total = 0
-
-
-def RunPlugin(url):
-    return 'RunPlugin(' + url + ')'
 
 
 def RunScript(url):

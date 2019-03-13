@@ -44,13 +44,14 @@ class ErrorPriority(object):
     | **BLOCKING**: Something that prevents continuing.
     | **HIGHEST**: An entire item failed to parse or something. May impact the user greatly. We show a dialog.
     | **HIGH**: Some data failed to parse, or a command couldn't succeed. May impact the user. Notification.
-    | **NORMAL**: couldn't keep up scrobbling or something that shouldn't happen often,
+    | **NORMAL**: Something that we handle separately. It shows no message, but logs it fully
+    | **LOW**: couldn't keep up scrobbling or something that shouldn't happen often,
     but isn't really a problem most of the time. Log it if there's more than 5.
-    | **LOW**: Basically negligible. They could happen all day, and the user wouldn't even care.
+    | **LOWEST**: Basically negligible. They could happen all day, and the user wouldn't even care.
     An example of LOW might be needing to internally retry selecting the next unwatched episode, as it wasn't ready yet.
     We don't even log them unless spam log is on.
     """
-    LOW, NORMAL, HIGH, HIGHEST, BLOCKING = range(0, 5)
+    LOWEST, LOW, NORMAL, HIGH, HIGHEST, BLOCKING = range(0, 6)
 
 
 class NakamoriError(object):
@@ -58,22 +59,16 @@ class NakamoriError(object):
     The error object has the point of carrying the traceback and exception info.
     It may also carry some extra data or less data, if the error is raised by us with a specific message
     """
-    def __init__(self):
+    def __init__(self, message='Something Happened :(', ex=Exception.__name__, trace='error_handler.py#L61'):
         # the message, either from the exception or us
-        self.exc_message = 'Something Happened :('
-        # the Exception type, in str form
-        self.exc_type = Exception.__name__
-        # (str, int) that carries the file and line number, relative to the addon directory
-        self.exc_trace = ('./error_handler.py', 61)
-        # this is for spam log or BLOCKING errors. It contains the full trace info, in list form at 1 line each
-        self.exc_full_trace = []
-
-    def __init__(self, message, ex, trace):
         self.exc_message = message
         if not isinstance(ex, str):
             ex = ex.__name__
+        # the Exception type, in str form
         self.exc_type = ex
+        # (str, int) that carries the file and line number, relative to the addon directory
         self.exc_trace = trace
+        # this is for spam log or BLOCKING errors. It contains the full trace info, in list form at 1 line each
         self.exc_full_trace = []
 
     def __eq__(self, o):
@@ -115,31 +110,45 @@ def kodi_error(text):
 
 
 # noinspection PyProtectedMember
-def __get_caller_prefix():
+def get_simple_trace(fullpath=False):
     # this gets the frame that is not in this file
-    filepath, line_number, clsname, class_name, lines, index = '', 0, '', '', [], 0
-    for i in range(2, 5):
-        f = sys._getframe(i)
-        filepath, line_number, clsname, lines, index = inspect.getframeinfo(f)
+    filepath, line_number, clsname, class_name, lines, index, path = '', 0, '', '', [], 0, ''
+    for frame_index in range(3, 12):
         try:
-            class_name = f.f_locals['self'].__class__.__name__
-        except:
-            pass
+            f = sys._getframe(frame_index)
+            filepath, line_number, clsname, lines, index = inspect.getframeinfo(f)
+            try:
+                class_name = f.f_locals['self'].__class__.__name__
+            except:
+                pass
 
-        frame_path = os.path.split(filepath)[-1]
-        frame_path = os.path.splitext(frame_path)[0]
-        this_path = os.path.split(__file__)[-1]
-        this_path = os.path.splitext(this_path)[0]
-        if frame_path != this_path:
+            frame_path = os.path.split(filepath)[-1]
+            frame_path = os.path.splitext(frame_path)[0]
+
+            if not fullpath:
+                path = frame_path
+            else:
+                path = filepath.replace('\\', '/').replace(addon_path, '.')
+
+            this_path = os.path.split(__file__)[-1]
+            this_path = os.path.splitext(this_path)[0]
+            if frame_path != this_path:
+                break
+        except:
             break
-    filename = 'Nakamori|' + os.path.split(filepath)[-1]
+
     if clsname == '<module>':
-        prefix = filename + '#L' + str(line_number) + ' -> '
+        filename = path + '#L' + str(line_number)
     elif class_name != '':
-        prefix = filename + '::' + class_name + '::' + clsname + '#L' + str(line_number) + ' -> '
+        filename = path + '::' + class_name + '::' + clsname + '#L' + str(line_number)
     else:
-        prefix = filename + '::' + clsname + '#L' + str(line_number) + ' -> '
-    return prefix
+        filename = path + '::' + clsname + '#L' + str(line_number)
+
+    return filename
+
+
+def __get_caller_prefix():
+    return 'Nakamori|' + get_simple_trace() + ' -> '
 
 
 def __get_basic_prefix():
@@ -185,40 +194,56 @@ def error(*args):
 
 
 def exception(priority, *args):
-    exc_type, exc_obj, exc_tb = sys.exc_info()
+    exc_type, exc_obj, exc_tb = None, None, None
+    try:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+    except:
+        # We don't actually have an Exception
+        pass
     text = class_dump.dump_to_text(*args)
     exception_internal(exc_type, exc_obj, exc_tb, priority, text)
 
 
 def exception_internal(exc_type, exc_obj, exc_tb, priority, message=''):
     """
-    Most of the data needed can be called from sys. The priority determines how the system will handle or display the error.
+    The priority determines how the system will handle or display the error. The message is self-explanatory.
+    sys.exc_info() will give the required information for the first arguments. Otherwise, just pass None to them.
+    :param exc_type:
+    :param exc_obj:
+    :type exc_obj: Exception
+    :param exc_tb:
     :param priority: The priority of the Error
     :type priority: ErrorPriority
     :param message: a custom message to give the user. If left blank, it will use the exception's
     :return:
     """
+    msg = message
     # apparently sometimes they give us exc_type as a str instead of a type
+    if exc_type is None:
+        exc_type = 'Exception'
     if not isinstance(exc_type, str):
         exc_type = exc_type.__name__
-    # for now we'll keeping the logging and stuff. I'll do the grouping and aggregation later
-    if exc_type is not None and exc_obj is not None and exc_tb is not None:
-        place = exc_tb.tb_frame.f_code.co_filename.replace('\\', '/').replace(addon_path, '.')
-        if message == '':
-            message = exc_obj.message
-        ex = NakamoriError(message, exc_type, (place, exc_tb.tb_lineno))
+
+    place = get_simple_trace(fullpath=True)
+
+    if exc_obj is not None and exc_tb is not None:
+        if msg == '':
+            msg = exc_obj.message
+        ex = NakamoriError(msg, exc_type, place)
         if priority == ErrorPriority.BLOCKING or plugin_addon.getSetting('spamLog') == 'true':
             for line in traceback.format_exc().replace('\r', '\n').split('\n'):
                 # skip empty lines
                 if len(line) == 0:
                     continue
                 # skip the try_function wrapper
-                if ' in try_inner2' in line or 'return func(*args, **kwargs)' in line:
+                if ' in try_inner2' in line or 'return func(*args, **kwargs)' in line or 'error_handler' in line:
                     continue
 
                 tr = line.replace('\\', '/').replace(addon_path, '.')
                 ex.exc_full_trace.append(tr)
-        __exceptions[priority].append(ex)
+    else:
+        ex = NakamoriError(msg, exc_type, place)
+    __exceptions[priority].append(ex)
 
 
 def show_messages():
@@ -249,15 +274,23 @@ def show_messages():
         exes = __exceptions[ErrorPriority.NORMAL]
         exes = Counter(exes).items()
         exes = sorted(exes)
+        print_exceptions(exes)
+    if ErrorPriority.LOW in __exceptions:
+        exes = __exceptions[ErrorPriority.LOW]
+        exes = Counter(exes).items()
+        exes = sorted(exes)
         # log all if we are spamming
         if plugin_addon.getSetting('spamLog') != 'true':
             exes = next([x for x in exes if x[1] > 5], [])
         print_exceptions(exes)
-    if plugin_addon.getSetting('spamLog') == 'true' and ErrorPriority.LOW in __exceptions:
-        exes = __exceptions[ErrorPriority.LOW]
+    if plugin_addon.getSetting('spamLog') == 'true' and ErrorPriority.LOWEST in __exceptions:
+        exes = __exceptions[ErrorPriority.LOWEST]
         exes = Counter(exes).items()
         exes = sorted(exes)
-        print_exceptions(exes)
+        # log only if we are spamming
+        if plugin_addon.getSetting('spamLog') != 'true':
+            exes = next([x for x in exes if x[1] > 5], [])
+            print_exceptions(exes)
 
 
 def print_exceptions(exes):
@@ -280,8 +313,7 @@ def print_exceptions(exes):
 
     for ex in exes:
         key, value = ex  # type: NakamoriError, int
-        msg = key.exc_message + ' -- Exception: ' + key.exc_type + ' at ' + key.exc_trace[0] + '#L' + \
-            str(key.exc_trace[1])
+        msg = key.exc_message + ' -- Exception: ' + key.exc_type + ' at ' + key.exc_trace
         kodi_error(__get_basic_prefix() + msg)
         if len(key.exc_full_trace) > 0:
             for line in key.exc_full_trace:
@@ -299,9 +331,12 @@ def show_dialog_for_exception(ex):
     :type ex: (NakamoriError, int)
     :return:
     """
-    msg = ex[0].exc_message + '\n  at ' + ex[0].exc_trace[0] + '#L' + str(ex[0].exc_trace[1]) + '\nThis occurred ' + \
+    msg = ex[0].exc_message
+    if msg == '':
+        msg = ex[0].exc_type
+    msg += '\n  at ' + ex[0].exc_trace + '\nThis occurred ' + \
         str(ex[1]) + ' times.'
-    dialog = xbmcgui.Dialog().ok('Nakamori: An Error Occurred', msg)
+    xbmcgui.Dialog().ok('Nakamori: An Error Occurred', msg)
 
 
 def show_notification_for_exception(ex):
