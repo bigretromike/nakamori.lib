@@ -268,8 +268,8 @@ def get_kodi_setting_bool(setting):
         if 'result' in result:
             if 'value' in result['result']:
                 return result['result']['value']
-    except Exception as exc:
-        error('jsonrpc_error: ' + str(exc))
+    except:
+        eh.exception(ErrorPriority.HIGH)
     return False
 
 
@@ -281,9 +281,8 @@ def get_kodi_setting_int(setting):
         # {"id":1,"jsonrpc":"2.0","result":{"value":false}} or true if ".." is displayed on list
 
         result = json.loads(parent_setting)
-        if 'result' in result:
-            if 'value' in result['result']:
-                return int(result['result']['value'])
-    except Exception as exc:
-        error('jsonrpc_error: ' + str(exc))
+        if 'result' in result and 'value' in result['result']:
+            return int(result['result']['value'])
+    except:
+        eh.exception(ErrorPriority.HIGH)
     return -1

@@ -17,7 +17,7 @@ except:
 
 from kodi_models.kodi_models import ListItem, WatchedStatus
 from nakamori_utils.globalvars import *
-from nakamori_utils import nakamoritools as nt, infolabel_utils, kodi_utils
+from nakamori_utils import nakamoritools as nt, infolabel_utils, kodi_utils, shoko_utils
 from nakamori_utils import model_utils
 
 
@@ -25,7 +25,6 @@ from proxy.kodi_version_proxy import kodi_proxy
 from proxy.python_version_proxy import python_proxy as pyproxy
 
 # TODO Context menu handlers
-# TODO better listitem info for series and groups
 
 
 localize = plugin_addon.getLocalizedString
@@ -731,6 +730,8 @@ class File(Directory):
         :type json_node: Union[list,dict]
         """
         Directory.__init__(self, json_node)
+        self.server_path = ''
+        self.file_url = ''
         # don't redownload info on an okay object
         if build_full_object and self.size < 0:
             json_node = self.get_full_object()
@@ -811,8 +812,10 @@ class File(Directory):
         return li
 
     def get_context_menu_items(self):
-        context_menu = []
-
+        context_menu = [
+            (localize(30120), RunScript('/file/%i/rescan' % self.id)),
+            (localize(30121), RunScript('/file/%i/rehash' % self.id))
+        ]
         return context_menu
 
     def set_watched_status(self, watched):
@@ -820,6 +823,12 @@ class File(Directory):
             return
         nt.sync_offset(self.id, 0)
         # this isn't really supported atm, so no need for the rest of the stuff here
+        
+    def rehash(self):
+        shoko_utils.rehash_file(self.id)
+
+    def rescan(self):
+        shoko_utils.rescan_file(self.id)
 
 
 def is_watched(dir_obj):

@@ -159,7 +159,12 @@ def log(*args):
     :param args: some objects to log
     :return:
     """
-    text = class_dump.dump_to_text(*args)
+    try:
+        text = class_dump.dump_to_text(*args)
+    except:
+        text = ''
+        exception(ErrorPriority.NORMAL, 'Unable to dump args for error_handler.log')
+
     if text == '':
         return
     kodi_log(__get_caller_prefix() + pp.encode(text))

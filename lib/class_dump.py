@@ -3,6 +3,7 @@ from collections import defaultdict
 
 # Surprisingly, there is no better way to do this...
 
+
 def dump_to_text(*args):
     text = ''
     if args is None:
