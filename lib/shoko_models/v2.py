@@ -5,6 +5,7 @@ import time
 
 from abc import abstractmethod
 import error_handler as eh
+import xbmcplugin
 
 try:
     import nakamoriplugin
@@ -49,6 +50,7 @@ class Directory(object):
         self.size = -1
         self.get_children = get_children
         self.sort_index = 0
+        self.sizes = None
         if isinstance(json_node, (str, int, unicode)):
             self.id = json_node
             return
@@ -161,6 +163,58 @@ class Directory(object):
     def __iter__(self):
         for i in self.items:
             yield i
+
+    def apply_sorting(self, handle):
+        pass
+
+    def is_watched(self):
+        local_only = plugin_addon.getSetting('local_total') == 'true'
+        no_specials = kodi_utils.get_kodi_setting_bool('ignore_specials_watched')
+        sizes = self.sizes
+        if sizes is None:
+            return WatchedStatus.UNWATCHED
+        # count only local episodes
+        if local_only and no_specials:
+            # 0 is unwatched
+            if sizes.watched_episodes == 0:
+                return WatchedStatus.UNWATCHED
+            # Should never be greater, but meh
+            if sizes.watched_episodes >= sizes.local_episodes:
+                return WatchedStatus.WATCHED
+            # if it's between 0 and total, then it's partial
+            return WatchedStatus.PARTIAL
+
+        # count local episodes and specials
+        if local_only:
+            # 0 is unwatched
+            if (sizes.watched_episodes + sizes.watched_specials) == 0:
+                return WatchedStatus.UNWATCHED
+            # Should never be greater, but meh
+            if (sizes.watched_episodes + sizes.watched_specials) >= (sizes.local_episodes + sizes.local_specials):
+                return WatchedStatus.WATCHED
+            # if it's between 0 and total, then it's partial
+            return WatchedStatus.PARTIAL
+
+        # count episodes, including ones we don't have
+        if no_specials:
+            # 0 is unwatched
+            if sizes.watched_episodes == 0:
+                return WatchedStatus.UNWATCHED
+            # Should never be greater, but meh
+            if sizes.watched_episodes >= sizes.total_episodes:
+                return WatchedStatus.WATCHED
+            # if it's between 0 and total, then it's partial
+            return WatchedStatus.PARTIAL
+
+        # count episodes and specials, including ones we don't have
+        # 0 is unwatched
+        if (sizes.watched_episodes + sizes.watched_specials) == 0:
+            return WatchedStatus.UNWATCHED
+        # Should never be greater, but meh
+        if (sizes.watched_episodes + sizes.watched_specials) >= (sizes.total_episodes + sizes.total_specials):
+            return WatchedStatus.WATCHED
+        # if it's between 0 and total, then it's partial
+        return WatchedStatus.PARTIAL
 
 
 class CustomItem(Directory):
@@ -320,6 +374,17 @@ class Filter(Directory):
     def set_watched_status(self, watched):
         pass
 
+    def apply_sorting(self, handle):
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_UNSORTED)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_DATE)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_USER_RATING)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+
+        sorting_setting = plugin_addon.getSetting('default_sort_filter')
+        kodi_utils.set_user_sort_method(sorting_setting)
+
 
 # noinspection Duplicates
 class Group(Directory):
@@ -383,7 +448,7 @@ class Group(Directory):
         li = ListItem(self.name, path=url)
         infolabels = infolabel_utils.get_infolabels_for_group(self)
         li.setPath(url)
-        li.set_watched_flags(infolabels, is_watched(self), 1)
+        li.set_watched_flags(infolabels, self.is_watched(), 1)
         li.setInfo(type='video', infoLabels=infolabels)
         li.addContextMenuItems(self.get_context_menu_items())
         li.set_art(self)
@@ -404,7 +469,7 @@ class Group(Directory):
         watched_item = (localize(30126), RunScript('/group/%s/set_watched/%s' % (str(self.id), 'True')))
         unwatched_item = (localize(30127), RunScript('/group/%s/set_watched/%s' % (str(self.id), 'False')))
         if plugin_addon.getSetting('context_krypton_watched') == 'true':
-            watched = is_watched(self)
+            watched = self.is_watched()
             if watched == WatchedStatus.WATCHED:
                 context_menu.append(unwatched_item)
             elif watched == WatchedStatus.UNWATCHED:
@@ -417,6 +482,17 @@ class Group(Directory):
             context_menu.append(unwatched_item)
 
         return context_menu
+
+    def apply_sorting(self, handle):
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_UNSORTED)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_DATE)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_USER_RATING)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+
+        sorting_setting = plugin_addon.getSetting('default_sort_filter')
+        kodi_utils.set_user_sort_method(sorting_setting)
 
 
 # noinspection Duplicates
@@ -476,7 +552,7 @@ class Series(Directory):
         li = ListItem(name, path=url)
         infolabels = infolabel_utils.get_infolabels_for_series(self)
         li.setPath(url)
-        li.set_watched_flags(infolabels, is_watched(self), 1)
+        li.set_watched_flags(infolabels, self.is_watched(), 1)
         li.setInfo(type='video', infoLabels=infolabels)
         li.addContextMenuItems(self.get_context_menu_items())
         li.set_art(self)
@@ -487,7 +563,7 @@ class Series(Directory):
         episode_types = []
         for i in items:
             try:
-                episode = Episode(i, build_full_object=True)
+                episode = Episode(i, series=self, build_full_object=True)
                 self.items.append(episode)
                 if episode.episode_type not in episode_types:
                     episode_types.append(episode.episode_type)
@@ -503,7 +579,7 @@ class Series(Directory):
         watched_item = (localize(30126), RunScript('/series/%s/set_watched/%s' % (str(self.id), 'True')))
         unwatched_item = (localize(30127), RunScript('/series/%s/set_watched/%s' % (str(self.id), 'False')))
         if plugin_addon.getSetting('context_krypton_watched') == 'true':
-            watched = is_watched(self)
+            watched = self.is_watched()
             if watched == WatchedStatus.WATCHED:
                 context_menu.append(unwatched_item)
             elif watched == WatchedStatus.UNWATCHED:
@@ -527,6 +603,18 @@ class Series(Directory):
                                                                         script_addon.getLocalizedString(30022),
                                                                         str(value), plugin_addon.getAddonInfo('icon')))
 
+    def apply_sorting(self, handle):
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_UNSORTED)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_EPISODE)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_DATE)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_USER_RATING)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+
+        sorting_setting = plugin_addon.getSetting('default_sort_episodes')
+        kodi_utils.set_user_sort_method(sorting_setting)
+
 
 # noinspection Duplicates
 class SeriesTypeList(Series):
@@ -535,23 +623,99 @@ class SeriesTypeList(Series):
     """
     def __init__(self, json_node, episode_type):
         Directory.__init__(self, json_node, True)
+        self.episode_type = episode_type
         json_node = self.get_full_object()
-        self.name = episode_type
+        Series.__init__(self, json_node)
 
+    def process_children(self, json_node):
         items = json_node.get('eps', [])
         for i in items:
             try:
-                episode = Episode(i)
-                if episode.episode_type != episode_type:
+                episode = Episode(i, series=self)
+                if episode.episode_type != self.episode_type:
                     continue
                 self.items.append(episode)
             except:
                 pass
 
-        eh.spam(self)
-
     def get_plugin_url(self):
-        return puf(nakamoriplugin.show_series_episode_types_menu, self.id, self.name)
+        return puf(nakamoriplugin.show_series_episode_types_menu, self.id, self.episode_type)
+
+    def apply_sorting(self, handle):
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_UNSORTED)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_EPISODE)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_DATE)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_USER_RATING)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+
+        sorting_setting = plugin_addon.getSetting('default_sort_episodes')
+        kodi_utils.set_user_sort_method(sorting_setting)
+
+    def get_listitem(self):
+        url = self.get_plugin_url()
+
+        li = ListItem(self.episode_type, path=url)
+        infolabels = infolabel_utils.get_infolabels_for_series_type(self)
+        li.setPath(url)
+        li.set_watched_flags(infolabels, self.is_watched(), 1)
+        li.setInfo(type='video', infoLabels=infolabels)
+        li.addContextMenuItems(self.get_context_menu_items())
+        li.set_art(self)
+        return li
+
+    def is_watched(self):
+        local_only = plugin_addon.getSetting('local_total') == 'true'
+        sizes = self.sizes
+        if sizes is None:
+            return WatchedStatus.UNWATCHED
+
+        # count only local episodes
+        if local_only and self.episode_type == 'Episode':
+            # 0 is unwatched
+            if sizes.watched_episodes == 0:
+                return WatchedStatus.UNWATCHED
+            # Should never be greater, but meh
+            if sizes.watched_episodes >= sizes.local_episodes:
+                return WatchedStatus.WATCHED
+            # if it's between 0 and total, then it's partial
+            return WatchedStatus.PARTIAL
+
+        # count local episodes and specials
+        if local_only and self.episode_type == 'Special':
+            # 0 is unwatched
+            if sizes.watched_specials == 0:
+                return WatchedStatus.UNWATCHED
+            # Should never be greater, but meh
+            if sizes.watched_specials >= sizes.local_specials:
+                return WatchedStatus.WATCHED
+            # if it's between 0 and total, then it's partial
+            return WatchedStatus.PARTIAL
+
+        # count episodes, including ones we don't have
+        if self.episode_type == 'Episode':
+            # 0 is unwatched
+            if sizes.watched_episodes == 0:
+                return WatchedStatus.UNWATCHED
+            # Should never be greater, but meh
+            if sizes.watched_episodes >= sizes.total_episodes:
+                return WatchedStatus.WATCHED
+            # if it's between 0 and total, then it's partial
+            return WatchedStatus.PARTIAL
+
+        # count specials, including ones we don't have
+        if self.episode_type == 'Special':
+            # 0 is unwatched
+            if sizes.watched_specials == 0:
+                return WatchedStatus.UNWATCHED
+            # Should never be greater, but meh
+            if sizes.watched_specials >= sizes.total_specials:
+                return WatchedStatus.WATCHED
+            # if it's between 0 and total, then it's partial
+            return WatchedStatus.PARTIAL
+
+        return WatchedStatus.UNWATCHED
 
 
 # noinspection Duplicates
@@ -559,13 +723,14 @@ class Episode(Directory):
     """
     An episode object, contains a unified method of representing an episode, with convenient converters
     """
-    def __init__(self, json_node, series_id=0, build_full_object=False):
+    def __init__(self, json_node, series=None, build_full_object=False):
         """
         Create an episode object from a json node, containing everything that is relevant to a ListItem
         :param json_node: the json response from things like api/serie.eps[]
         :type json_node: Union[list,dict]
         """
-        self.series_id = series_id
+        self.series_id = series.id if series is not None else 0
+        self.series_name = series.name if series is not None else None
         Directory.__init__(self, json_node, True)
         # don't redownload info on an okay object
         if build_full_object and self.size < 0:
@@ -744,6 +909,18 @@ class Episode(Directory):
                                                                         script_addon.getLocalizedString(30022),
                                                                         value, plugin_addon.getAddonInfo('icon')))
 
+    def apply_sorting(self, handle):
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_UNSORTED)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_EPISODE)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_DATE)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_USER_RATING)
+        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+
+        sorting_setting = plugin_addon.getSetting('default_sort_episodes')
+        kodi_utils.set_user_sort_method(sorting_setting)
+
 
 # noinspection Duplicates
 class File(Directory):
@@ -858,54 +1035,6 @@ class File(Directory):
         shoko_utils.rescan_file(self.id)
 
 
-def is_watched(dir_obj):
-    local_only = plugin_addon.getSetting('local_total') == 'true'
-    no_specials = kodi_utils.get_kodi_setting_bool('ignore_specials_watched')
-    sizes = dir_obj.sizes
-    # count only local episodes
-    if local_only and no_specials:
-        # 0 is unwatched
-        if sizes.watched_episodes == 0:
-            return WatchedStatus.UNWATCHED
-        # Should never be greater, but meh
-        if sizes.watched_episodes >= sizes.local_episodes:
-            return WatchedStatus.WATCHED
-        # if it's between 0 and total, then it's partial
-        return WatchedStatus.PARTIAL
-
-    # count local episodes and specials
-    if local_only:
-        # 0 is unwatched
-        if (sizes.watched_episodes + sizes.watched_specials) == 0:
-            return WatchedStatus.UNWATCHED
-        # Should never be greater, but meh
-        if (sizes.watched_episodes + sizes.watched_specials) >= (sizes.local_episodes + sizes.local_specials):
-            return WatchedStatus.WATCHED
-        # if it's between 0 and total, then it's partial
-        return WatchedStatus.PARTIAL
-
-    # count episodes, including ones we don't have
-    if no_specials:
-        # 0 is unwatched
-        if sizes.watched_episodes == 0:
-            return WatchedStatus.UNWATCHED
-        # Should never be greater, but meh
-        if sizes.watched_episodes >= sizes.total_episodes:
-            return WatchedStatus.WATCHED
-        # if it's between 0 and total, then it's partial
-        return WatchedStatus.PARTIAL
-
-    # count episodes and specials, including ones we don't have
-    # 0 is unwatched
-    if (sizes.watched_episodes + sizes.watched_specials) == 0:
-        return WatchedStatus.UNWATCHED
-    # Should never be greater, but meh
-    if (sizes.watched_episodes + sizes.watched_specials) >= (sizes.total_episodes + sizes.total_specials):
-        return WatchedStatus.WATCHED
-    # if it's between 0 and total, then it's partial
-    return WatchedStatus.PARTIAL
-
-
 def get_sizes(json_node):
     result = Sizes()
     local_sizes = json_node.get('local_sizes', {})
@@ -938,3 +1067,12 @@ class Sizes(object):
 
 def RunScript(url):
     return 'RunScript(script.module.nakamori,' + url + ')'
+
+
+@eh.try_function(eh.ErrorPriority.NORMAL)
+def get_series_for_episode(ep_id):
+    url = server + '/api/serie/fromep'
+    url = nt.add_default_parameters(url, ep_id, 0)
+    json_body = pyproxy.get_json(url)
+    json_node = json.loads(json_body)
+    return Series(json_node)

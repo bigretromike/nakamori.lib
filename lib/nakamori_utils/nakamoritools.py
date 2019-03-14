@@ -13,7 +13,6 @@ import xbmcplugin
 import traceback
 import json
 import collections
-import re
 
 from nakamori_utils.globalvars import *
 
@@ -139,42 +138,6 @@ def mark_watch_status(params):
                                                                         watched_msg,
                                                                         plugin_addon.getAddonInfo('icon')))
     refresh()
-
-
-def set_sort_method(int_of_sort_method=0):
-    """
-    Ser given sort method
-    :param int_of_sort_method: int parameter of sort method
-    :return: set sort method
-    """
-    # xbmc.log('-> trying to set \'%s\' sorting' % int_of_sort_method, xbmc.LOGWARNING)
-    xbmc.executebuiltin('Container.SetSortMethod(' + str(int_of_sort_method) + ')')
-
-
-def set_user_sort_method(place):
-    """
-    Set user define type of sort method.
-    For more check:
-    https://codedocs.xyz/AlwinEsch/kodi/group___list__of__sort__methods.html
-    https://github.com/xbmc/xbmc/blob/master/xbmc/utils/SortUtils.cpp#L529-L577
-    """
-    sort_method = {
-        'Server': 0,
-        'Title': 7,
-        'Episode': 23,
-        'Date': 2,
-        'Rating': 17
-    }
-
-    place_setting = {
-        'filter': plugin_addon.getSetting('default_sort_filter'),
-        'group': plugin_addon.getSetting('default_sort_group_series'),
-        'episode': plugin_addon.getSetting('default_sort_episodes')
-    }
-
-    user_sort_method = place_setting.get(place, 'Server')
-    method_for_sorting = sort_method.get(user_sort_method, 0)
-    set_sort_method(method_for_sorting)
 
 
 def error(msg, error_type='Error', silent=False):

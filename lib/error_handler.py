@@ -38,6 +38,8 @@ except (ImportError, NameError):
 # a dictionary of ErrorPriority to list of errors
 __exceptions = defaultdict(list)
 
+file_exclusions = {'error_handler', 'routing', '__init__'}
+
 
 class ErrorPriority(object):
     """
@@ -113,7 +115,7 @@ def kodi_error(text):
 def get_simple_trace(fullpath=False):
     # this gets the frame that is not in this file
     filepath, line_number, clsname, class_name, lines, index, path = '', 0, '', '', [], 0, ''
-    for frame_index in range(3, 12):
+    for frame_index in range(0, 12):
         try:
             f = sys._getframe(frame_index)
             filepath, line_number, clsname, lines, index = inspect.getframeinfo(f)
@@ -130,9 +132,7 @@ def get_simple_trace(fullpath=False):
             else:
                 path = filepath.replace('\\', '/').replace(addon_path, '.')
 
-            this_path = os.path.split(__file__)[-1]
-            this_path = os.path.splitext(this_path)[0]
-            if frame_path != this_path:
+            if frame_path not in file_exclusions:
                 break
         except:
             break

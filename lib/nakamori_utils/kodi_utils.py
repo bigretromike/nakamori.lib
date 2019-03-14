@@ -3,10 +3,12 @@ import json
 import sys
 
 import xbmcgui
+import xbmcplugin
 
 from nakamori_utils.globalvars import *
 import error_handler as eh
 from error_handler import ErrorPriority
+from nakamori_utils.globalvars import plugin_addon
 from proxy.python_version_proxy import python_proxy as pyproxy
 
 try:
@@ -286,3 +288,25 @@ def get_kodi_setting_int(setting):
     except:
         eh.exception(ErrorPriority.HIGH)
     return -1
+
+
+def set_sort_method(int_of_sort_method=0):
+    """
+    Ser given sort method
+    :param int_of_sort_method: int parameter of sort method
+    :return: set sort method
+    """
+    xbmc.executebuiltin('Container.SetSortMethod(' + str(int_of_sort_method) + ')')
+
+
+def set_user_sort_method(content):
+    sort_method = {
+        'Server': xbmcplugin.SORT_METHOD_NONE,
+        'Title': xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE,
+        'Episode': xbmcplugin.SORT_METHOD_EPISODE,
+        'Date': xbmcplugin.SORT_METHOD_DATE,
+        'Rating': xbmcplugin.SORT_METHOD_VIDEO_RATING
+    }
+
+    method_for_sorting = sort_method.get(content, 0)
+    set_sort_method(method_for_sorting)

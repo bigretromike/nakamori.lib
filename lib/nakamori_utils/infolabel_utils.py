@@ -38,6 +38,25 @@ def get_infolabels_for_series(series):
     return infolabels
 
 
+def get_infolabels_for_series_type(series):
+    infolabels = {
+        'aired': series.date,
+        'date': model_utils.get_date(series.date),
+        'originaltitle': series.alternate_name,
+        'genre': series.tags,
+        'plot': series.overview,
+        'premiered': series.date,
+        'rating': series.rating,
+        'season': series.season,
+        'title': series.episode_type,
+        'userrating': series.user_rating,
+        'path': series.get_plugin_url(),
+        'mediatype': 'tvshow',
+    }
+
+    return infolabels
+
+
 def get_infolabels_for_episode(episode):
 
     infolabels = {
@@ -54,6 +73,7 @@ def get_infolabels_for_episode(episode):
         'userrating': episode.user_rating,
         'votes': episode.votes,
         'path': episode.get_plugin_url(),
+        'tvshowtitle': episode.series_name,
         'mediatype': 'episode',
     }
 
