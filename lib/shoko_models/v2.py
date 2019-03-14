@@ -216,22 +216,26 @@ class Filter(Directory):
         :param json_node: the json response from things like api/filter
         :type json_node: Union[list,dict]
         """
-        # we are making this overrideable for Unsorted and such
-
         Directory.__init__(self, json_node, get_children)
+        # we are making this overrideable for Unsorted and such
         self.plugin_url = puf(nakamoriplugin.show_filter_menu, self.id)
-        # don't redownload info on an okay object
-        if build_full_object and (self.size < 0 or (get_children and len(self.items) < 1)):
-            json_node = self.get_full_object()
-            Directory.__init__(self, json_node, get_children)
+        self.directory_filter = False
+
+        if build_full_object:
+            # don't redownload info on an okay object
+            if self.size < 0:
+                # First, download basic info
+                json_node = self.get_full_object()
+                Directory.__init__(self, json_node, get_children)
+                self.directory_filter = json_node.get('type', 'filter') == 'filters'
+            # then download children, optimized for type
+            if get_children and len(self.items) < 1:
+                json_node = self.get_full_object()
 
         # check again, as we might have replaced it above
         if isinstance(json_node, (str, int, unicode)):
             eh.spam(self)
             return
-
-        self.size = int(json_node.get('size', '0'))
-        self.directory_filter = json_node.get('type', 'filter') == 'filters'
 
         self.apply_built_in_overrides()
         self.process_children(json_node)
@@ -240,7 +244,10 @@ class Filter(Directory):
 
     def get_api_url(self):
         url = self.base_url()
-        url = nt.add_default_parameters(url, self.id, 2 if self.get_children else 0)
+        level = 0
+        if self.get_children and self.size > 0:
+            level = 1 if self.directory_filter else 2
+        url = nt.add_default_parameters(url, self.id, level)
         if self.id == 0:
             url = pyproxy.set_parameter(url, 'notag', 1)
         return url
