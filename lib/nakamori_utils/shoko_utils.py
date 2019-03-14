@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from past.builtins import basestring
 import json
 from distutils.version import LooseVersion
 
@@ -13,6 +12,10 @@ import error_handler as eh
 from error_handler import ErrorPriority
 import xbmc
 
+try:
+    basestring
+except NameError:
+    basestring = str  #For Python 3
 
 localize = plugin_addon.getLocalizedString
 

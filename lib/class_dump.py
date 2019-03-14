@@ -1,7 +1,9 @@
-from past.builtins import basestring
 import json
 from collections import defaultdict
-
+try:
+    basestring
+except NameError:
+    basestring = str  #For Python 3
 # Surprisingly, there is no better way to do this...
 
 
