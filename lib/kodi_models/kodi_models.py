@@ -114,9 +114,6 @@ class DirectoryListing(list):
             xbmcplugin.addDirectoryItems(self.handle, self.pending, self.__len__() + self.pending.__len__())
         xbmcplugin.endOfDirectory(self.handle, cacheToDisc=self.cache)
 
-        from nakamori_utils import kodi_utils
-        kodi_utils.set_user_sort_method()
-
 
 def get_tuple(item, folder=True):
     if isinstance(item, ListItem):
