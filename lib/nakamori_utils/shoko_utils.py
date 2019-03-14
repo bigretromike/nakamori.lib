@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from past.builtins import basestring
 import json
 from distutils.version import LooseVersion
 
@@ -168,7 +169,7 @@ def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon
     """
     if port is None:
         port = plugin_addon.getSetting('port')
-    if isinstance(port, (str, unicode)):
+    if isinstance(port, basestring):
         port = pyproxy.safe_int(port)
         port = port if port != 0 else 8111
 
@@ -325,7 +326,7 @@ def get_version(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon.getSe
 def can_connect(ip=None, port=None):
     if port is None:
         port = plugin_addon.getSetting('port')
-    if isinstance(port, (str, unicode)):
+    if isinstance(port, basestring):
         port = pyproxy.safe_int(port)
         port = port if port != 0 else 8111
 
