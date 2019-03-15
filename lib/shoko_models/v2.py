@@ -272,7 +272,7 @@ class Filter(Directory):
         """
         Directory.__init__(self, json_node, get_children)
         # we are making this overrideable for Unsorted and such
-        self.plugin_url = 'plugin://plugin.video.nakamori/menu/filter/%i' % self.id
+        self.plugin_url = 'plugin://plugin.video.nakamori/menu/filter/%s' % self.id
         self.directory_filter = False
 
         if build_full_object:
@@ -280,6 +280,7 @@ class Filter(Directory):
             if self.size < 0:
                 # First, download basic info
                 json_node = self.get_full_object()
+                self.plugin_url = 'plugin://plugin.video.nakamori/menu/filter/%s' % self.id
                 Directory.__init__(self, json_node, get_children)
                 self.directory_filter = json_node.get('type', 'filter') == 'filters'
             # then download children, optimized for type
