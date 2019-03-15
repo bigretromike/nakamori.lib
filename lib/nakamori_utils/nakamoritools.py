@@ -169,41 +169,6 @@ def error(msg, error_type='Error', silent=False):
                                                                         plugin_addon.getAddonInfo('icon')))
 
 
-def valid_user():
-    """
-    Logs into the server and stores the apikey, then checks if the userid is valid
-    :return: bool True if all completes successfully
-    """
-
-    if plugin_addon.getSetting('apikey') != '' and plugin_addon.getSetting('login') == '':
-        return True, plugin_addon.getSetting('apikey')
-    else:
-        xbmc.log('-- apikey empty --', xbmc.LOGWARNING)
-        try:
-            if plugin_addon.getSetting('login') != '' and plugin_addon.getSetting('device') != '':
-                _server = 'http://' + plugin_addon.getSetting('ipaddress') + ':' + plugin_addon.getSetting('port')
-                body = '{"user":"' + plugin_addon.getSetting('login') + '",' + \
-                       '"device":"' + plugin_addon.getSetting('device') + '",' + \
-                       '"pass":"' + plugin_addon.getSetting('password') + '"}'
-                post_body = pyproxy.post_data(_server + '/api/auth', body)
-                auth = json.loads(post_body)
-                if 'apikey' in auth:
-                    apikey_found_in_auth = str(auth['apikey'])
-                    plugin_addon.setSetting(id='login', value='')
-                    plugin_addon.setSetting(id='password', value='')
-                    plugin_addon.setSetting(id='apikey', value=apikey_found_in_auth)
-                    xbmc.log('-- save apikey: %s' % apikey_found_in_auth, xbmc.LOGWARNING)
-                    return True, apikey_found_in_auth
-                else:
-                    raise Exception('Error Getting apikey')
-            else:
-                xbmc.log('-- Login and Device Empty --', xbmc.LOGERROR)
-                return False, ''
-        except Exception as exc:
-            error('Error in Valid_User', str(exc))
-            return False, ''
-
-
 def dump_dictionary(details, name):
     if plugin_addon.getSetting('spamLog') == 'true':
         if details is not None:

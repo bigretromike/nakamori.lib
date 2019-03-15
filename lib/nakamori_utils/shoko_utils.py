@@ -340,3 +340,57 @@ def can_connect(ip=None, port=None):
         return True
     except:
         return False
+
+
+def auth():
+    """
+    Checks the apikey, if any, attempts to log in, and saves if we have auth
+    :return: bool True if all completes successfully
+    """
+    # new flow for auth
+    # we store the apikey, and its existence is what determines whether to try to connect
+    # we will have a log out button, and that wipes the apikey, then we go through the log in steps
+
+    # we have an apikey. try to connect
+    if plugin_addon.getSetting('apikey') != '' and can_user_connect():
+        return True
+
+    # just in case there's a situation where the wizard isn't working, we can fill it in the settings
+    if plugin_addon.getSetting('login') != '':
+        login = plugin_addon.getSetting('login')
+        password = plugin_addon.getSetting('password')
+        apikey = get_apikey(login, password)
+        if apikey is not None:
+            plugin_addon.setSetting('apikey', apikey)
+            plugin_addon.setSetting(id='login', value='')
+            plugin_addon.setSetting(id='password', value='')
+            return can_user_connect()
+    # we tried the apikey, and login failed, too
+    return False
+
+
+def get_apikey(login, password):
+    creds = (login, password, plugin_addon.getSetting('device'))
+    body = '{"user":"%s","pass":"%s","device":"%s"}' % creds
+    post_body = pyproxy.post_data(server + '/api/auth', body)
+    auth = json.loads(post_body)
+    if 'apikey' in auth:
+        apikey_found_in_auth = str(auth['apikey'])
+        return apikey_found_in_auth
+    else:
+        raise Exception('Error Getting apikey')
+
+
+def can_user_connect():
+    # what better way to try than to just attempt to load the main menu?
+    try:
+        from shoko_models.v2 import Filter
+        f = Filter(0, build_full_object=True, get_children=False)
+        if f.size < 1:
+            raise RuntimeError("It didn't error, but it didn't init either")
+        return True
+    except:
+        # because we always check for connection first, we can assume that auth is the only problem
+        # we need to log in
+        plugin_addon.setSetting('apikey', '')
+        return False

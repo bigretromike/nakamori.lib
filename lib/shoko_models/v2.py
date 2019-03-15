@@ -18,7 +18,7 @@ except:
 
 from kodi_models.kodi_models import ListItem, WatchedStatus
 from nakamori_utils.globalvars import *
-from nakamori_utils import nakamoritools as nt, infolabel_utils, kodi_utils, shoko_utils
+from nakamori_utils import nakamoritools as nt, infolabel_utils, kodi_utils, shoko_utils, script_utils
 from nakamori_utils import model_utils
 
 
@@ -272,7 +272,7 @@ class Filter(Directory):
         """
         Directory.__init__(self, json_node, get_children)
         # we are making this overrideable for Unsorted and such
-        self.plugin_url = puf(nakamoriplugin.show_filter_menu, self.id)
+        self.plugin_url = 'plugin://plugin.video.nakamori/menu/filter/%i' % self.id
         self.directory_filter = False
 
         if build_full_object:
@@ -466,8 +466,8 @@ class Group(Directory):
         context_menu = []
 
         # Mark as watched/unwatched
-        watched_item = (localize(30126), RunScript('/group/%s/set_watched/%s' % (str(self.id), 'True')))
-        unwatched_item = (localize(30127), RunScript('/group/%s/set_watched/%s' % (str(self.id), 'False')))
+        watched_item = (localize(30126), script_utils.url_group_watched_status(self.id, True))
+        unwatched_item = (localize(30127), script_utils.url_group_watched_status(self.id, False))
         if plugin_addon.getSetting('context_krypton_watched') == 'true':
             watched = self.is_watched()
             if watched == WatchedStatus.WATCHED:
@@ -576,8 +576,8 @@ class Series(Directory):
         context_menu = []
 
         # Mark as watched/unwatched
-        watched_item = (localize(30126), RunScript('/series/%s/set_watched/%s' % (str(self.id), 'True')))
-        unwatched_item = (localize(30127), RunScript('/series/%s/set_watched/%s' % (str(self.id), 'False')))
+        watched_item = (localize(30126), script_utils.url_series_watched_status(self.id, True))
+        unwatched_item = (localize(30127), script_utils.url_series_watched_status(self.id, False))
         if plugin_addon.getSetting('context_krypton_watched') == 'true':
             watched = self.is_watched()
             if watched == WatchedStatus.WATCHED:
@@ -593,7 +593,7 @@ class Series(Directory):
 
         # Vote Series
         if plugin_addon.getSetting('context_show_vote_Series') == 'true':
-            context_menu.append((localize(30124), RunScript('/series/%i/vote' % self.id)))
+            context_menu.append((localize(30124), script_utils.url_vote_for_series(self.id)))
 
         return context_menu
 
@@ -856,16 +856,16 @@ class Episode(Directory):
 
         # Play (No Scrobble)
         if plugin_addon.getSetting('context_show_play_no_watch') == 'true':
-            context_menu.append((localize(30132), RunScript('/episode/%s/file/%s/play_without_marking' %
-                                                            (str(self.id), str(self.get_file().id)))))
+            context_menu.append((localize(30132), puf(nakamoriplugin.play_video_without_marking, self.id,
+                                                      self.get_file().id)))
 
         # Inspect
         if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
             context_menu.append((localize(30133), 'TO BE ADDED TO SCRIPT'))
 
         # Mark as watched/unwatched
-        watched_item = (localize(30128), RunScript('/episode/%s/set_watched/%s' % (str(self.id), 'True')))
-        unwatched_item = (localize(30129), RunScript('/episode/%s/set_watched/%s' % (str(self.id), 'False')))
+        watched_item = (localize(30128), script_utils.url_episode_watched_status(self.id, True))
+        unwatched_item = (localize(30129), script_utils.url_episode_watched_status(self.id, False))
         if plugin_addon.getSetting('context_krypton_watched') == 'true':
             if self.watched:
                 context_menu.append(unwatched_item)
@@ -881,11 +881,11 @@ class Episode(Directory):
 
         # Vote Episode
         if plugin_addon.getSetting('context_show_vote_Episode') == 'true':
-            context_menu.append((localize(30125), RunScript('/episode/%i/vote' % self.id)))
+            context_menu.append((localize(30125), script_utils.url_show_episode_vote_dialog(self.id)))
 
         # Vote Series
         if plugin_addon.getSetting('context_show_vote_Series') == 'true' and self.series_id != 0:
-            context_menu.append((localize(30124), RunScript('/series/%i/vote' % self.series_id)))
+            context_menu.append((localize(30124), script_utils.url_show_series_vote_dialog(self.series_id)))
 
         # Metadata
         if plugin_addon.getSetting('context_show_info') == 'true':
@@ -1017,8 +1017,8 @@ class File(Directory):
 
     def get_context_menu_items(self):
         context_menu = [
-            (localize(30120), RunScript('/file/%i/rescan' % self.id)),
-            (localize(30121), RunScript('/file/%i/rehash' % self.id))
+            (localize(30120), script_utils.url_rescan_file(self.id)),
+            (localize(30121), script_utils.url_rehash_file(self.id))
         ]
         return context_menu
 
@@ -1063,10 +1063,6 @@ class Sizes(object):
         self.total_episodes = 0
         self.total_specials = 0
         self.total = 0
-
-
-def RunScript(url):
-    return 'RunScript(script.module.nakamori,' + url + ')'
 
 
 @eh.try_function(eh.ErrorPriority.NORMAL)
