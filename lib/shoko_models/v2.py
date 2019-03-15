@@ -730,8 +730,14 @@ class Episode(Directory):
         :param json_node: the json response from things like api/serie.eps[]
         :type json_node: Union[list,dict]
         """
-        self.series_id = series.id if series is not None else 0
-        self.series_name = series.name if series is not None else None
+        self.series_id = 0
+        self.series_name = None
+        self.actors = []
+        if series is not None:
+            self.series_id = series.id
+            self.series_name = series.name
+            self.actors = series.actors
+
         Directory.__init__(self, json_node, True)
         # don't redownload info on an okay object
         if build_full_object and self.size < 0:
@@ -843,6 +849,7 @@ class Episode(Directory):
                 pass
 
     def get_context_menu_items(self):
+        # Calls to Plugin from Context Menus need 'RunPlugin(%s)' %
         context_menu = []
         # Play
         if plugin_addon.getSetting('context_show_play') == 'true':
@@ -852,13 +859,13 @@ class Episode(Directory):
         if self.get_file() is not None and self.get_file().resume_time > 0 \
                 and plugin_addon.getSetting('file_resume') == 'true':
             label = localize(30141) + ' (%s)' % time.strftime('%H:%M:%S', time.gmtime(self.get_file().resume_time))
-            url = puf(nakamoriplugin.resume_video, self.id, self.get_file().id)
+            url = 'RunPlugin(%s)' % puf(nakamoriplugin.resume_video, self.id, self.get_file().id)
             context_menu.append((label, url))
 
         # Play (No Scrobble)
         if plugin_addon.getSetting('context_show_play_no_watch') == 'true':
-            context_menu.append((localize(30132), puf(nakamoriplugin.play_video_without_marking, self.id,
-                                                      self.get_file().id)))
+            context_menu.append((localize(30132), 'RunPlugin(%s)' % puf(nakamoriplugin.play_video_without_marking,
+                                                                        self.id, self.get_file().id)))
 
         # Inspect
         if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
@@ -909,18 +916,6 @@ class Episode(Directory):
         xbmc.executebuiltin('XBMC.Notification(%s, %s %i, 7500, %s)' % (script_addon.getLocalizedString(30023),
                                                                         script_addon.getLocalizedString(30022),
                                                                         value, plugin_addon.getAddonInfo('icon')))
-
-    def apply_sorting(self, handle):
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_UNSORTED)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_EPISODE)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_DATE)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_USER_RATING)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
-
-        sorting_setting = plugin_addon.getSetting('default_sort_episodes')
-        kodi_utils.set_user_sort_method(sorting_setting)
 
 
 # noinspection Duplicates

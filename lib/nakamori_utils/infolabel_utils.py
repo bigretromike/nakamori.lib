@@ -3,6 +3,7 @@ from nakamori_utils import model_utils
 
 
 def get_infolabels_for_group(group):
+    cast, roles = model_utils.convert_cast_and_role_to_legacy(group.actors)
     infolabels = {
         'aired': group.date,
         'date': model_utils.get_date(group.date),
@@ -13,6 +14,8 @@ def get_infolabels_for_group(group):
         'title': group.name,
         'userrating': group.user_rating,
         'path': group.get_plugin_url(),
+        'cast': cast,
+        'castandrole': roles,
         'mediatype': 'tvshow',
     }
 
@@ -20,6 +23,7 @@ def get_infolabels_for_group(group):
 
 
 def get_infolabels_for_series(series):
+    cast, roles = model_utils.convert_cast_and_role_to_legacy(series.actors)
     infolabels = {
         'aired': series.date,
         'date': model_utils.get_date(series.date),
@@ -32,6 +36,8 @@ def get_infolabels_for_series(series):
         'title': series.name,
         'userrating': series.user_rating,
         'path': series.get_plugin_url(),
+        'cast': cast,
+        'castandrole': roles,
         'mediatype': 'tvshow',
     }
 
@@ -58,7 +64,7 @@ def get_infolabels_for_series_type(series):
 
 
 def get_infolabels_for_episode(episode):
-
+    cast, roles = model_utils.convert_cast_and_role_to_legacy(episode.actors)
     infolabels = {
         'aired': episode.date,
         'date': model_utils.get_date(episode.date),
@@ -73,6 +79,8 @@ def get_infolabels_for_episode(episode):
         'userrating': episode.user_rating,
         'votes': episode.votes,
         'path': episode.get_plugin_url(),
+        'cast': cast,
+        'castandrole': roles,
         'tvshowtitle': episode.series_name,
         'mediatype': 'episode',
     }

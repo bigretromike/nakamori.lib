@@ -102,7 +102,6 @@ def convert_cast_and_role_to_legacy(list_of_dicts):
     :return: list
     """
 
-    result_list = []
     list_cast = []
     list_cast_and_role = []
     if list_of_dicts is not None and len(list_of_dicts) > 0:
@@ -113,9 +112,7 @@ def convert_cast_and_role_to_legacy(list_of_dicts):
                 list_cast.append(role)
                 if len(seiyuu) != 0:
                     list_cast_and_role.append((seiyuu, role))
-        result_list.append(list_cast)
-        result_list.append(list_cast_and_role)
-    return result_list
+    return list_cast, list_cast_and_role
 
 
 def is_type_list(title):
@@ -312,6 +309,7 @@ def get_cast_info(json_node):
     :return: list of cast objects { 'name': str, 'role': str, 'thumbnail': str (url) }
     :rtype:
     """
+    result_list = []
     if 'roles' in json_node:
         cast_nodes = json_node.get('roles', {})
         if len(cast_nodes) > 0:
@@ -319,7 +317,7 @@ def get_cast_info(json_node):
                 result_list = get_cast_and_role_new(cast_nodes)
             else:
                 result_list = get_cast_and_role(cast_nodes)
-            return result_list
+    return result_list
 
 
 def get_airdate(json_node):
