@@ -2,7 +2,8 @@
 import re
 from collections import defaultdict
 
-from nakamori_utils import nakamoritools as nt
+import error_handler as eh
+from error_handler import ErrorPriority
 from nakamori_utils.globalvars import *
 from proxy.python_version_proxy import python_proxy as pyproxy
 
@@ -30,8 +31,8 @@ def get_tags(tag_node):
                 temp_genres.append(temp_genre)
         temp_genre = ' | '.join(temp_genres)
         return temp_genre
-    except Exception as exc:
-        nt.error('util.error generating tags', str(exc))
+    except:
+        eh.exception(ErrorPriority.NORMAL)
         return ''
 
 
@@ -176,8 +177,8 @@ def get_title(data, lang=None, title_type=None):
 
         # fallback on directory title
         return pyproxy.decode(data.get('name', ''))
-    except Exception as ex2:
-        nt.error('get_title Exception', str(ex2))
+    except:
+        eh.exception(ErrorPriority.NORMAL)
         return 'util.error'
 
 
@@ -204,8 +205,8 @@ def match_title(data, lang, title_type):
 
             return title
         return None
-    except Exception as ex1:
-        nt.error('util.error thrown on getting title', str(ex1))
+    except:
+        eh.exception(ErrorPriority.NORMAL)
         return None
 
 
@@ -453,3 +454,12 @@ def remove_anidb_links(data=''):
     # remove urls that start with anidb, with the following spaces
     p = re.compile(r'(http://anidb.net/[0-9A-z/\-_.?=&]+[ ]*\[)([\S ]+?)(\])')
     return p.sub(r'\2', data)
+
+
+def add_default_parameters(url, obj_id, level):
+    key = pyproxy.set_parameter(url, 'id', obj_id)
+    key = pyproxy.set_parameter(key, 'level', level)
+    key = pyproxy.set_parameter(key, 'tagfilter', tag_setting_flags)
+    if plugin_addon.getSetting('request_nocast') == 'true':
+        key = pyproxy.set_parameter(key, 'nocast', 1)
+    return key

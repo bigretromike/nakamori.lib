@@ -125,6 +125,16 @@ def vote_for_episode(ep_id, wait=False):
     xbmc.executebuiltin(url, wait)
 
 
+def url_file_list(ep_id):
+    url = '/ep/%i/file_list' % ep_id
+    return run % url
+
+
+def file_list(ep_id):
+    url = url_file_list(ep_id)
+    xbmc.executebuiltin(url, True)
+
+
 def url_rescan_file(file_id):
     url = '/file/%i/rescan' % file_id
     return run % url

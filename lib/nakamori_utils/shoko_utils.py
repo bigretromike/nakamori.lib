@@ -340,7 +340,6 @@ def can_connect(ip=None, port=None):
         json_file = pyproxy.get_json('http://%s:%i/api/version' % (ip, port), direct=True)
         if json_file is None:
             return False
-
         return True
     except:
         return False
@@ -398,3 +397,25 @@ def can_user_connect():
         # we need to log in
         plugin_addon.setSetting('apikey', '')
         return False
+
+
+def trakt_scrobble(ep_id, status, progress, movie, notification):
+    note_text = ''
+    if status == 1:
+        # start
+        progress = 0
+        note_text = 'Starting Scrobble'
+    elif status == 2:
+        # pause
+        note_text = 'Paused Scrobble'
+    elif status == 3:
+        # finish
+        progress = 100
+        note_text = 'Stopping Scrobble'
+
+    if notification:
+        xbmc.executebuiltin('XBMC.Notification(%s, %s %s, 7500, %s)' % ('Trakt.tv', note_text, '',
+                                                                        plugin_addon.getAddonInfo('icon')))
+
+    pyproxy.get_json(server + '/api/ep/scrobble?id=%i&ismovie=%s&status=%i&progress=%i' %
+                     (ep_id, movie, status, progress))

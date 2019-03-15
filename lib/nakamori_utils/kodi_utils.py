@@ -194,10 +194,7 @@ def play_continue_item():
         if pos == 1:
             xbmcgui.Dialog().ok(plugin_addon.getLocalizedString(30182), plugin_addon.getLocalizedString(30183))
         else:
-            wind = xbmcgui.Window(xbmcgui.getCurrentWindowId())
-            control_id = wind.getFocusId()
-            control_list = wind.getControl(control_id)
-            move_position_on_list(control_list, pos)
+            move_to_index(pos)
             xbmc.sleep(1000)
 
 

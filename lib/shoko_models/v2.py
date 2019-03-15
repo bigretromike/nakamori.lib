@@ -5,6 +5,7 @@ import time
 
 from abc import abstractmethod
 import error_handler as eh
+import nakamori_utils.model_utils
 import xbmcplugin
 
 try:
@@ -18,7 +19,7 @@ except:
 
 from kodi_models import ListItem, WatchedStatus
 from nakamori_utils.globalvars import *
-from nakamori_utils import nakamoritools as nt, infolabel_utils, kodi_utils, shoko_utils, script_utils
+from nakamori_utils import infolabel_utils, kodi_utils, shoko_utils, script_utils
 from nakamori_utils import model_utils
 
 
@@ -302,7 +303,7 @@ class Filter(Directory):
         level = 0
         if self.get_children and self.size > 0:
             level = 1 if self.directory_filter else 2
-        url = nt.add_default_parameters(url, self.id, level)
+        url = nakamori_utils.model_utils.add_default_parameters(url, self.id, level)
         if self.id == 0:
             url = pyproxy.set_parameter(url, 'notag', 1)
         return url
@@ -429,7 +430,7 @@ class Group(Directory):
 
     def get_api_url(self):
         url = self.base_url()
-        url = nt.add_default_parameters(url, self.id, 1 if self.get_children else 0)
+        url = nakamori_utils.model_utils.add_default_parameters(url, self.id, 1 if self.get_children else 0)
         if self.filter_id != 0:
             url = pyproxy.set_parameter(url, 'filter', self.filter_id)
         return url
@@ -534,7 +535,7 @@ class Series(Directory):
 
     def get_api_url(self):
         url = self.base_url()
-        url = nt.add_default_parameters(url, self.id, 2 if self.get_children else 0)
+        url = nakamori_utils.model_utils.add_default_parameters(url, self.id, 2 if self.get_children else 0)
         return url
 
     def url_prefix(self):
@@ -804,7 +805,7 @@ class Episode(Directory):
     def get_api_url(self):
         # this one doesn't matter much atm, but I'll prolly copy and paste for APIv3, so I'll leave it in
         url = self.base_url()
-        url = nt.add_default_parameters(url, self.id, 1)
+        url = nakamori_utils.model_utils.add_default_parameters(url, self.id, 1)
         return url
 
     def url_prefix(self):
@@ -869,7 +870,7 @@ class Episode(Directory):
 
         # Inspect
         if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
-            context_menu.append((localize(30133), 'TO BE ADDED TO SCRIPT'))
+            context_menu.append((localize(30133), script_utils.url_file_list(self.id)))
 
         # Mark as watched/unwatched
         watched_item = (localize(30128), script_utils.url_episode_watched_status(self.id, True))
@@ -904,7 +905,7 @@ class Episode(Directory):
 
         # Refresh
         if plugin_addon.getSetting('context_refresh') == 'true':
-            context_menu.append((localize(30131), 'TO BE ADDED TO SCRIPT'))
+            context_menu.append((localize(30131), 'Container.Refresh'))
 
         # the default ones that say the rest are kodi's
         context_menu += Directory.get_context_menu_items(self)
@@ -976,7 +977,7 @@ class File(Directory):
 
     def get_api_url(self):
         url = self.base_url()
-        url = nt.add_default_parameters(url, self.id, 1)
+        url = nakamori_utils.model_utils.add_default_parameters(url, self.id, 1)
         return url
 
     def url_prefix(self):
@@ -1021,8 +1022,17 @@ class File(Directory):
     def set_watched_status(self, watched):
         if watched:
             return
-        nt.sync_offset(self.id, 0)
+        self.set_resume_time(0)
         # this isn't really supported atm, so no need for the rest of the stuff here
+
+    def set_resume_time(self, current_time):
+        """
+        sync offset of played file
+        :param current_time: current time in seconds
+        """
+        offset_url = server + '/api/file/offset'
+        offset_body = '"id":%i,"offset":%i' % (self.id, current_time * 1000)
+        pyproxy.post_json(offset_url, offset_body)
         
     def rehash(self):
         shoko_utils.rehash_file(self.id)
@@ -1064,7 +1074,7 @@ class Sizes(object):
 @eh.try_function(eh.ErrorPriority.NORMAL)
 def get_series_for_episode(ep_id):
     url = server + '/api/serie/fromep'
-    url = nt.add_default_parameters(url, ep_id, 0)
+    url = nakamori_utils.model_utils.add_default_parameters(url, ep_id, 0)
     json_body = pyproxy.get_json(url)
     json_node = json.loads(json_body)
     return Series(json_node)
