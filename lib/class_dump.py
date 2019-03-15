@@ -1,6 +1,9 @@
 import json
 from collections import defaultdict
-
+try:
+    basestring
+except NameError:
+    basestring = str  #For Python 3
 # Surprisingly, there is no better way to do this...
 
 
@@ -12,7 +15,7 @@ def dump_to_text(*args):
         text = text.strip()
         if arg is None:
             text += ' ' + str(arg)
-        elif isinstance(arg, (str, unicode, bytes)):
+        elif isinstance(arg, (basestring, bytes)):
             text += ' ' + arg
         else:
             text += ' ' + dump(arg)
@@ -20,7 +23,7 @@ def dump_to_text(*args):
 
 
 def dump(obj):
-    if isinstance(obj, (str, unicode, int, bool, float)):
+    if isinstance(obj, (basestring, int, bool, float)):
         return obj
     if isinstance(obj, (list, set, tuple)):
         return json.dumps(dump_iterable(obj))
@@ -37,7 +40,7 @@ def dump_class(obj):
     members = [attr for attr in dir(obj) if not callable(getattr(obj, attr)) and not attr.startswith("__")]
     for key in members:
         value = getattr(obj, key)
-        if isinstance(value, (str, unicode, int, bool, float)):
+        if isinstance(value, (basestring, int, bool, float)):
             result[key] = value
         elif isinstance(value, (list, set, tuple)):
             result[key] = dump_iterable(value)
@@ -51,7 +54,7 @@ def dump_class(obj):
 def dump_iterable(obj):
     result = []
     for item in obj:
-        if isinstance(item, (str, unicode, int, bool, float)):
+        if isinstance(item, (basestring, int, bool, float)):
             result.append(item)
         elif isinstance(item, (list, set, tuple)):
             result.append(dump_iterable(item))
@@ -65,7 +68,7 @@ def dump_iterable(obj):
 def dump_dictionary(obj):
     result = {}
     for key, value in obj.items():
-        if isinstance(value, (str, unicode, int, bool, float)):
+        if isinstance(value, (basestring, int, bool, float)):
             result[key] = value
         elif isinstance(value, (list, set, tuple)):
             result[key] = dump_iterable(value)
