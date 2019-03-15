@@ -87,15 +87,16 @@ class NakamoriError(object):
         return (self.exc_type, self.exc_message, self.exc_trace) < (other.exc_type, other.exc_message, other.exc_trace)
 
 
-def try_function(error_priority, message=''):
+def try_function(error_priority, message='', except_func=None, *exc_args, **exc_kwargs):
     def try_inner1(func):
         def try_inner2(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
             except Exception:
                 exception(error_priority, message)
+                if except_func is not None:
+                    except_func(*exc_args, **exc_kwargs)
                 if error_priority == ErrorPriority.BLOCKING:
-
                     show_messages()
                     # sys.exit is called if BLOCKING errors exist in the above
                 return None

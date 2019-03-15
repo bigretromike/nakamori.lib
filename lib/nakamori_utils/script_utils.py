@@ -65,6 +65,16 @@ def settings():
     xbmc.executebuiltin(url)
 
 
+def url_shoko_menu():
+    url = '/dialog/shoko'
+    return run % url
+
+
+def shoko_menu():
+    url = url_shoko_menu()
+    xbmc.executebuiltin(url)
+
+
 def url_cohesion():
     url = '/cohesion'
     return run % url

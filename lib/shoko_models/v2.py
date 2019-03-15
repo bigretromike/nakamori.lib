@@ -16,7 +16,7 @@ except:
     if len(sys.argv) > 2:
         eh.exception(eh.ErrorPriority.BLOCKING)
 
-from kodi_models.kodi_models import ListItem, WatchedStatus
+from kodi_models import ListItem, WatchedStatus
 from nakamori_utils.globalvars import *
 from nakamori_utils import nakamoritools as nt, infolabel_utils, kodi_utils, shoko_utils, script_utils
 from nakamori_utils import model_utils

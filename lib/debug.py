@@ -34,12 +34,11 @@ def profile_this(func):
         """
         profile = cProfile.Profile()
         try:
-            profile.enable()
+            profile.enable(builtins=False)
             result = func(*args, **kwargs)
             profile.disable()
             return result
         finally:
-
             stream = StringIO()
             sort_by = u'cumulative'
             ps = pstats.Stats(profile, stream=stream).sort_stats(sort_by)

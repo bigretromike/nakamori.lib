@@ -12,10 +12,7 @@ class WatchedStatus(object):
 
 
 class ListItem(xbmcgui.ListItem):
-    def __init__(self):
-        xbmcgui.ListItem.__init__(self)
-
-    def __init__(self, label, label2='', icon_image='', thumbnail_image='', path='', offscreen=False):
+    def __init__(self, label='', label2='', icon_image='', thumbnail_image='', path='', offscreen=False):
         xbmcgui.ListItem.__init__(self, label, label2, icon_image, thumbnail_image, path, offscreen)
 
     def set_art(self, dir_obj):
@@ -31,12 +28,6 @@ class ListItem(xbmcgui.ListItem):
             self.set_thumb(dir_obj.poster)
         if dir_obj.banner is not None:
             self.set_banner(dir_obj.banner)
-
-    def set_internal_image(self, image_name):
-        icon = os.path.join(plugin_img_path, 'icons', image_name)
-        fanart = os.path.join(plugin_img_path, 'backgrounds', image_name)
-        self.set_thumb(icon)
-        self.set_fanart(fanart)
 
     def set_thumb(self, thumb):
         xbmcgui.ListItem.setArt(self, {'thumb': thumb})
@@ -57,6 +48,7 @@ class ListItem(xbmcgui.ListItem):
         :param infolabels
         :param flag:
         :type flag: WatchedStatus
+        :param resume_time: int s
         :return:
         """
         if flag == WatchedStatus.UNWATCHED:
@@ -66,8 +58,6 @@ class ListItem(xbmcgui.ListItem):
             infolabels['playcount'] = 1
             infolabels['overlay'] = 5
         elif flag == WatchedStatus.PARTIAL and plugin_addon.getSetting('file_resume') == 'true':
-            # infolabels['playcount'] = 0
-            # infolabels['overlay'] = 7
             self.setProperty('ResumeTime', str(resume_time))
 
     def set_resume(self):
@@ -82,12 +72,23 @@ class DirectoryListing(list):
     An optimized list to add directory items.
     There may be a speedup by calling `del dir_list`, but Kodi's GC is pretty aggressive
     """
-    def __init__(self, content_type, cache=False):
+    def __init__(self, content_type='', cache=False):
         list.__init__(self)
         self.pending = []
         self.handle = int(sys.argv[1])
         self.cache = cache
-        xbmcplugin.setContent(self.handle, content_type)
+        self.success = True
+        self.content_type = content_type
+        if self.content_type != '':
+            xbmcplugin.setContent(self.handle, content_type)
+
+    def set_cached(self):
+        self.cache = True
+
+    def set_content(self, content_type):
+        self.content_type = content_type
+        if self.content_type != '':
+            xbmcplugin.setContent(self.handle, content_type)
 
     def extend(self, iterable):
         # first handle pending items
@@ -112,7 +113,7 @@ class DirectoryListing(list):
     def __del__(self):
         if len(self.pending) > 0:
             xbmcplugin.addDirectoryItems(self.handle, self.pending, self.__len__() + self.pending.__len__())
-        xbmcplugin.endOfDirectory(self.handle, cacheToDisc=self.cache)
+        xbmcplugin.endOfDirectory(self.handle, succeeded=self.success, cacheToDisc=self.cache)
 
 
 def get_tuple(item, folder=True):
