@@ -419,6 +419,7 @@ class Group(Directory):
         self.date = model_utils.get_airdate(json_node)
         self.rating = float(str(json_node.get('rating', '0')).replace(',', '.'))
         self.user_rating = float(str(json_node.get('userrating', '0')).replace(',', '.'))
+        self.votes = pyproxy.safe_int(json_node.get('votes', 0))
         self.actors = model_utils.get_cast_info(json_node)
         self.sizes = get_sizes(json_node)
         self.tags = model_utils.get_tags(json_node.get('tags', {}))
@@ -451,6 +452,8 @@ class Group(Directory):
         infolabels = infolabel_utils.get_infolabels_for_group(self)
         li.setPath(url)
         li.set_watched_flags(infolabels, self.is_watched(), 1)
+        li.setCast(self.actors)
+        li.setRating('anidb', float(self.rating), self.votes, True)
         li.setInfo(type='video', infoLabels=infolabels)
         li.addContextMenuItems(self.get_context_menu_items())
         li.set_art(self)
@@ -522,13 +525,16 @@ class Series(Directory):
         self.alternate_name = model_utils.get_title(json_node, 'en', 'official')
         self.overview = model_utils.remove_anidb_links(pyproxy.decode(json_node.get('summary', '')))
 
+        self.anidb_id = pyproxy.safe_int(json_node.get('aid', 0))
         self.season = json_node.get('season', '1')
         self.date = model_utils.get_airdate(json_node)
         self.rating = float(str(json_node.get('rating', '0')).replace(',', '.'))
         self.user_rating = float(str(json_node.get('userrating', '0')).replace(',', '.'))
+        self.votes = pyproxy.safe_int(json_node.get('votes', 0))
         self.actors = model_utils.get_cast_info(json_node)
         self.sizes = get_sizes(json_node)
         self.tags = model_utils.get_tags(json_node.get('tags', {}))
+        self.is_movie = json_node.get('ismovie', 0) == 1
         self.process_children(json_node)
 
         eh.spam(self)
@@ -555,7 +561,13 @@ class Series(Directory):
         infolabels = infolabel_utils.get_infolabels_for_series(self)
         li.setPath(url)
         li.set_watched_flags(infolabels, self.is_watched(), 1)
+        li.setRating('anidb', float(self.rating), self.votes, True)
+        li.setUniqueIDs({'anidb': self.anidb_id})
+        #li.setProperty('TotalEpisodes', self.sizes.))
+        #li.setProperty('WatchedEpisodes', str(extra_data['WatchedEpisodes']))
+        #li.setProperty('UnWatchedEpisodes', str(extra_data['UnWatchedEpisodes']))
         li.setInfo(type='video', infoLabels=infolabels)
+        li.setCast(self.actors)
         li.addContextMenuItems(self.get_context_menu_items())
         li.set_art(self)
         return li
@@ -663,6 +675,7 @@ class SeriesTypeList(Series):
         li.setPath(url)
         li.set_watched_flags(infolabels, self.is_watched(), 1)
         li.setInfo(type='video', infoLabels=infolabels)
+        li.setCast(self.actors)
         li.addContextMenuItems(self.get_context_menu_items())
         li.set_art(self)
         return li
@@ -733,11 +746,13 @@ class Episode(Directory):
         """
         self.series_id = 0
         self.series_name = None
+        self.series_anidb_id = 0
         self.actors = []
         if series is not None:
             self.series_id = series.id
             self.series_name = series.name
             self.actors = series.actors
+            self.series_anidb_id = series.anidb_id
 
         Directory.__init__(self, json_node, True)
         # don't redownload info on an okay object
@@ -823,6 +838,7 @@ class Episode(Directory):
         url = self.get_plugin_url()
         li = ListItem(self.name, path=url)
         li.setPath(url)
+        li.setRating('anidb', float(self.rating), self.votes, True)
         infolabels = infolabel_utils.get_infolabels_for_episode(self)
 
         # set watched flags
@@ -835,6 +851,7 @@ class Episode(Directory):
 
         li.setInfo(type='video', infoLabels=infolabels)
         li.set_art(self)
+        li.setCast(self.actors)
         f = self.get_file()
         if f is not None:
             model_utils.set_stream_info(li, f)
