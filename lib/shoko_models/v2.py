@@ -1083,11 +1083,11 @@ class Episode(Directory):
         if self.episode_type == 'Special':
             if plugin_addon.getSetting('hide_title') == 'Episodes':  # both,specials
                 return
-            infolabels['title'] = localize(30076) + str(self.episode_number)
+            infolabels['title'] = localize(30076) + ' ' + str(self.episode_number)
         elif self.episode_type == 'Episode':
             if plugin_addon.getSetting('hide_title') == 'Specials':  # both,episodes
                 return
-            infolabels['title'] = localize(30076) + str(self.episode_number)
+            infolabels['title'] = localize(30076) + ' ' + str(self.episode_number)
 
     def hide_ratings(self, infolabels):
         if plugin_addon.getSetting('hide_rating_type') == 'Series':  # Episodes|Both
