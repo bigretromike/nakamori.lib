@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import json
-import sys
 
 import xbmcgui
 import xbmcplugin
@@ -182,29 +181,15 @@ def search_box():
     return search_text
 
 
-def play_continue_item():
-    """
-    Move to next item that was not marked as watched
-    Essential information are query from Parameters via util lib
-    """
-    params = pyproxy.parse_parameters(sys.argv[2])
-    if 'offset' in params:
-        offset = params['offset']
-        pos = int(offset)
-        if pos == 1:
-            xbmcgui.Dialog().ok(plugin_addon.getLocalizedString(30182), plugin_addon.getLocalizedString(30183))
-        else:
-            move_to_index(pos)
-            xbmc.sleep(1000)
-
-
 def move_to_index(index, absolute=False):
-    wind = xbmcgui.Window(xbmcgui.getCurrentWindowId())
-    control_id = wind.getFocusId()
-    control_list = wind.getControl(control_id)
-    if not isinstance(control_list, xbmcgui.ControlList):
-        return
-    move_position_on_list(control_list, index, absolute)
+    try:
+        wind = xbmcgui.Window(xbmcgui.getCurrentWindowId())
+        control_id = wind.getFocusId()
+        control_list = wind.getControl(control_id)
+        assert isinstance(control_list, xbmcgui.ControlList)
+        move_position_on_list(control_list, index, absolute)
+    except:
+        eh.exception(ErrorPriority.HIGH, 'Unable to Select Item')
 
 
 def move_position_on_list(control_list, position=0, absolute=False):
@@ -220,10 +205,8 @@ def move_position_on_list(control_list, position=0, absolute=False):
             position = 0
         if plugin_addon.getSetting('show_continue') == 'true':
             position = int(position + 1)
-
         if get_kodi_setting_bool('filelists.showparentdiritems'):
             position = int(position + 1)
-
     try:
         control_list.selectItem(position)
     except:

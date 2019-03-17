@@ -22,13 +22,20 @@ def get_tags(tag_node):
             return ''
         if len(tag_node) == 0:
             return ''
+        short_tag = plugin_addon.getSetting('short_tag_list') == 'true'
         temp_genres = []
+        current_length = 0
+        # the '3' here is because the separator ' | ' is 3 chars
         for tag in tag_node:
             if isinstance(tag, str) or isinstance(tag, unicode):
                 temp_genres.append(tag)
+                current_length = len(tag)
             else:
                 temp_genre = pyproxy.decode(tag['tag']).strip()
+                if short_tag and current_length + len(temp_genre) + 3 > 50:
+                    break
                 temp_genres.append(temp_genre)
+                current_length += len(temp_genre) + 3
         temp_genre = ' | '.join(temp_genres)
         return temp_genre
     except:
@@ -210,22 +217,6 @@ def match_title(data, lang, title_type):
         return None
 
 
-def set_watch_flag(extra_data, details):
-    """
-    Set the flag icon for the list item to the desired state based on watched episodes
-    Args:
-        extra_data: the extra_data dict
-        details: the details dict
-    """
-    # Set up overlays for watched and unwatched episodes
-    if extra_data['WatchedEpisodes'] == 0:
-        details['playcount'] = 0
-    elif extra_data['UnWatchedEpisodes'] == 0:
-        details['playcount'] = 1
-    else:
-        extra_data['partialTV'] = 1
-
-
 def video_file_information(node, detail_dict):
     """
     Process given 'node' and parse it to create proper file information dictionary 'detail_dict'
@@ -257,7 +248,7 @@ def get_video_streams(node):
             if 'width' not in streams or 'height' not in streams:
                 streams['width'] = stream_info['Width']
                 streams['height'] = stream_info['Height']
-            streams[stream_id]['aspect'] = round(int(streams['width']) / int(streams['height']), 2)
+            streams[stream_id]['aspect'] = round(float(streams['width']) / float(streams['height']), 2)
     return streams
 
 
@@ -277,7 +268,7 @@ def get_audio_streams(node):
             # there are some codecs like AC3 that are really called AC3+, but Kodi doesn't do the +
             streams[stream_id]['codec'] = stream_info['Codec'].replace('+', '')
             streams[stream_id]['language'] = stream_info['LanguageCode'] if 'LanguageCode' in stream_info else 'unk'
-            streams[stream_id]['channels'] = int(stream_info['Channels']) if 'Channels' in stream_info else 1
+            streams[stream_id]['channels'] = int(stream_info['Channels']) if 'Channels' in stream_info else 2
     return streams
 
 

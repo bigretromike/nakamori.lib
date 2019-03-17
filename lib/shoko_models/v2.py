@@ -43,6 +43,7 @@ class Directory(object):
         :param json_node: the json response from things like api/serie
         :type json_node: Union[list,dict]
         """
+        self.IsKodiFolder = True
         self.name = None
         self.items = []
         self.fanart = ''
@@ -148,6 +149,7 @@ class Directory(object):
         """
         This creates a ListItem based on the model
         :return:
+        :rtype: ListItem
         """
         url = self.get_plugin_url()
         li = ListItem(self.name, path=url)
@@ -217,9 +219,74 @@ class Directory(object):
         # if it's between 0 and total, then it's partial
         return WatchedStatus.PARTIAL
 
+    def get_watched_episodes(self):
+        # we don't consider local, because we can't watch an episode that we don't have
+        no_specials = kodi_utils.get_kodi_setting_bool('ignore_specials_watched')
+        sizes = self.sizes
+        if sizes is None:
+            return 0
+        # count only local episodes
+        if no_specials:
+            return sizes.watched_episodes
+        # count local episodes and specials
+        return sizes.watched_episodes + sizes.watched_specials
+
+    def get_total_episodes(self):
+        local_only = plugin_addon.getSetting('local_total') == 'true'
+        no_specials = kodi_utils.get_kodi_setting_bool('ignore_specials_watched')
+        sizes = self.sizes
+        if sizes is None:
+            return 0
+        # count only local episodes
+        if local_only and no_specials:
+            return sizes.local_episodes
+        # count local episodes and specials
+        if local_only:
+            return sizes.local_episodes + sizes.local_specials
+        # count episodes, including ones we don't have
+        if no_specials:
+            return sizes.total_episodes
+        # count episodes and specials, including ones we don't have
+        return sizes.total_episodes + sizes.total_specials
+
+    def hide_info(self, infolabels):
+        self.hide_images()
+        self.hide_title(infolabels)
+        self.hide_description(infolabels)
+        self.hide_ratings(infolabels)
+
+    def hide_images(self):
+        pass
+
+    def hide_ratings(self, infolabels):
+        if plugin_addon.getSetting('hide_rating_type') == 'Episodes':  # Series|Both
+            return
+        if plugin_addon.getSetting('hide_rating') == 'Always':
+            del infolabels['rating']
+            return
+        if plugin_addon.getSetting('hide_rating') == 'Unwatched':
+            if self.is_watched() == WatchedStatus.WATCHED:
+                return
+            del infolabels['rating']
+            return
+        if plugin_addon.getSetting('hide_rating') == 'All Unwatched':
+            if self.is_watched() != WatchedStatus.UNWATCHED:
+                return
+            del infolabels['rating']
+
+    def hide_title(self, infolabels):
+        pass
+
+    def hide_description(self, infolabels):
+        if self.is_watched() == WatchedStatus.WATCHED:
+            return
+        if not kodi_utils.get_kodi_setting_bool('videolibrary.showunwatchedplots')\
+                or plugin_addon.getSetting('hide_plot') == 'true':
+            infolabels['plot'] = localize(30079)
+
 
 class CustomItem(Directory):
-    def __init__(self, name, image, plugin_url, sort_index):
+    def __init__(self, name, image, plugin_url, sort_index, is_folder=True):
         """
         Create a custom menu item for the main menu
         :param name: the text of the item
@@ -234,6 +301,7 @@ class CustomItem(Directory):
         self.name = name
         self.plugin_url = plugin_url
         self.image = image
+        self.IsKodiFolder = is_folder
         self.apply_image_override(image)
 
         self.size = 0
@@ -447,14 +515,23 @@ class Group(Directory):
         return puf(nakamoriplugin.show_group_menu, self.id, self.filter_id)
 
     def get_listitem(self):
+        """
+
+        :return:
+        :rtype: ListItem
+        """
         url = self.get_plugin_url()
         li = ListItem(self.name, path=url)
         infolabels = infolabel_utils.get_infolabels_for_group(self)
         li.setPath(url)
         li.set_watched_flags(infolabels, self.is_watched(), 1)
-        li.setCast(self.actors)
-        li.setRating('anidb', float(self.rating), self.votes, True)
+        self.hide_info(infolabels)
+        li.setRating('anidb', float(infolabels.get('rating', 0.0)), infolabels.get('votes', 0), True)
         li.setInfo(type='video', infoLabels=infolabels)
+        li.setCast(self.actors)
+        li.setProperty('TotalEpisodes', str(self.get_total_episodes()))
+        li.setProperty('WatchedEpisodes', str(self.get_watched_episodes()))
+        li.setProperty('UnWatchedEpisodes', str(self.get_total_episodes() - self.get_watched_episodes()))
         li.addContextMenuItems(self.get_context_menu_items())
         li.set_art(self)
         return li
@@ -551,6 +628,11 @@ class Series(Directory):
         return puf(nakamoriplugin.show_series_menu, self.id)
 
     def get_listitem(self):
+        """
+
+        :return:
+        :rtype: ListItem
+        """
         url = self.get_plugin_url()
 
         # We need to assume not airing, as there is no end date provided in API
@@ -561,13 +643,15 @@ class Series(Directory):
         infolabels = infolabel_utils.get_infolabels_for_series(self)
         li.setPath(url)
         li.set_watched_flags(infolabels, self.is_watched(), 1)
-        li.setRating('anidb', float(self.rating), self.votes, True)
+
         li.setUniqueIDs({'anidb': self.anidb_id})
-        #li.setProperty('TotalEpisodes', self.sizes.))
-        #li.setProperty('WatchedEpisodes', str(extra_data['WatchedEpisodes']))
-        #li.setProperty('UnWatchedEpisodes', str(extra_data['UnWatchedEpisodes']))
+        self.hide_info(infolabels)
+        li.setRating('anidb', float(infolabels.get('rating', 0.0)), infolabels.get('votes', 0), True)
         li.setInfo(type='video', infoLabels=infolabels)
         li.setCast(self.actors)
+        li.setProperty('TotalEpisodes', str(self.get_total_episodes()))
+        li.setProperty('WatchedEpisodes', str(self.get_watched_episodes()))
+        li.setProperty('UnWatchedEpisodes', str(self.get_total_episodes() - self.get_watched_episodes()))
         li.addContextMenuItems(self.get_context_menu_items())
         li.set_art(self)
         return li
@@ -608,6 +692,8 @@ class Series(Directory):
         # Vote Series
         if plugin_addon.getSetting('context_show_vote_Series') == 'true':
             context_menu.append((localize(30124), script_utils.url_vote_for_series(self.id)))
+
+        # TODO Things to add: View Cast, Play All, Related, Similar
 
         return context_menu
 
@@ -668,14 +754,24 @@ class SeriesTypeList(Series):
         kodi_utils.set_user_sort_method(sorting_setting)
 
     def get_listitem(self):
+        """
+
+        :return:
+        :rtype: ListItem
+        """
         url = self.get_plugin_url()
 
         li = ListItem(self.episode_type, path=url)
         infolabels = infolabel_utils.get_infolabels_for_series_type(self)
         li.setPath(url)
         li.set_watched_flags(infolabels, self.is_watched(), 1)
+        self.hide_info(infolabels)
+        li.setRating('anidb', float(infolabels.get('rating', 0.0)), infolabels.get('votes', 0), True)
         li.setInfo(type='video', infoLabels=infolabels)
         li.setCast(self.actors)
+        li.setProperty('TotalEpisodes', str(self.get_total_episodes()))
+        li.setProperty('WatchedEpisodes', str(self.get_watched_episodes()))
+        li.setProperty('UnWatchedEpisodes', str(self.get_total_episodes() - self.get_watched_episodes()))
         li.addContextMenuItems(self.get_context_menu_items())
         li.set_art(self)
         return li
@@ -731,6 +827,37 @@ class SeriesTypeList(Series):
             return WatchedStatus.PARTIAL
 
         return WatchedStatus.UNWATCHED
+
+    def get_watched_episodes(self):
+        # we don't consider local, because we can't watch an episode that we don't have
+        sizes = self.sizes
+        if sizes is None:
+            return 0
+        # count only local episodes
+        if self.episode_type == 'Episode':
+            return sizes.watched_episodes
+        # count local episodes and specials
+        if self.episode_type == 'Special':
+            return sizes.watched_specials
+        return 0
+
+    def get_total_episodes(self):
+        local_only = plugin_addon.getSetting('local_total') == 'true'
+        sizes = self.sizes
+        if sizes is None:
+            return 0
+        # count only local episodes
+        if self.episode_type == 'Episode':
+            if local_only:
+                return sizes.local_episodes
+            else:
+                return sizes.total_episodes
+        # count local episodes and specials
+        if self.episode_type == 'Special':
+            if local_only:
+                return sizes.local_specials
+            else:
+                return sizes.total_specials
 
 
 # noinspection Duplicates
@@ -829,6 +956,14 @@ class Episode(Directory):
     def get_plugin_url(self):
         return puf(nakamoriplugin.play_video, self.id, self.get_file().id)
 
+    def is_watched(self):
+        if self.watched:
+            return WatchedStatus.WATCHED
+        f = self.get_file()
+        if f is not None and f.resume_time > 0:
+            return WatchedStatus.PARTIAL
+        return WatchedStatus.UNWATCHED
+
     def get_listitem(self):
         """
 
@@ -838,7 +973,6 @@ class Episode(Directory):
         url = self.get_plugin_url()
         li = ListItem(self.name, path=url)
         li.setPath(url)
-        li.setRating('anidb', float(self.rating), self.votes, True)
         infolabels = infolabel_utils.get_infolabels_for_episode(self)
 
         # set watched flags
@@ -849,6 +983,8 @@ class Episode(Directory):
         else:
             li.set_watched_flags(infolabels, WatchedStatus.UNWATCHED)
 
+        self.hide_info(infolabels)
+        li.setRating('anidb', float(infolabels.get('rating', 0.0)), infolabels.get('votes', 0), True)
         li.setInfo(type='video', infoLabels=infolabels)
         li.set_art(self)
         li.setCast(self.actors)
@@ -901,7 +1037,7 @@ class Episode(Directory):
             context_menu.append(watched_item)
             context_menu.append(unwatched_item)
 
-        # Playlist Mode
+        # Play From Here
         if plugin_addon.getSetting('context_playlist') == 'true':
             context_menu.append((localize(30130), 'TO BE ADDED TO SCRIPT'))
 
@@ -917,8 +1053,10 @@ class Episode(Directory):
         if plugin_addon.getSetting('context_show_info') == 'true':
             context_menu.append((localize(30123), 'Action(Info)'))
 
+        # View Cast
         if plugin_addon.getSetting('context_view_cast') == 'true' and self.series_id != 0:
-            context_menu.append((localize(30134), 'RunPlugin(%s&cmd=viewCast)'))
+            # context_menu.append((localize(30134), 'RunPlugin(%s&cmd=viewCast)'))
+            pass
 
         # Refresh
         if plugin_addon.getSetting('context_refresh') == 'true':
@@ -934,6 +1072,38 @@ class Episode(Directory):
         xbmc.executebuiltin('XBMC.Notification(%s, %s %i, 7500, %s)' % (script_addon.getLocalizedString(30023),
                                                                         script_addon.getLocalizedString(30022),
                                                                         value, plugin_addon.getAddonInfo('icon')))
+
+    def hide_images(self):
+        if plugin_addon.getSetting('hide_images') == 'true' and self.is_watched() != WatchedStatus.WATCHED:
+            self.apply_image_override('hidden.png')
+
+    def hide_title(self, infolabels):
+        if plugin_addon.getSetting('hide_title') == 'Never' or self.is_watched() == WatchedStatus.WATCHED:
+            return
+        if self.episode_type == 'Special':
+            if plugin_addon.getSetting('hide_title') == 'Episodes':  # both,specials
+                return
+            infolabels['title'] = localize(30076) + str(self.episode_number)
+        elif self.episode_type == 'Episode':
+            if plugin_addon.getSetting('hide_title') == 'Specials':  # both,episodes
+                return
+            infolabels['title'] = localize(30076) + str(self.episode_number)
+
+    def hide_ratings(self, infolabels):
+        if plugin_addon.getSetting('hide_rating_type') == 'Series':  # Episodes|Both
+            return
+        if plugin_addon.getSetting('hide_rating') == 'Always':
+            del infolabels['rating']
+            return
+        if plugin_addon.getSetting('hide_rating') == 'Unwatched':
+            if self.is_watched() == WatchedStatus.WATCHED:
+                return
+            del infolabels['rating']
+            return
+        if plugin_addon.getSetting('hide_rating') == 'All Unwatched':
+            if self.is_watched() != WatchedStatus.UNWATCHED:
+                return
+            del infolabels['rating']
 
 
 # noinspection Duplicates
@@ -1014,6 +1184,7 @@ class File(Directory):
     def get_listitem(self):
         """
         This should only be used as a temp object to feed to the player or it is unrecognized
+        :rtype: ListItem
         """
         url = self.get_plugin_url()
         li = ListItem(self.name, path=url)

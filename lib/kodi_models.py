@@ -60,20 +60,19 @@ class ListItem(xbmcgui.ListItem):
         elif flag == WatchedStatus.PARTIAL and plugin_addon.getSetting('file_resume') == 'true':
             self.setProperty('ResumeTime', str(resume_time))
 
-    def set_resume(self):
+    def resume(self):
         resume = self.getProperty('ResumeTime')
         if resume is None or resume == '':
             return
         self.setProperty('StartOffset', resume)
 
 
-class DirectoryListing(list):
+class DirectoryListing(object):
     """
     An optimized list to add directory items.
     There may be a speedup by calling `del dir_list`, but Kodi's GC is pretty aggressive
     """
     def __init__(self, content_type='', cache=False):
-        list.__init__(self)
         self.pending = []
         self.handle = int(sys.argv[1])
         self.cache = cache
@@ -91,28 +90,35 @@ class DirectoryListing(list):
             xbmcplugin.setContent(self.handle, content_type)
 
     def extend(self, iterable):
-        # first handle pending items
-        if len(self.pending) > 0:
-            xbmcplugin.addDirectoryItems(self.handle, self.pending, self.__len__() + self.pending.__len__())
-            self.pending = []
-        # we pass a list of listitems, (listitem, bool). or (str, listitem, bool)
         result_list = []
         for item in iterable:
             result = get_tuple(item)
             if result is not None:
                 result_list.append(result)
-        list.extend(self, result_list)
-        xbmcplugin.addDirectoryItems(self.handle, result_list, self.__len__())
+        return self.pending.extend(result_list)
 
     def append(self, item, folder=True):
         result = get_tuple(item, folder)
         if result is not None:
-            self.pending.append(result)
-            list.append(self, result)
+            return self.pending.append(result)
+
+    def insert(self, index, obj, folder=True):
+        item = get_tuple(obj, folder)
+        return self.pending.insert(index, item)
+
+    def __getitem__(self, item):
+        return self.pending.__getitem__(item)
+
+    def __setitem__(self, key, value):
+        item = get_tuple(value, True)
+        return self.pending.__setitem__(key, item)
+
+    def __delitem__(self, key):
+        return self.pending.__delitem__(key)
 
     def __del__(self):
         if len(self.pending) > 0:
-            xbmcplugin.addDirectoryItems(self.handle, self.pending, self.__len__() + self.pending.__len__())
+            xbmcplugin.addDirectoryItems(self.handle, self.pending, self.pending.__len__())
         xbmcplugin.endOfDirectory(self.handle, succeeded=self.success, cacheToDisc=self.cache)
 
 

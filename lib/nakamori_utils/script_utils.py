@@ -183,3 +183,13 @@ def url_group_watched_status(group_id, watched):
 def set_group_watched_status(group_id, watched, wait=False):
     url = url_group_watched_status(group_id, watched)
     xbmc.executebuiltin(url, wait)
+
+
+def url_move_to_item(index):
+    url = '/menu/episode/move_to_item/%i' % index
+    return run % url
+
+
+def move_to_item(index):
+    url = url_move_to_item(index)
+    xbmc.executebuiltin(url)
