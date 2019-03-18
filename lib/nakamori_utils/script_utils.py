@@ -1,6 +1,7 @@
 # THIS IS A SUPPLEMENTARY FILE UNTIL WE GET THE ROUTING REGISTRY
 # Yes this was super tedious and the reason that I want a routing registry
 import xbmc
+from proxy.python_version_proxy import python_proxy as pyproxy
 
 run = 'RunScript(script.module.nakamori,%s)'
 
@@ -15,6 +16,11 @@ def calendar(when=0, page=0):
     xbmc.executebuiltin(url)
 
 
+def arbiter(arg):
+    url = pyproxy.quote(pyproxy.quote(arg))
+    xbmc.executebuiltin(url)
+
+
 def url_wizard_connection():
     url = '/dialog/wizard/connection'
     return run % url
@@ -22,7 +28,7 @@ def url_wizard_connection():
 
 def wizard_connection():
     url = url_wizard_connection()
-    xbmc.executebuiltin(url)
+    xbmc.executebuiltin(url, True)
 
 
 def url_wizard_login():
@@ -32,7 +38,7 @@ def url_wizard_login():
 
 def wizard_login():
     url = url_wizard_login()
-    xbmc.executebuiltin(url)
+    xbmc.executebuiltin(url, True)
 
 
 def url_clearcache():

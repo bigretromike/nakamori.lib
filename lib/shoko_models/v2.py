@@ -668,7 +668,7 @@ class Series(Directory):
             except:
                 pass
         for i in episode_types:
-            self.episode_types.append(SeriesTypeList(self.id, i))
+            self.episode_types.append(SeriesTypeList(json_node, i))
 
     def get_context_menu_items(self):
         context_menu = []
@@ -721,11 +721,13 @@ class SeriesTypeList(Series):
     """
     The Episode Type List for a series
     """
-    def __init__(self, json_node, episode_type):
-        Directory.__init__(self, json_node, True)
+    def __init__(self, json_node, episode_type, get_children=False):
         self.episode_type = episode_type
-        json_node = self.get_full_object()
-        Series.__init__(self, json_node)
+        if isinstance(json_node, (int, str, unicode)):
+            self.id = json_node
+            self.get_children = get_children
+            json_node = self.get_full_object()
+        Series.__init__(self, json_node, get_children=get_children)
 
     def process_children(self, json_node):
         items = json_node.get('eps', [])
@@ -899,7 +901,7 @@ class Episode(Directory):
         self.process_children(json_node)
 
         if self.name is None:
-            self.name = 'Episode ' + str(json_node.get('epnumber', '??'))
+            self.name = 'Episode ' + str(self.episode_number)
         self.alternate_name = model_utils.get_title(json_node, 'x-jat', 'main')
 
         self.watched = pyproxy.safe_int(json_node.get('view', 0)) != 0

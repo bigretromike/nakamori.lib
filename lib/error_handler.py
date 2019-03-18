@@ -2,7 +2,6 @@
 import inspect
 import os
 import sys
-import time
 import traceback
 from collections import defaultdict, Counter
 
@@ -350,48 +349,3 @@ def show_notification_for_exception(ex):
     msg = ex[0].exc_message + '\nThis occurred ' + str(ex[1]) + pp.encode(u'\u00D7 ') + ' times.'
     xbmc.executebuiltin('XBMC.Notification(Nakamori: An Error Occurred, ' + msg + ', 2000, ' +
                         plugin_addon.getAddonInfo('icon') + ')')
-
-
-def get_some_text():
-    return __get_caller_prefix() + 'this is some text'
-
-
-if __name__ == '__main__':
-    log('This is a test')
-
-    then = int(time.time() * 1000)
-    log('We\'re starting now!')
-    for i in range(0, 100):
-        if i % 10 == 0:
-            log('We are ' + str(i/10) + '0% done!')
-        test_string = get_some_text()
-    log('We\'re done now!')
-    now = int(time.time() * 1000)
-    log('It took ' + str(now - then) + 'ms to process 100 error messages')
-
-    try:
-        k = int('k')
-    except:
-        error('THIS IS AN ERROR!')
-        exception(ErrorPriority.HIGHEST)
-
-# Nakamori|error_handler.py#L121 -> This is a test
-# Nakamori|error_handler.py#L124 -> We're starting now!
-# Nakamori|error_handler.py#L127 -> We are 00% done!
-# Nakamori|error_handler.py#L127 -> We are 10% done!
-# Nakamori|error_handler.py#L127 -> We are 20% done!
-# Nakamori|error_handler.py#L127 -> We are 30% done!
-# Nakamori|error_handler.py#L127 -> We are 40% done!
-# Nakamori|error_handler.py#L127 -> We are 50% done!
-# Nakamori|error_handler.py#L127 -> We are 60% done!
-# Nakamori|error_handler.py#L127 -> We are 70% done!
-# Nakamori|error_handler.py#L127 -> We are 80% done!
-# Nakamori|error_handler.py#L127 -> We are 90% done!
-# Nakamori|error_handler.py#L129 -> We're done now!
-# Nakamori|error_handler.py#L131 -> It took 14ms to process 100 error messages
-# Nakamori|error_handler.py#L136 -> THIS IS AN ERROR!
-# Nakamori|Logger -> Exception: ValueError at error_handler.py#L134
-# Nakamori|Logger -> Traceback (most recent call last):
-# Nakamori|Logger ->   File "./script.module.nakamori-lib/lib/error_handler.py", line 134, in <module>
-# Nakamori|Logger ->     k = int('k')
-# Nakamori|Logger -> ValueError: invalid literal for int() with base 10: 'k'
