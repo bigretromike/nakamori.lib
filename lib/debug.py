@@ -72,7 +72,7 @@ def debug_init():
                     # we keep this message the same, as kodi will merge them into Previous line repeats...
                     eh.spam('Failed to connect to debugger')
                     xbmc.sleep(1000)
-        except ImportError:
+        except (ImportError, NameError):
             eh.log('unable to import pycharm debugger, falling back on the web-pdb')
             try:
                 import web_pdb
