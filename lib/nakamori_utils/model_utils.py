@@ -28,8 +28,10 @@ def get_tags(tag_node):
         # the '3' here is because the separator ' | ' is 3 chars
         for tag in tag_node:
             if isinstance(tag, str) or isinstance(tag, unicode):
+                if short_tag and current_length + len(tag) + 3 > 50:
+                    break
                 temp_genres.append(tag)
-                current_length = len(tag)
+                current_length += len(tag) + 3
             else:
                 temp_genre = pyproxy.decode(tag['tag']).strip()
                 if short_tag and current_length + len(temp_genre) + 3 > 50:

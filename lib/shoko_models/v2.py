@@ -860,6 +860,7 @@ class SeriesTypeList(Series):
                 return sizes.local_specials
             else:
                 return sizes.total_specials
+        return 0
 
 
 # noinspection Duplicates
