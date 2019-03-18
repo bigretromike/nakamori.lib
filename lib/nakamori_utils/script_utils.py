@@ -17,7 +17,8 @@ def calendar(when=0, page=0):
 
 
 def arbiter(arg):
-    url = pyproxy.quote(pyproxy.quote(arg))
+    url = '/arbiter/%s' % pyproxy.quote(pyproxy.quote(arg))
+    url = run % url
     xbmc.executebuiltin(url)
 
 
