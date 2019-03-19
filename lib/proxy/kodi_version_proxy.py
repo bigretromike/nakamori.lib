@@ -1,4 +1,3 @@
-import datetime
 from distutils.version import LooseVersion
 
 import xbmc
@@ -18,16 +17,29 @@ class Kodi16Proxy:
         """
         return 'Mozilla/6.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.5) Gecko/2008092417 Firefox/3.0.3'
 
-    def duration(self, time_s):
+    @staticmethod
+    def duration_to_kodi(time_s):
         """
-        Starting in Kodi 18, the duration tag uses a string timestamp, rather than an integer in seconds.
+        In shoko we use ms, but in various versions of Kodi, there may be a different type
         This takes the duration in seconds and returns the proper converted version
-        :param time_s: time in seconds
+        :param time_s: time in milliseconds
         :type time_s: int
         :return:
         :rtype Union[str, int]
         """
-        return time_s
+        return time_s / 1000
+
+    @staticmethod
+    def duration_from_kodi(kodi_time):
+        """
+        In shoko we use ms, but in various versions of Kodi, there may be a different type
+        This takes the duration in seconds and returns the proper converted version
+        :param kodi_time: Kodi's value
+        :type kodi_time: Any
+        :return:
+        :rtype Union[str, int]
+        """
+        return kodi_time * 1000
 
     def external_player(self, player_obj):
         """
@@ -51,9 +63,6 @@ class Kodi18Proxy(Kodi17Proxy):
     def __init__(self):
         Kodi17Proxy.__init__(self)
         plugin_addon.setSetting('kodi18', 'true')
-
-    def duration(self, time_s):
-        return str(datetime.timedelta(seconds=time_s))
 
     def external_player(self, player_obj):
         return player_obj.isExternalPlayer()

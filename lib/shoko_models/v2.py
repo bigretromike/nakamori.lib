@@ -19,7 +19,7 @@ except:
 
 from kodi_models import ListItem, WatchedStatus
 from nakamori_utils.globalvars import *
-from nakamori_utils import infolabel_utils, kodi_utils, shoko_utils, script_utils
+from nakamori_utils import kodi_utils, shoko_utils, script_utils
 from nakamori_utils import model_utils
 
 
@@ -154,9 +154,13 @@ class Directory(object):
         url = self.get_plugin_url()
         li = ListItem(self.name, path=url)
         li.setPath(url)
-        li.setInfo(type='video', infoLabels={'Title': self.name, 'Plot': self.name})
+        infolabels = self.get_infolabels()
+        li.setInfo(type='video', infoLabels=infolabels)
         li.set_art(self)
         return li
+
+    def get_infolabels(self):
+        return {'Title': self.name, 'Plot': self.name}
 
     def get_context_menu_items(self):
         context_menu = [('  ', 'empty'), (plugin_addon.getLocalizedString(30147), 'empty'),
@@ -522,7 +526,7 @@ class Group(Directory):
         """
         url = self.get_plugin_url()
         li = ListItem(self.name, path=url)
-        infolabels = infolabel_utils.get_infolabels_for_group(self)
+        infolabels = self.get_infolabels()
         li.setPath(url)
         li.set_watched_flags(infolabels, self.is_watched(), 1)
         self.hide_info(infolabels)
@@ -535,6 +539,25 @@ class Group(Directory):
         li.addContextMenuItems(self.get_context_menu_items())
         li.set_art(self)
         return li
+
+    def get_infolabels(self):
+        cast, roles = model_utils.convert_cast_and_role_to_legacy(self.actors)
+        infolabels = {
+            'aired': self.date,
+            'date': model_utils.get_date(self.date),
+            'genre': self.tags,
+            'plot': self.overview,
+            'premiered': self.date,
+            'rating': self.rating,
+            'title': self.name,
+            'userrating': self.user_rating,
+            'path': self.get_plugin_url(),
+            'cast': cast,
+            'castandrole': roles,
+            'mediatype': 'tvshow',
+        }
+
+        return infolabels
 
     def process_children(self, json_node):
         items = json_node.get('series', [])
@@ -640,7 +663,7 @@ class Series(Directory):
                                           self.sizes.local_specials, self.sizes.total_specials, False)
 
         li = ListItem(name, path=url)
-        infolabels = infolabel_utils.get_infolabels_for_series(self)
+        infolabels = self.get_infolabels()
         li.setPath(url)
         li.set_watched_flags(infolabels, self.is_watched(), 1)
 
@@ -655,6 +678,27 @@ class Series(Directory):
         li.addContextMenuItems(self.get_context_menu_items())
         li.set_art(self)
         return li
+
+    def get_infolabels(self):
+        cast, roles = model_utils.convert_cast_and_role_to_legacy(self.actors)
+        infolabels = {
+            'aired': self.date,
+            'date': model_utils.get_date(self.date),
+            'originaltitle': self.alternate_name,
+            'genre': self.tags,
+            'plot': self.overview,
+            'premiered': self.date,
+            'rating': self.rating,
+            'season': self.season,
+            'title': self.name,
+            'userrating': self.user_rating,
+            'path': self.get_plugin_url(),
+            'cast': cast,
+            'castandrole': roles,
+            'mediatype': 'tvshow',
+        }
+
+        return infolabels
 
     def process_children(self, json_node):
         items = json_node.get('eps', [])
@@ -764,7 +808,7 @@ class SeriesTypeList(Series):
         url = self.get_plugin_url()
 
         li = ListItem(self.episode_type, path=url)
-        infolabels = infolabel_utils.get_infolabels_for_series_type(self)
+        infolabels = self.get_infolabels()
         li.setPath(url)
         li.set_watched_flags(infolabels, self.is_watched(), 1)
         self.hide_info(infolabels)
@@ -777,6 +821,24 @@ class SeriesTypeList(Series):
         li.addContextMenuItems(self.get_context_menu_items())
         li.set_art(self)
         return li
+
+    def get_infolabels(self):
+        infolabels = {
+            'aired': self.date,
+            'date': model_utils.get_date(self.date),
+            'originaltitle': self.alternate_name,
+            'genre': self.tags,
+            'plot': self.overview,
+            'premiered': self.date,
+            'rating': self.rating,
+            'season': self.season,
+            'title': self.episode_type,
+            'userrating': self.user_rating,
+            'path': self.get_plugin_url(),
+            'mediatype': 'tvshow',
+        }
+
+        return infolabels
 
     def is_watched(self):
         local_only = plugin_addon.getSetting('local_total') == 'true'
@@ -976,7 +1038,7 @@ class Episode(Directory):
         url = self.get_plugin_url()
         li = ListItem(self.name, path=url)
         li.setPath(url)
-        infolabels = infolabel_utils.get_infolabels_for_episode(self)
+        infolabels = self.get_infolabels()
 
         # set watched flags
         if self.watched:
@@ -997,6 +1059,39 @@ class Episode(Directory):
         li.addContextMenuItems(self.get_context_menu_items())
 
         return li
+
+    def get_infolabels(self):
+        cast, roles = model_utils.convert_cast_and_role_to_legacy(self.actors)
+        infolabels = {
+            'aired': self.date,
+            'date': model_utils.get_date(self.date),
+            'episode': self.episode_number,
+            'originaltitle': self.alternate_name,
+            'plot': self.overview,
+            'premiered': self.date,
+            'rating': self.rating,
+            'season': self.season,
+            'title': self.name,
+            'sorttitle': model_utils.get_sort_name(self),
+            'userrating': self.user_rating,
+            'votes': self.votes,
+            'path': self.get_plugin_url(),
+            'cast': cast,
+            'castandrole': roles,
+            'tvshowtitle': self.series_name,
+            'mediatype': 'episode',
+        }
+
+        f = self.items[0] if len(self.items) > 0 else None  # type: File
+        if file is not None:
+            more_infolabels = {
+                'duration': kodi_proxy.duration_to_kodi(f.duration),
+                'size': f.size,
+                'dateadded': f.date_added
+            }
+            for key in more_infolabels:
+                infolabels[key] = more_infolabels[key]
+        return infolabels
 
     def process_children(self, json_node):
         for _file in json_node.get('files', []):
@@ -1137,10 +1232,7 @@ class File(Directory):
         self.resume_time = int(int(json_node.get('offset', '0')) / 1000)
 
         # Check for empty duration from MediaInfo check fail and handle it properly
-        duration = json_node.get('duration', 1) / 1000
-        if duration != 1:
-            duration = kodi_proxy.duration(duration)
-        self.duration = duration
+        self.duration = json_node.get('duration', 1)
 
         self.size = pyproxy.safe_int(json_node.get('size', 0))
         self.file_url = json_node.get('url', '')
@@ -1192,7 +1284,8 @@ class File(Directory):
         url = self.get_plugin_url()
         li = ListItem(self.name, path=url)
         li.setPath(url)
-        li.setInfo(type='video', infoLabels={'Title': self.name, 'Plot': self.name})
+        infolabels = self.get_infolabels()
+        li.setInfo(type='video', infoLabels=infolabels)
 
         # Files don't have watched states in the API, so this is all that's needed
         if self.resume_time > 0 and plugin_addon.getSetting('file_resume') == 'true':
@@ -1202,6 +1295,22 @@ class File(Directory):
         li.set_art(self)
         li.addContextMenuItems(self.get_context_menu_items())
         return li
+
+    def get_infolabels(self):
+        """
+        :param self:
+        :type self: File
+        :return:
+        """
+        infolabels = {
+
+            'path': self.get_plugin_url(),
+            'mediatype': 'episode',
+            'duration': kodi_proxy.duration_to_kodi(self.duration),
+            'size': self.size,
+            'dateadded': self.date_added
+        }
+        return infolabels
 
     def get_context_menu_items(self):
         context_menu = [
@@ -1222,7 +1331,7 @@ class File(Directory):
         :param current_time: current time in seconds
         """
         offset_url = server + '/api/file/offset'
-        offset_body = '"id":%i,"offset":%i' % (self.id, current_time * 1000)
+        offset_body = '"id":%i,"offset":%i' % (self.id, current_time)
         pyproxy.post_json(offset_url, offset_body)
         
     def rehash(self):
