@@ -31,7 +31,7 @@ class Sorting(object):
             sorting_types.append(self)
 
     # There are apparently two lists. SetSortMethod uses a container sorting list, and ListItem uses the one from stubs
-    none = SortingMethod(0, 'Server', xbmcplugin.SORT_METHOD_NONE)
+    none = SortingMethod(45, 'Server', xbmcplugin.SORT_METHOD_UNSORTED)
     label = SortingMethod(1, 'Label', xbmcplugin.SORT_METHOD_LABEL)
     date = SortingMethod(2, 'Date', xbmcplugin.SORT_METHOD_DATE)
     title = SortingMethod(7, 'Title', xbmcplugin.SORT_METHOD_TITLE)
