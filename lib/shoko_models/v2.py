@@ -172,7 +172,7 @@ class Directory(object):
         for i in self.items:
             yield i
 
-    def apply_sorting(self, handle):
+    def add_sort_methods(self, handle):
         pass
 
     def is_watched(self):
@@ -289,6 +289,17 @@ class Directory(object):
                 or plugin_addon.getSetting('hide_plot') == 'true':
             infolabels['plot'] = localize(30079)
 
+    def add_sort_methods(self, handle):
+        xbmcplugin.addSortMethod(handle, Sorting.none.listitem_id)
+        xbmcplugin.addSortMethod(handle, Sorting.title.listitem_id)
+        xbmcplugin.addSortMethod(handle, Sorting.date.listitem_id)
+        xbmcplugin.addSortMethod(handle, Sorting.rating.listitem_id)
+        xbmcplugin.addSortMethod(handle, Sorting.year.listitem_id)
+
+    def apply_default_sorting(self):
+        sorting_setting = plugin_addon.getSetting('default_sort_series')
+        kodi_utils.set_user_sort_method(sorting_setting)
+
 
 class CustomItem(Directory):
     def __init__(self, name, image, plugin_url, sort_index, is_folder=True):
@@ -329,6 +340,12 @@ class CustomItem(Directory):
         pass
 
     def set_watched_status(self, watched):
+        pass
+
+    def add_sort_methods(self, handle):
+        pass
+
+    def apply_default_sorting(self):
         pass
 
 
@@ -448,16 +465,6 @@ class Filter(Directory):
 
     def set_watched_status(self, watched):
         pass
-
-    def apply_sorting(self, handle):
-        xbmcplugin.addSortMethod(handle, Sorting.none.listitem_id)
-        xbmcplugin.addSortMethod(handle, Sorting.title.listitem_id)
-        xbmcplugin.addSortMethod(handle, Sorting.date.listitem_id)
-        xbmcplugin.addSortMethod(handle, Sorting.rating.listitem_id)
-        xbmcplugin.addSortMethod(handle, Sorting.year.listitem_id)
-
-        sorting_setting = plugin_addon.getSetting('default_sort_filter')
-        kodi_utils.set_user_sort_method(sorting_setting)
 
 
 # noinspection Duplicates
@@ -587,16 +594,6 @@ class Group(Directory):
             context_menu.append(unwatched_item)
 
         return context_menu
-
-    def apply_sorting(self, handle):
-        xbmcplugin.addSortMethod(handle, Sorting.none.listitem_id)
-        xbmcplugin.addSortMethod(handle, Sorting.title.listitem_id)
-        xbmcplugin.addSortMethod(handle, Sorting.date.listitem_id)
-        xbmcplugin.addSortMethod(handle, Sorting.rating.listitem_id)
-        xbmcplugin.addSortMethod(handle, Sorting.year.listitem_id)
-
-        sorting_setting = plugin_addon.getSetting('default_sort_group_series')
-        kodi_utils.set_user_sort_method(sorting_setting)
 
 
 # noinspection Duplicates
@@ -746,7 +743,7 @@ class Series(Directory):
                                                                         script_addon.getLocalizedString(30022),
                                                                         str(value), plugin_addon.getAddonInfo('icon')))
 
-    def apply_sorting(self, handle):
+    def add_sort_methods(self, handle):
         xbmcplugin.addSortMethod(handle, Sorting.none.listitem_id)
         xbmcplugin.addSortMethod(handle, Sorting.episode_number.listitem_id)
         xbmcplugin.addSortMethod(handle, Sorting.date.listitem_id)
@@ -754,6 +751,7 @@ class Series(Directory):
         xbmcplugin.addSortMethod(handle, Sorting.rating.listitem_id)
         xbmcplugin.addSortMethod(handle, Sorting.year.listitem_id)
 
+    def apply_default_sorting(self):
         sorting_setting = plugin_addon.getSetting('default_sort_episodes')
         kodi_utils.set_user_sort_method(sorting_setting)
 
@@ -910,6 +908,11 @@ class SeriesTypeList(Series):
                 return sizes.total_specials
         return 0
 
+    def add_sort_methods(self, handle):
+        pass
+
+    def apply_default_sorting(self):
+        pass
 
 # noinspection Duplicates
 class Episode(Directory):
