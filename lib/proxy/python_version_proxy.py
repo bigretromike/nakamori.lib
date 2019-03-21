@@ -326,8 +326,7 @@ class Python2Proxy(BasePythonProxy):
                 return unicode(i)
         except:
             # error('Unicode Error', error_type='Unicode Error')
-            return ''\
-
+            return ''
 
     def isnumeric(self, value):
         return unicode(value).isnumeric()
@@ -346,7 +345,7 @@ class Python3Proxy(BasePythonProxy):
             else:
                 return str(i).encode('utf-8')
         except:
-            pass  # nt.error('Unicode Error', error_type='Unicode Error')
+            # nt.error('Unicode Error', error_type='Unicode Error')
             return ''
 
     def decode(self, i):

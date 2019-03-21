@@ -7,6 +7,7 @@ from abc import abstractmethod
 import error_handler as eh
 import nakamori_utils.model_utils
 import xbmcplugin
+from nakamori_utils.kodi_utils import Sorting
 
 try:
     import nakamoriplugin
@@ -375,7 +376,7 @@ class Filter(Directory):
         level = 0
         if self.get_children and self.size > 0:
             level = 1 if self.directory_filter else 2
-        url = nakamori_utils.model_utils.add_default_parameters(url, self.id, level)
+        url = model_utils.add_default_parameters(url, self.id, level)
         if self.id == 0:
             url = pyproxy.set_parameter(url, 'notag', 1)
         return url
@@ -449,12 +450,11 @@ class Filter(Directory):
         pass
 
     def apply_sorting(self, handle):
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_UNSORTED)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_DATE)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_USER_RATING)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+        xbmcplugin.addSortMethod(handle, Sorting.none.listitem_id)
+        xbmcplugin.addSortMethod(handle, Sorting.title.listitem_id)
+        xbmcplugin.addSortMethod(handle, Sorting.date.listitem_id)
+        xbmcplugin.addSortMethod(handle, Sorting.rating.listitem_id)
+        xbmcplugin.addSortMethod(handle, Sorting.year.listitem_id)
 
         sorting_setting = plugin_addon.getSetting('default_sort_filter')
         kodi_utils.set_user_sort_method(sorting_setting)
@@ -589,14 +589,13 @@ class Group(Directory):
         return context_menu
 
     def apply_sorting(self, handle):
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_UNSORTED)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_DATE)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_USER_RATING)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+        xbmcplugin.addSortMethod(handle, Sorting.none.listitem_id)
+        xbmcplugin.addSortMethod(handle, Sorting.title.listitem_id)
+        xbmcplugin.addSortMethod(handle, Sorting.date.listitem_id)
+        xbmcplugin.addSortMethod(handle, Sorting.rating.listitem_id)
+        xbmcplugin.addSortMethod(handle, Sorting.year.listitem_id)
 
-        sorting_setting = plugin_addon.getSetting('default_sort_filter')
+        sorting_setting = plugin_addon.getSetting('default_sort_group_series')
         kodi_utils.set_user_sort_method(sorting_setting)
 
 
@@ -748,13 +747,12 @@ class Series(Directory):
                                                                         str(value), plugin_addon.getAddonInfo('icon')))
 
     def apply_sorting(self, handle):
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_UNSORTED)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_EPISODE)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_DATE)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_USER_RATING)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+        xbmcplugin.addSortMethod(handle, Sorting.none.listitem_id)
+        xbmcplugin.addSortMethod(handle, Sorting.episode_number.listitem_id)
+        xbmcplugin.addSortMethod(handle, Sorting.date.listitem_id)
+        xbmcplugin.addSortMethod(handle, Sorting.title.listitem_id)
+        xbmcplugin.addSortMethod(handle, Sorting.rating.listitem_id)
+        xbmcplugin.addSortMethod(handle, Sorting.year.listitem_id)
 
         sorting_setting = plugin_addon.getSetting('default_sort_episodes')
         kodi_utils.set_user_sort_method(sorting_setting)
@@ -786,18 +784,6 @@ class SeriesTypeList(Series):
 
     def get_plugin_url(self):
         return puf(nakamoriplugin.show_series_episode_types_menu, self.id, self.episode_type)
-
-    def apply_sorting(self, handle):
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_UNSORTED)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_EPISODE)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_DATE)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_USER_RATING)
-        xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
-
-        sorting_setting = plugin_addon.getSetting('default_sort_episodes')
-        kodi_utils.set_user_sort_method(sorting_setting)
 
     def get_listitem(self):
         """

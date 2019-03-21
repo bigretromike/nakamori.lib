@@ -3,6 +3,7 @@ import inspect
 import os
 import sys
 import traceback
+import types
 from collections import defaultdict, Counter
 
 import class_dump
@@ -92,9 +93,15 @@ def try_function(error_priority, message='', except_func=None, *exc_args, **exc_
             try:
                 return func(*args, **kwargs)
             except Exception:
-                exception(error_priority, message)
-                if except_func is not None:
-                    except_func(*exc_args, **exc_kwargs)
+                msg = message
+                exc_func = except_func
+                # if we accidentally pass a function to this instead of except_func
+                if isinstance(msg, (types.FunctionType, types.BuiltinFunctionType)):
+                    exc_func = msg
+                    msg = ''
+                exception(error_priority, msg)
+                if exc_func is not None:
+                    exc_func(*exc_args, **exc_kwargs)
                 if error_priority == ErrorPriority.BLOCKING:
                     show_messages()
                     # sys.exit is called if BLOCKING errors exist in the above

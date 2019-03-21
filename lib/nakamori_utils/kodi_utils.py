@@ -19,6 +19,35 @@ except:
 
 localize = script_addon.getLocalizedString
 
+sorting_types = []
+
+
+class Sorting(object):
+    class SortingMethod(object):
+        def __init__(self, container_id, name, listitem_id):
+            self.container_id = container_id
+            self.name = name
+            self.listitem_id = listitem_id
+            sorting_types.append(self)
+
+    # There are apparently two lists. SetSortMethod uses a container sorting list, and ListItem uses the one from stubs
+    none = SortingMethod(0, 'Server', xbmcplugin.SORT_METHOD_NONE)
+    label = SortingMethod(1, 'Label', xbmcplugin.SORT_METHOD_LABEL)
+    date = SortingMethod(2, 'Date', xbmcplugin.SORT_METHOD_DATE)
+    title = SortingMethod(7, 'Title', xbmcplugin.SORT_METHOD_TITLE)
+    time = SortingMethod(9, 'Time', xbmcplugin.SORT_METHOD_DURATION)
+    genre = SortingMethod(14, 'Genre', xbmcplugin.SORT_METHOD_GENRE)
+    year = SortingMethod(16, 'Year', xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+    rating = SortingMethod(17, 'Rating', xbmcplugin.SORT_METHOD_VIDEO_RATING)
+    user_rating = SortingMethod(18, 'UserRating', xbmcplugin.SORT_METHOD_VIDEO_USER_RATING)
+    episode_number = SortingMethod(23, 'Episode', xbmcplugin.SORT_METHOD_EPISODE)
+    sort_title = SortingMethod(29, 'SortTitle', xbmcplugin.SORT_METHOD_VIDEO_SORT_TITLE)
+    date_added = SortingMethod(40, 'DateAdded', xbmcplugin.SORT_METHOD_DATEADDED)
+
+    string2id = dict((k.name, k.container_id) for k in sorting_types)
+    # inverse dict
+    id2string = dict((v, k) for k, v in string2id.items())
+
 
 def set_window_heading(window_name):
     """
@@ -237,6 +266,7 @@ def kodi_jsonrpc(request):
         return result
     except:
         eh.exception(ErrorPriority.HIGH, 'Unable to Execute JSONRPC to Kodi')
+        return None
 
 
 def get_kodi_setting_bool(setting):
@@ -280,13 +310,7 @@ def set_sort_method(int_of_sort_method=0):
 
 
 def set_user_sort_method(content):
-    sort_method = {
-        'Server': xbmcplugin.SORT_METHOD_NONE,
-        'Title': xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE,
-        'Episode': xbmcplugin.SORT_METHOD_EPISODE,
-        'Date': xbmcplugin.SORT_METHOD_DATE,
-        'Rating': xbmcplugin.SORT_METHOD_VIDEO_RATING
-    }
-
-    method_for_sorting = sort_method.get(content, 0)
+    method_for_sorting = Sorting.string2id.get(content, Sorting.none.container_id)
+    if method_for_sorting == Sorting.none.container_id:
+        return
     set_sort_method(method_for_sorting)
