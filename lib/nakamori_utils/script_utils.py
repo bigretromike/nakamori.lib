@@ -1,6 +1,7 @@
 # THIS IS A SUPPLEMENTARY FILE UNTIL WE GET THE ROUTING REGISTRY
 # Yes this was super tedious and the reason that I want a routing registry
 import xbmc
+from proxy.python_version_proxy import python_proxy as pyproxy
 
 run = 'RunScript(script.module.nakamori,%s)'
 
@@ -88,6 +89,36 @@ def url_new_search(save):
 
 def new_search(save):
     url = url_new_search(save)
+    xbmc.executebuiltin(url, True)
+
+
+def url_remove_search_term(query):
+    url = '/search/remove/%s' % pyproxy.quote(pyproxy.quote(query))
+    return run % url
+
+
+def remove_search_term(query):
+    url = url_remove_search_term(query)
+    xbmc.executebuiltin(url, True)
+
+
+def url_clear_search_terms():
+    url = '/search/clear'
+    return run % url
+
+
+def clear_search_terms():
+    url = url_clear_search_terms()
+    xbmc.executebuiltin(url, True)
+
+
+def url_refresh():
+    url = '/refresh'
+    return run % url
+
+
+def refresh():
+    url = url_refresh()
     xbmc.executebuiltin(url, True)
 
 

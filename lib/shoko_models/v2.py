@@ -154,14 +154,20 @@ class Directory(object):
         infolabels = self.get_infolabels()
         li.setInfo(type='video', infoLabels=infolabels)
         li.set_art(self)
+        context = self.get_context_menu_items()
+        if context is not None and len(context) > 0:
+            li.addContextMenuItems(context)
         return li
 
     def get_infolabels(self):
         return {'Title': self.name, 'Plot': self.name}
 
     def get_context_menu_items(self):
-        context_menu = [('  ', 'empty'), (plugin_addon.getLocalizedString(30147), 'empty'),
-                        (plugin_addon.getLocalizedString(30148), 'empty')]
+        context_menu = []
+        if plugin_addon.getSetting('show_refresh') == 'true':
+            context_menu += [(plugin_addon.getLocalizedString(30131), script_utils.url_refresh())]
+        context_menu += [('  ', 'empty'), (plugin_addon.getLocalizedString(30147), 'empty'),
+                         (plugin_addon.getLocalizedString(30148), 'empty')]
         return context_menu
 
     def __iter__(self):
