@@ -1,7 +1,6 @@
 # THIS IS A SUPPLEMENTARY FILE UNTIL WE GET THE ROUTING REGISTRY
 # Yes this was super tedious and the reason that I want a routing registry
 import xbmc
-from proxy.python_version_proxy import python_proxy as pyproxy
 
 run = 'RunScript(script.module.nakamori,%s)'
 
@@ -17,7 +16,7 @@ def calendar(when=0, page=0):
 
 
 def arbiter(wait, arg):
-    url = '/arbiter/%i/%s' % (wait, pyproxy.quote(pyproxy.quote(arg)))
+    url = '/arbiter/%i/%s' % (wait, arg)
     url = run % url
     xbmc.executebuiltin(url)
 

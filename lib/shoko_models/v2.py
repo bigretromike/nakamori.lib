@@ -23,12 +23,8 @@ from nakamori_utils.globalvars import *
 from nakamori_utils import kodi_utils, shoko_utils, script_utils
 from nakamori_utils import model_utils
 
-
 from proxy.kodi_version_proxy import kodi_proxy
 from proxy.python_version_proxy import python_proxy as pyproxy
-
-# TODO Context menu handlers
-
 
 localize = plugin_addon.getLocalizedString
 
@@ -44,7 +40,7 @@ class Directory(object):
         :param json_node: the json response from things like api/serie
         :type json_node: Union[list,dict]
         """
-        self.IsKodiFolder = True
+        self.is_kodi_folder = True
         self.name = None
         self.items = []
         self.fanart = ''
@@ -172,12 +168,9 @@ class Directory(object):
         for i in self.items:
             yield i
 
-    def add_sort_methods(self, handle):
-        pass
-
     def is_watched(self):
         local_only = plugin_addon.getSetting('local_total') == 'true'
-        no_specials = kodi_utils.get_kodi_setting_bool('ignore_specials_watched')
+        no_specials = kodi_utils.get_kodi_setting('ignore_specials_watched')
         sizes = self.sizes
         if sizes is None:
             return WatchedStatus.UNWATCHED
@@ -226,7 +219,7 @@ class Directory(object):
 
     def get_watched_episodes(self):
         # we don't consider local, because we can't watch an episode that we don't have
-        no_specials = kodi_utils.get_kodi_setting_bool('ignore_specials_watched')
+        no_specials = kodi_utils.get_kodi_setting('ignore_specials_watched')
         sizes = self.sizes
         if sizes is None:
             return 0
@@ -238,7 +231,7 @@ class Directory(object):
 
     def get_total_episodes(self):
         local_only = plugin_addon.getSetting('local_total') == 'true'
-        no_specials = kodi_utils.get_kodi_setting_bool('ignore_specials_watched')
+        no_specials = kodi_utils.get_kodi_setting('ignore_specials_watched')
         sizes = self.sizes
         if sizes is None:
             return 0
@@ -285,7 +278,7 @@ class Directory(object):
     def hide_description(self, infolabels):
         if self.is_watched() == WatchedStatus.WATCHED:
             return
-        if not kodi_utils.get_kodi_setting_bool('videolibrary.showunwatchedplots')\
+        if not kodi_utils.get_kodi_setting('videolibrary.showunwatchedplots')\
                 or plugin_addon.getSetting('hide_plot') == 'true':
             infolabels['plot'] = localize(30079)
 
@@ -302,7 +295,7 @@ class Directory(object):
 
 
 class CustomItem(Directory):
-    def __init__(self, name, image, plugin_url, sort_index, is_folder=True):
+    def __init__(self, name, image, plugin_url, sort_index=0, is_folder=True):
         """
         Create a custom menu item for the main menu
         :param name: the text of the item
@@ -314,10 +307,11 @@ class CustomItem(Directory):
         # we are making this overrideable for Unsorted and such
 
         Directory.__init__(self, 0, False)
+        self._context_menu = []
         self.name = name
         self.plugin_url = plugin_url
         self.image = image
-        self.IsKodiFolder = is_folder
+        self.is_kodi_folder = is_folder
         self.apply_image_override(image)
 
         self.size = 0
@@ -336,8 +330,11 @@ class CustomItem(Directory):
         """
         return self.plugin_url
 
+    def set_context_menu_items(self, context_menu):
+        self._context_menu = context_menu
+
     def get_context_menu_items(self):
-        pass
+        return self._context_menu
 
     def set_watched_status(self, watched):
         pass
@@ -913,6 +910,7 @@ class SeriesTypeList(Series):
 
     def apply_default_sorting(self):
         pass
+
 
 # noinspection Duplicates
 class Episode(Directory):

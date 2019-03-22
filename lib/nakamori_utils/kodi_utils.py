@@ -234,7 +234,7 @@ def move_position_on_list(control_list, position=0, absolute=False):
             position = 0
         if plugin_addon.getSetting('show_continue') == 'true':
             position = int(position + 1)
-        if get_kodi_setting_bool('filelists.showparentdiritems'):
+        if get_kodi_setting('filelists.showparentdiritems'):
             position = int(position + 1)
     try:
         control_list.selectItem(position)
@@ -259,8 +259,9 @@ def message_box(title, text, text2=None, text3=None):
     xbmcgui.Dialog().ok(title, text, text2, text3)
 
 
-def kodi_jsonrpc(request):
+def kodi_jsonrpc(method, params):
     try:
+        request = '{"jsonrpc":"2.0","method":%s,"params":%s, "id": 1}' % (pyproxy.decode(method), params)
         return_data = xbmc.executeJSONRPC(request)
         result = json.loads(return_data)
         return result
@@ -269,35 +270,16 @@ def kodi_jsonrpc(request):
         return None
 
 
-def get_kodi_setting_bool(setting):
+def get_kodi_setting(setting):
     try:
-        parent_setting = xbmc.executeJSONRPC(
-            '{"jsonrpc": "2.0", "method": "Settings.GetSettingValue", "params":' +
-            '{"setting": "' + setting + '"}, "id": 1}')
-        # {"id":1,"jsonrpc":"2.0","result":{"value":false}} or true if ".." is displayed on list
-
-        result = json.loads(parent_setting)
-        if 'result' in result:
-            if 'value' in result['result']:
-                return result['result']['value']
+        method = "Settings.GetSettingValue"
+        params = {'setting': setting}
+        result = kodi_jsonrpc(method, params)
+        if result is not None and 'result' in result and 'value' in result['result']:
+            return result['result']['value']
     except:
         eh.exception(ErrorPriority.HIGH)
-    return False
-
-
-def get_kodi_setting_int(setting):
-    try:
-        parent_setting = xbmc.executeJSONRPC(
-            '{"jsonrpc": "2.0", "method": "Settings.GetSettingValue", "params":' +
-            '{"setting": "' + setting + '"}, "id": 1}')
-        # {"id":1,"jsonrpc":"2.0","result":{"value":false}} or true if ".." is displayed on list
-
-        result = json.loads(parent_setting)
-        if 'result' in result and 'value' in result['result']:
-            return int(result['result']['value'])
-    except:
-        eh.exception(ErrorPriority.HIGH)
-    return -1
+    return None
 
 
 def set_sort_method(int_of_sort_method=0):
