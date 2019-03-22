@@ -9,7 +9,6 @@ except:
 
 import os.path
 import time
-import json
 import sys
 
 import xbmc
@@ -85,7 +84,7 @@ def get_data_from_cache(url):
         # noinspection PyTypeChecker
         db_cursor.execute('SELECT json FROM cache WHERE url=?', (url,))
         items = db_cursor.fetchone()
-        items = json.loads(items[0])
+        items = items[0]
     except:
         pass
     return items
@@ -109,19 +108,18 @@ def add_cache(url, json_body):
 
 
 # noinspection PyShadowingNames
-def remove_cache(params):
+def remove_cache(url=None):
     """
     Remove single term from Search History
-    :param params:
+    :param url:
     :return:
     """
     db_connection = database.connect(db_file)
     db_cursor = db_connection.cursor()
-    try:
-        if params['extras'] == 'single-delete':
-            # noinspection PyTypeChecker
-            db_cursor.execute('DELETE FROM cache WHERE url=?', (params['name'],))
-    except:
+    if url is not None:
+        # noinspection PyTypeChecker
+        db_cursor.execute('DELETE FROM cache WHERE url=?', (url,))
+    else:
         # noinspection PyTypeChecker
         db_cursor.execute('DELETE FROM cache')
     db_connection.commit()

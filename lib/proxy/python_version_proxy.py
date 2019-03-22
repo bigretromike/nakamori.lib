@@ -241,14 +241,13 @@ class BasePythonProxy:
                     if expire_second > int(plugin_addon.getSetting('expireCache')):
                         # expire, get new date
                         body = self.get_data(url_in, None, timeout, apikey)
-                        params = {'extras': 'single-delete', 'name': url_in}
-                        cache.remove_cache(params)
-                        cache.add_cache(url_in, json.dumps(body))
+                        cache.remove_cache(url_in)
+                        cache.add_cache(url_in, body)
                     else:
                         body = cache.get_data_from_cache(url_in)
                 else:
                     body = self.get_data(url_in, None, timeout, apikey)
-                    cache.add_cache(url_in, json.dumps(body))
+                    cache.add_cache(url_in, body)
         except http_error as err:
             body = err.code
             return body
