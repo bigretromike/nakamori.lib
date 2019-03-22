@@ -261,7 +261,7 @@ def message_box(title, text, text2=None, text3=None):
 
 def kodi_jsonrpc(method, params):
     try:
-        request = '{"jsonrpc":"2.0","method":%s,"params":%s, "id": 1}' % (pyproxy.decode(method), params)
+        request = '{"jsonrpc":"2.0","method":"%s","params":%s, "id": 1}' % (pyproxy.decode(method), json.dumps(params))
         return_data = xbmc.executeJSONRPC(request)
         result = json.loads(return_data)
         return result
@@ -272,7 +272,7 @@ def kodi_jsonrpc(method, params):
 
 def get_kodi_setting(setting):
     try:
-        method = "Settings.GetSettingValue"
+        method = 'Settings.GetSettingValue'
         params = {'setting': setting}
         result = kodi_jsonrpc(method, params)
         if result is not None and 'result' in result and 'value' in result['result']:

@@ -101,6 +101,8 @@ class DirectoryListing(object):
         result = get_tuple(item, folder)
         if result is not None:
             return self.pending.append(result)
+        else:
+            raise RuntimeError('Attempting to Add Not a ListItem to the List')
 
     def insert(self, index, obj, folder=True):
         item = get_tuple(obj, folder)
@@ -127,7 +129,11 @@ def get_tuple(item, folder=True):
         return item.getPath(), item, folder
     if isinstance(item, tuple):
         if len(item) == 2:
+            if not isinstance(item[0], ListItem):
+                return None
             return item[0].getPath(), item[0], item[1]
         if len(item) == 3:
+            if not isinstance(item[1], ListItem):
+                return None
             return item[0], item[1], item[2]
     return None

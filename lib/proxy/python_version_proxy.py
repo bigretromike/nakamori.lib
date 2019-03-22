@@ -203,10 +203,10 @@ class BasePythonProxy:
         return parameters
 
     def quote(self, url):
-        return quote(url)
+        return quote(url, '')
 
     def quote_plus(self, url):
-        return quote_plus(url)
+        return quote_plus(url, '')
 
     def unquote(self, url):
         return unquote_plus(url)
