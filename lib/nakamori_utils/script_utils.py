@@ -112,6 +112,26 @@ def clear_search_terms():
     xbmc.executebuiltin(url, True)
 
 
+def url_clear_listitem_cache():
+    url = '/kodi/clear_listitem_cache'
+    return run % url
+
+
+def clear_listitem_cache():
+    url = url_clear_listitem_cache()
+    xbmc.executebuiltin(url, True)
+
+
+def url_clear_image_cache():
+    url = '/kodi/clear_image_cache'
+    return run % url
+
+
+def clear_image_cache():
+    url = url_clear_image_cache()
+    xbmc.executebuiltin(url, True)
+
+
 def url_refresh():
     url = '/refresh'
     return run % url

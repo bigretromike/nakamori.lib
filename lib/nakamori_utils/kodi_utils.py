@@ -144,7 +144,7 @@ def import_folder_list():
         return 0
 
 
-def fix_mark_watch_in_kodi_db():
+def clear_listitem_cache():
     """
     Clear mark for nakamori files in kodi db
     :return:
@@ -169,7 +169,7 @@ def fix_mark_watch_in_kodi_db():
             xbmcgui.Dialog().ok('', plugin_addon.getLocalizedString(30138))
 
 
-def clear_image_cache_in_kodi_db():
+def clear_image_cache():
     """
     Clear image cache in kodi db
     :return:
