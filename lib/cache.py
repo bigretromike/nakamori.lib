@@ -14,6 +14,7 @@ import sys
 import xbmc
 import xbmcaddon
 import xbmcgui
+from proxy.python_version_proxy import python_proxy as pyproxy
 
 
 def decode_utf8(_string):
@@ -76,7 +77,7 @@ def get_cached_data():
 
 # noinspection PyShadowingNames
 def get_data_from_cache(url):
-    items = ''
+    items = None
     url = str(url)
     try:
         db_connection = database.connect(db_file)
@@ -102,7 +103,7 @@ def add_cache(url, json_body):
     db_connection = database.connect(db_file)
     db_cursor = db_connection.cursor()
     # noinspection PyTypeChecker
-    db_cursor.execute('INSERT INTO cache (url, json, created) VALUES (?, ?, ?)', (url, json_body, date))
+    db_cursor.execute('INSERT INTO cache (url, json, created) VALUES (?, ?, ?)', (url, pyproxy.decode(json_body), date))
     db_connection.commit()
     db_connection.close()
 
@@ -133,7 +134,7 @@ def check_in_database(term):
     :param term: string that you check for
     :return: True if exist in database, False if not
     """
-    items = ''
+    items = 0
     try:
         db_connection = database.connect(db_file)
         db_cursor = db_connection.cursor()
