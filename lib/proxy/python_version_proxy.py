@@ -233,18 +233,16 @@ class BasePythonProxy:
                 body = self.get_data(url_in, None, timeout, apikey)
             else:
                 import cache
-                db_row = cache.check_in_database(url_in)
-                if db_row is None:
-                    db_row = 0
-                if db_row > 0:
-                    expire_second = time.time() - float(db_row)
+                db_row = cache.get_data_from_cache(url_in)
+                if db_row is not None:
+                    expire_second = time.time() - float(db_row[1])
                     if expire_second > int(plugin_addon.getSetting('expireCache')):
                         # expire, get new date
                         body = self.get_data(url_in, None, timeout, apikey)
                         cache.remove_cache(url_in)
                         cache.add_cache(url_in, body)
                     else:
-                        body = cache.get_data_from_cache(url_in)
+                        body = db_row[0]
                 else:
                     body = self.get_data(url_in, None, timeout, apikey)
                     cache.add_cache(url_in, body)

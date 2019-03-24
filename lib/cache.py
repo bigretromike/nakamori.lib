@@ -83,9 +83,8 @@ def get_data_from_cache(url):
         db_connection = database.connect(db_file)
         db_cursor = db_connection.cursor()
         # noinspection PyTypeChecker
-        db_cursor.execute('SELECT json FROM cache WHERE url=?', (url,))
+        db_cursor.execute('SELECT json, created FROM cache WHERE url=?', (url,))
         items = db_cursor.fetchone()
-        items = items[0]
     except:
         pass
     return items
@@ -125,26 +124,6 @@ def remove_cache(url=None):
         db_cursor.execute('DELETE FROM cache')
     db_connection.commit()
     db_connection.close()
-
-
-# noinspection PyShadowingNames
-def check_in_database(term):
-    """
-    Check if 'term' is inside database
-    :param term: string that you check for
-    :return: True if exist in database, False if not
-    """
-    items = 0
-    try:
-        db_connection = database.connect(db_file)
-        db_cursor = db_connection.cursor()
-        # noinspection PyTypeChecker
-        db_cursor.execute('SELECT created FROM cache WHERE url=?', (term,))
-        items = db_cursor.fetchone()
-        items = items[0]
-    except:
-        pass
-    return items
 
 
 def clear_cache(params):

@@ -9,7 +9,6 @@ from collections import defaultdict, Counter
 import class_dump
 import xbmcgui
 from nakamori_utils.globalvars import plugin_addon, plugin_version
-from proxy.python_version_proxy import python_proxy as pp
 
 try:
     import xbmc
@@ -175,6 +174,7 @@ def log(*args):
     :param args: some objects to log
     :return:
     """
+    from proxy.python_version_proxy import python_proxy as pp
     try:
         text = class_dump.dump_to_text(*args)
     except:
@@ -194,6 +194,7 @@ def error(*args):
     :param args: some objects to log
     :return:
     """
+    from proxy.python_version_proxy import python_proxy as pp
     text = class_dump.dump_to_text(*args)
     if text == '':
         return
@@ -301,6 +302,7 @@ def show_messages():
 
 
 def print_exceptions(exes):
+    from proxy.python_version_proxy import python_proxy as pp
     if exes is None or len(exes) == 0:
         return
 
@@ -353,6 +355,7 @@ def show_notification_for_exception(ex):
     :type ex: (NakamoriError, int)
     :return:
     """
+    from proxy.python_version_proxy import python_proxy as pp
     msg = ex[0].exc_message + '\nThis occurred ' + str(ex[1]) + pp.encode(u'\u00D7 ') + ' times.'
     xbmc.executebuiltin('XBMC.Notification(Nakamori: An Error Occurred, ' + msg + ', 2000, ' +
                         plugin_addon.getAddonInfo('icon') + ')')
