@@ -21,10 +21,12 @@ script_addon = xbmcaddon.Addon('script.module.nakamori')
 server = 'http://' + plugin_addon.getSetting('ipaddress') + ':' + plugin_addon.getSetting('port')
 
 tag_setting_flags = 0
-tag_setting_flags |= 0b0000001 if plugin_addon.getSetting('hideMiscTags') == 'true' else 0
-tag_setting_flags |= 0b0000010 if plugin_addon.getSetting('hideArtTags') == 'true' else 0
-tag_setting_flags |= 0b0000100 if plugin_addon.getSetting('hideSourceTags') == 'true' else 0
-tag_setting_flags |= 0b0001000 if plugin_addon.getSetting('hideUsefulMiscTags') == 'true' else 0
-tag_setting_flags |= 0b0010000 if plugin_addon.getSetting('hideSpoilerTags') == 'true' else 0
-tag_setting_flags |= 0b0100000 if plugin_addon.getSetting('hideSettingTags') == 'true' else 0
-tag_setting_flags |= 0b1000000 if plugin_addon.getSetting('hideProgrammingTags') == 'true' else 0
+tag_setting_flags |= 1 << 0 if plugin_addon.getSetting('MiscTags') == 'true' else 0
+tag_setting_flags |= 1 << 1 if plugin_addon.getSetting('ArtTags') == 'true' else 0
+tag_setting_flags |= 1 << 2 if plugin_addon.getSetting('SourceTags') == 'true' else 0
+tag_setting_flags |= 1 << 3 if plugin_addon.getSetting('UsefulMiscTags') == 'true' else 0
+tag_setting_flags |= 1 << 4 if plugin_addon.getSetting('SpoilerTags') == 'true' else 0
+tag_setting_flags |= 1 << 5 if plugin_addon.getSetting('SettingTags') == 'true' else 0
+tag_setting_flags |= 1 << 6 if plugin_addon.getSetting('ProgrammingTags') == 'true' else 0
+tag_setting_flags |= 1 << 7 if plugin_addon.getSetting('GenreTags') == 'true' else 0
+tag_setting_flags |= 1 << 31 if plugin_addon.getSetting('InvertTags') == 'Show' else 0

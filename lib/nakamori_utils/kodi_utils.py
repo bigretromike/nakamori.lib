@@ -212,10 +212,25 @@ def search_box():
 
 def move_to_index(index, absolute=False):
     try:
-        wind = xbmcgui.Window(xbmcgui.getCurrentWindowId())
-        control_id = wind.getFocusId()
-        control_list = wind.getControl(control_id)
-        assert isinstance(control_list, xbmcgui.ControlList)
+        # putting this in a method crashes kodi to desktop.
+        # region Fuck if I know....
+        elapsed = 0
+        interval = 250
+        wait_time = 4000
+        control_list = None
+        while True:
+            if elapsed >= wait_time:
+                break
+            try:
+                wind = xbmcgui.Window(xbmcgui.getCurrentWindowId())
+                control_list = wind.getControl(wind.getFocusId())
+                if isinstance(control_list, xbmcgui.ControlList):
+                    break
+            except:
+                pass
+            xbmc.sleep(interval)
+            elapsed += interval
+        # endregion Fuck if I know....
         move_position_on_list(control_list, index, absolute)
     except:
         eh.exception(ErrorPriority.HIGH, 'Unable to Select Item')

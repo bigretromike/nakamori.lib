@@ -6,7 +6,6 @@ from io import BytesIO
 from abc import abstractmethod
 
 from nakamori_utils.globalvars import plugin_addon
-from proxy import kodi_version_proxy
 
 try:
     from urllib.parse import urlparse, quote, unquote_plus, quote_plus, urlencode
@@ -169,17 +168,6 @@ class BasePythonProxy:
         else:
             eh.error('Tried to POST data with no body')
             return None
-
-    def post(self, url, data, headers=None):
-        if headers is None:
-            headers = {}
-        postdata = urlencode(data)
-        req = Request(url, postdata, headers)
-        req.add_header('User-Agent', kodi_version_proxy.kodi_proxy.user_agent())
-        response = urlopen(req)
-        data = response.read()
-        response.close()
-        return data
 
     def parse_parameters(self, input_string):
         """Parses a parameter string starting at the first ? found in inputString
