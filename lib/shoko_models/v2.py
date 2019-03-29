@@ -1228,7 +1228,11 @@ class File(Directory):
         self.duration = json_node.get('duration', 1)
 
         self.size = pyproxy.safe_int(json_node.get('size', 0))
-        self.file_url = json_node.get('url', '')
+        # this is the only URL that is given not as a short URL, because proxies and BS, we need to rewrite it
+        url = pyproxy.decode(json_node.get('url', ''))
+        url = url[url.rindex(':') + 1:]
+        url = url[url.index('/'):]
+        self.file_url = server + url
         self.server_path = json_node.get('server_path', '')
 
         self.date_added = pyproxy.decode(json_node.get('created', '')).replace('T', ' ')
