@@ -320,6 +320,8 @@ class CustomItem(Directory):
         self.is_kodi_folder = is_folder
         self.apply_image_override(image)
 
+        self.infolabels = {'Title': self.name, 'Plot': self.name}
+
         self.size = 0
         self.sort_index = sort_index
         self.directory_filter = False
@@ -335,6 +337,9 @@ class CustomItem(Directory):
         :type: str
         """
         return self.plugin_url
+
+    def get_infolabels(self):
+        return self.infolabels
 
     def set_context_menu_items(self, context_menu):
         self._context_menu = context_menu
