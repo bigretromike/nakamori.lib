@@ -1263,7 +1263,7 @@ class File(Directory):
 
     @property
     def url_for_player(self):
-        if os.path.isfile(self.server_path):
+        if os.path.isfile(pyproxy.encode(self.server_path)):
             if self.server_path.startswith(u'\\\\'):
                 return u'smb:' + self.server_path.replace('\\', '/')
             return self.server_path
