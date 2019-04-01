@@ -1017,7 +1017,7 @@ class Episode(Directory):
         return 'ep'
 
     def get_plugin_url(self):
-        return puf(nakamoriplugin.play_video, self.id, self.get_file().id)
+        return 'plugin://plugin.video.nakamori/episode/%s/file/%s/play' % (self.id, 0)
 
     def is_watched(self):
         if self.watched:
@@ -1135,7 +1135,8 @@ class Episode(Directory):
 
         # Play From Here
         if plugin_addon.getSetting('context_playlist') == 'true':
-            context_menu.append((localize(30130), 'TO BE ADDED TO SCRIPT'))
+            # context_menu.append((localize(30130), 'TO BE ADDED TO SCRIPT'))
+            pass
 
         # Vote Episode
         if plugin_addon.getSetting('context_show_vote_Episode') == 'true':
@@ -1268,7 +1269,7 @@ class File(Directory):
         return 'file'
 
     def get_plugin_url(self):
-        return puf(nakamoriplugin.play_video_without_marking, 0, self.id)
+        return 'plugin://plugin.video.nakamori/episode/%s/file/%s/play_without_marking' % (0, self.id)
 
     @property
     def url_for_player(self):
@@ -1319,6 +1320,8 @@ class File(Directory):
             (localize(30120), script_utils.url_rescan_file(self.id)),
             (localize(30121), script_utils.url_rehash_file(self.id))
         ]
+        # the default ones that say the rest are kodi's
+        context_menu += Directory.get_context_menu_items(self)
         return context_menu
 
     def set_watched_status(self, watched):
