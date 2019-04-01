@@ -15,9 +15,8 @@ import xbmc
 try:
     basestring
 except NameError:
-    basestring = str  #For Python 3
+    basestring = str  # For Python 3
 
-localize = plugin_addon.getLocalizedString
 
 localization_notification_map = {
     'rescan': plugin_addon.getLocalizedString(30190),
@@ -32,7 +31,7 @@ localization_refresh_map = {
 }
 
 
-def perform_server_action(command, object_id=None, refresh='refresh10', post=False):
+def perform_server_action(command, object_id=None, refresh='refresh10', post=False, post_body=''):
     """
     Performs an action on the server
     Args:
@@ -40,21 +39,21 @@ def perform_server_action(command, object_id=None, refresh='refresh10', post=Fal
         command: string representing api/command?object_id=...
         refresh: whether to refresh
         post: is it a POST endpoint
+        post_body: the body to post, minus the {}
     """
     key_url = server + '/api/' + command
     if object_id is not None and object_id != 0 and object_id != '':
         key_url = pyproxy.set_parameter(key_url, 'id', object_id)
-    if plugin_addon.getSetting('spamLog') == 'true':
-        xbmc.log('object_id: ' + str(object_id), xbmc.LOGWARNING)
-        xbmc.log('key: ' + key_url, xbmc.LOGWARNING)
+
+    eh.spam('url:', key_url, 'id:', object_id)
+    eh.spam('post:', post, 'body:', post_body)
 
     if post:
-        response = pyproxy.post_json(key_url, '')
+        response = pyproxy.post_json(key_url, post_body)
     else:
         response = pyproxy.get_json(key_url)
 
-    if plugin_addon.getSetting('spamLog') == 'true':
-        xbmc.log('response: ' + response, xbmc.LOGWARNING)
+    eh.spam(response)
 
     refresh_message = localization_refresh_map.get(refresh, '')
     xbmc.executebuiltin('XBMC.Notification(%s, %s, 2000, %s)' % (
@@ -109,11 +108,10 @@ def stats_update():
 
 def run_import():
     """
-    THIS DOES NOT HAVE API YET. DON'T TRY TO USE IT
     Same as pressing run import in Shoko. It performs many tasks, such as checking for files that are not added
     :return: None
     """
-    pass
+    perform_server_action('/folder/import', object_id=None, refresh='awhile')
 
 
 def scan_folder(object_id):
@@ -129,39 +127,11 @@ def scan_folder(object_id):
 def remove_missing_files():
     """
     Run "remove missing files" on server to remove every file that is not accessible by server
-    This give a different localization, so for now, use another method. Ideally, we would make an Enum for Refresh Message
+    This give a different localization, so for now, use another method.
+    Ideally, we would make an Enum for Refresh Message
     :return:
     """
     perform_server_action('remove_missing_files', refresh='awhile')
-
-
-# TODO MOVE BOTH OF THESE INTO A DIALOG AND A METHOD IN MODELS
-def vote_series(series_id):
-    """
-    Marks a rating for a series
-    Args:
-        series_id: serie id
-
-    """
-    vote_list = ['Don\'t Vote', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1']
-    my_vote = xbmcgui.Dialog().select(localize(30021), vote_list)
-    if my_vote > 0:
-        vote_value = str(vote_list[my_vote])
-        body = '?id=' + series_id + '&score=' + vote_value
-        pyproxy.get_json(server + '/api/serie/vote' + body)
-        xbmc.executebuiltin('XBMC.Notification(%s, %s %s, 7500, %s)' % (localize(30021),
-                                                                        localize(30022),
-                                                                        vote_value, plugin_addon.getAddonInfo('icon')))
-
-
-def vote_episode(self, value):
-    url = server + '/api/ep/vote'
-    url = pyproxy.set_parameter(url, 'id', self.id)
-    url = pyproxy.set_parameter(url, 'score', value)
-    pyproxy.get_json(url)
-    xbmc.executebuiltin('XBMC.Notification(%s, %s %s, 7500, %s)' % (localize(30023),
-                                                                    localize(30022),
-                                                                    str(value), plugin_addon.getAddonInfo('icon')))
 
 
 def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon.getSetting('port')):
@@ -197,11 +167,13 @@ def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon
         # not started successfully
         if startup_failed:
             # server finished trying to start, but failed
+            # TODO LOCALIZE
             message_box('Server Error', 'There was an error starting Shoko Server', 'Check the server\'s status.',
                         'Feel free to ask for advice on our discord')
             return False
 
         busy = xbmcgui.DialogProgress()
+        # TODO LOCALIZE
         busy.create('Waiting for Server Startup', startup_state)
         busy.update(1)
         # poll every second until the server gives us a response that we want
@@ -212,6 +184,7 @@ def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon
             # this should not happen
             if response is None or pyproxy.safe_int(response) > 200:
                 busy.close()
+                # TODO LOCALIZE
                 message_box('Connection Error', 'There was an error connecting to Shoko Server',
                             'If you have set up Shoko Server,', 'feel free to ask for advice on our discord')
                 return False
@@ -228,6 +201,7 @@ def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon
                 continue
             startup_state = json_tree.get('startup_state', '')
 
+            # TODO LOCALIZE
             busy.update(1, 'Waiting for Server Startup', startup_state)
             if startup_failed:
                 break
@@ -235,6 +209,7 @@ def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon
         busy.close()
 
         if startup_failed:
+            # TODO LOCALIZE
             message_box('Server Error', 'There was an error starting Shoko Server', 'Check the server\'s status.',
                         'Feel free to ask for advice on our discord')
             return False
@@ -257,6 +232,7 @@ def startup_handle_no_connection(ip=None, port=None):
     # which could mean that it's starting, but not even hosting yet
     # retry for a bit, then give up if it doesn't respond
     busy = xbmcgui.DialogProgress()
+    # TODO LOCALIZE
     busy.create('Waiting for Server Startup', 'This will retry for a short while')
     busy.update(1)
     # poll every second until the server gives us a response that we want
@@ -286,6 +262,7 @@ def startup_handle_404():
 
 
 def show_connection_error():
+    # TODO LOCALIZE
     message_box('Connection Error', 'There was an error connecting to Shoko Server\n'
                                     'If you have set up Shoko Server, feel free to ask for advice on our discord.'
                                     'If you do, please provide your kodi.log and Shoko Server log.')
@@ -404,13 +381,16 @@ def trakt_scrobble(ep_id, status, progress, movie, notification):
     if status == 1:
         # start
         progress = 0
+        # TODO LOCALIZE
         note_text = 'Starting Scrobble'
     elif status == 2:
         # pause
+        # TODO LOCALIZE
         note_text = 'Paused Scrobble'
     elif status == 3:
         # finish
         progress = 100
+        # TODO LOCALIZE
         note_text = 'Stopping Scrobble'
 
     if notification:

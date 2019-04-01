@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import sys
 
 import xbmcgui
 import xbmcplugin
@@ -49,16 +50,15 @@ class Sorting(object):
     id2string = dict((v, k) for k, v in string2id.items())
 
 
-def set_window_heading(window_name):
+def set_window_heading(category, window_name):
     """
     Sets the window titles
     Args:
-        window_name: name to put in titles
+        category: Primary name
+        window_name: Secondary name
     """
-    if window_name == 'Continue Watching (SYSTEM)':
-        window_name = 'Continue Watching'
-    elif window_name == 'Unsort':
-        window_name = 'Unsorted'
+    handle = int(sys.argv[1])
+    xbmcplugin.setPluginCategory(handle, category)
 
     window_obj = xbmcgui.Window(xbmcgui.getCurrentWindowId())
     try:
