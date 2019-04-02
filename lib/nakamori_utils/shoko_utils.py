@@ -12,6 +12,8 @@ import error_handler as eh
 from error_handler import ErrorPriority
 import xbmc
 
+localized = lib_addon.getLocalizedString
+
 try:
     basestring
 except NameError:
@@ -167,14 +169,11 @@ def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon
         # not started successfully
         if startup_failed:
             # server finished trying to start, but failed
-            # TODO LOCALIZE
-            message_box('Server Error', 'There was an error starting Shoko Server', 'Check the server\'s status.',
-                        'Feel free to ask for advice on our discord')
+            message_box(localized(30017), localized(30018), localized(30019), localized(30020))
             return False
 
         busy = xbmcgui.DialogProgress()
-        # TODO LOCALIZE
-        busy.create('Waiting for Server Startup', startup_state)
+        busy.create(localized(30021), startup_state)
         busy.update(1)
         # poll every second until the server gives us a response that we want
         while not busy.iscanceled():
@@ -184,9 +183,7 @@ def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon
             # this should not happen
             if response is None or pyproxy.safe_int(response) > 200:
                 busy.close()
-                # TODO LOCALIZE
-                message_box('Connection Error', 'There was an error connecting to Shoko Server',
-                            'If you have set up Shoko Server,', 'feel free to ask for advice on our discord')
+                message_box(localized(30022), localized(30023), localized(30024), localized(30025))
                 return False
 
             json_tree = json.loads(response)
@@ -201,17 +198,15 @@ def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon
                 continue
             startup_state = json_tree.get('startup_state', '')
 
-            # TODO LOCALIZE
-            busy.update(1, 'Waiting for Server Startup', startup_state)
+            busy.update(1, localized(30026), startup_state)
             if startup_failed:
                 break
 
         busy.close()
 
         if startup_failed:
-            # TODO LOCALIZE
-            message_box('Server Error', 'There was an error starting Shoko Server', 'Check the server\'s status.',
-                        'Feel free to ask for advice on our discord')
+            message_box(localized(30027), localized(30028), localized(30029),
+                        localized(30030))
             return False
         return True
     except python_version_proxy.http_error as httperror:
@@ -262,10 +257,7 @@ def startup_handle_404():
 
 
 def show_connection_error():
-    # TODO LOCALIZE
-    message_box('Connection Error', 'There was an error connecting to Shoko Server\n'
-                                    'If you have set up Shoko Server, feel free to ask for advice on our discord.'
-                                    'If you do, please provide your kodi.log and Shoko Server log.')
+    message_box(localized(30031), localized(30032), localized(30033), localized(30034))
 
 
 def get_version(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon.getSetting('port'), force=False):
@@ -358,7 +350,7 @@ def get_apikey(login, password):
         apikey_found_in_auth = str(auth['apikey'])
         return apikey_found_in_auth
     else:
-        raise Exception('Error Getting apikey')
+        raise Exception(localized(30035))
 
 
 def can_user_connect():
@@ -367,7 +359,7 @@ def can_user_connect():
         from shoko_models.v2 import Filter
         f = Filter(0, build_full_object=True, get_children=False)
         if f.size < 1:
-            raise RuntimeError("It didn't error, but it didn't init either")
+            raise RuntimeError(localized(30036))
         return True
     except:
         # because we always check for connection first, we can assume that auth is the only problem
@@ -381,17 +373,14 @@ def trakt_scrobble(ep_id, status, progress, movie, notification):
     if status == 1:
         # start
         progress = 0
-        # TODO LOCALIZE
-        note_text = 'Starting Scrobble'
+        note_text = localized(30037)
     elif status == 2:
         # pause
-        # TODO LOCALIZE
-        note_text = 'Paused Scrobble'
+        note_text = localized(30038)
     elif status == 3:
         # finish
         progress = 100
-        # TODO LOCALIZE
-        note_text = 'Stopping Scrobble'
+        note_text = localized(30039)
 
     if notification:
         xbmc.executebuiltin('XBMC.Notification(%s, %s %s, 7500, %s)' % ('Trakt.tv', note_text, '',

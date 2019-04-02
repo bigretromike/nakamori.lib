@@ -17,6 +17,7 @@ plugin_img_path = os.path.join(xbmcaddon.Addon(plugin_addon.getSetting('icon_pac
 
 service_addon = xbmcaddon.Addon('service.nakamori')
 script_addon = xbmcaddon.Addon('script.module.nakamori')
+lib_addon = xbmcaddon.Addon('script.module.nakamori-lib')
 
 server = 'http://' + plugin_addon.getSetting('ipaddress') + ':' + plugin_addon.getSetting('port')
 

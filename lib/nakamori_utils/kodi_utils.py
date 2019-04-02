@@ -19,6 +19,7 @@ except:
 
 
 localize = script_addon.getLocalizedString
+localize2 = lib_addon.getLocalizedString
 
 sorting_types = []
 
@@ -32,18 +33,18 @@ class Sorting(object):
             sorting_types.append(self)
 
     # There are apparently two lists. SetSortMethod uses a container sorting list, and ListItem uses the one from stubs
-    none = SortingMethod(45, 'Server', xbmcplugin.SORT_METHOD_UNSORTED)
-    label = SortingMethod(1, 'Label', xbmcplugin.SORT_METHOD_LABEL)
-    date = SortingMethod(2, 'Date', xbmcplugin.SORT_METHOD_DATE)
-    title = SortingMethod(7, 'Title', xbmcplugin.SORT_METHOD_TITLE)
-    time = SortingMethod(9, 'Time', xbmcplugin.SORT_METHOD_DURATION)
-    genre = SortingMethod(14, 'Genre', xbmcplugin.SORT_METHOD_GENRE)
-    year = SortingMethod(16, 'Year', xbmcplugin.SORT_METHOD_VIDEO_YEAR)
-    rating = SortingMethod(17, 'Rating', xbmcplugin.SORT_METHOD_VIDEO_RATING)
-    user_rating = SortingMethod(18, 'UserRating', xbmcplugin.SORT_METHOD_VIDEO_USER_RATING)
-    episode_number = SortingMethod(23, 'Episode', xbmcplugin.SORT_METHOD_EPISODE)
-    sort_title = SortingMethod(29, 'SortTitle', xbmcplugin.SORT_METHOD_VIDEO_SORT_TITLE)
-    date_added = SortingMethod(40, 'DateAdded', xbmcplugin.SORT_METHOD_DATEADDED)
+    none = SortingMethod(45, localize2(30001), xbmcplugin.SORT_METHOD_UNSORTED)
+    label = SortingMethod(1, localize2(30002), xbmcplugin.SORT_METHOD_LABEL)
+    date = SortingMethod(2, localize2(30003), xbmcplugin.SORT_METHOD_DATE)
+    title = SortingMethod(7, localize2(30004), xbmcplugin.SORT_METHOD_TITLE)
+    time = SortingMethod(9, localize2(30005), xbmcplugin.SORT_METHOD_DURATION)
+    genre = SortingMethod(14, localize2(30006), xbmcplugin.SORT_METHOD_GENRE)
+    year = SortingMethod(16, localize2(30007), xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+    rating = SortingMethod(17, localize2(30008), xbmcplugin.SORT_METHOD_VIDEO_RATING)
+    user_rating = SortingMethod(18, localize2(30009), xbmcplugin.SORT_METHOD_VIDEO_USER_RATING)
+    episode_number = SortingMethod(23, localize2(30010), xbmcplugin.SORT_METHOD_EPISODE)
+    sort_title = SortingMethod(29, localize2(30011), xbmcplugin.SORT_METHOD_VIDEO_SORT_TITLE)
+    date_added = SortingMethod(40, localize2(30012), xbmcplugin.SORT_METHOD_DATEADDED)
 
     string2id = dict((k.name, k.container_id) for k in sorting_types)
     # inverse dict
@@ -64,12 +65,12 @@ def set_window_heading(category, window_name):
     try:
         window_obj.setProperty('heading', str(window_name))
     except Exception as e:
-        eh.exception(ErrorPriority.LOW, 'Failed set_window_heading')
+        eh.exception(ErrorPriority.LOW, localize2(30013))
         window_obj.clearProperty('heading')
     try:
         window_obj.setProperty('heading2', str(window_name))
     except Exception as e:
-        eh.exception(ErrorPriority.LOW, 'Failed set_window_heading 2')
+        eh.exception(ErrorPriority.LOW, localize2(30013) + ' 2')
         window_obj.clearProperty('heading2')
 
 
@@ -233,7 +234,7 @@ def move_to_index(index, absolute=False):
         # endregion Fuck if I know....
         move_position_on_list(control_list, index, absolute)
     except:
-        eh.exception(ErrorPriority.HIGH, 'Unable to Select Item')
+        eh.exception(ErrorPriority.HIGH, localize2(30014))
 
 
 def move_position_on_list(control_list, position=0, absolute=False):
@@ -257,7 +258,7 @@ def move_position_on_list(control_list, position=0, absolute=False):
         try:
             control_list.selectItem(position - 1)
         except:
-            eh.exception(ErrorPriority.HIGH, 'Unable to Select Item')
+            eh.exception(ErrorPriority.HIGH, localize2(30015))
 
 
 def refresh():
@@ -282,7 +283,7 @@ def kodi_jsonrpc(method, params):
         result = json.loads(return_data)
         return result
     except:
-        eh.exception(ErrorPriority.HIGH, 'Unable to Execute JSONRPC to Kodi')
+        eh.exception(ErrorPriority.HIGH, localize2(30016))
         return None
 
 
