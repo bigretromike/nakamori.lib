@@ -345,9 +345,9 @@ def get_apikey(login, password):
     creds = (login, password, plugin_addon.getSetting('device'))
     body = '{"user":"%s","pass":"%s","device":"%s"}' % creds
     post_body = pyproxy.post_data(server + '/api/auth', body)
-    auth = json.loads(post_body)
-    if 'apikey' in auth:
-        apikey_found_in_auth = str(auth['apikey'])
+    auth_body = json.loads(post_body)
+    if 'apikey' in auth_body:
+        apikey_found_in_auth = str(auth_body['apikey'])
         return apikey_found_in_auth
     else:
         raise Exception(localized(30026))
