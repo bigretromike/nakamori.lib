@@ -123,80 +123,35 @@ msgstr "There was an error connecting to Shoko Server"
 
 #: shoko_utils
 msgctxt "#30024"
-msgid "If you have set up Shoko Server,"
-msgstr "If you have set up Shoko Server,"
-
-#: shoko_utils
-msgctxt "#30025"
-msgid "feel free to ask for advice on our discord"
-msgstr "feel free to ask for advice on our discord"
-
-#: shoko_utils
-msgctxt "#30026"
-msgid "Waiting for Server Startup"
-msgstr "Waiting for Server Startup"
-
-#: shoko_utils
-msgctxt "#30027"
-msgid "Server Error"
-msgstr "Server Error"
-
-#: shoko_utils
-msgctxt "#30028"
-msgid "There was an error starting Shoko Server"
-msgstr "There was an error starting Shoko Server"
-
-#: shoko_utils
-msgctxt "#30029"
-msgid "Check the server\'s status."
-msgstr "Check the server\'s status."
-
-#: shoko_utils
-msgctxt "#30030"
-msgid "Feel free to ask for advice on our discord"
-msgstr "Feel free to ask for advice on our discord"
-
-#: shoko_utils
-msgctxt "#30031"
-msgid "Connection Error"
-msgstr "Connection Error"
-
-#: shoko_utils
-msgctxt "#30032"
-msgid "There was an error connecting to Shoko Server\n"
-msgstr "There was an error connecting to Shoko Server\n"
-
-#: shoko_utils
-msgctxt "#30033"
 msgid "If you have set up Shoko Server, feel free to ask for advice on our discord."
 msgstr "If you have set up Shoko Server, feel free to ask for advice on our discord."
 
 #: shoko_utils
-msgctxt "#30034"
+msgctxt "#30025"
 msgid "If you do, please provide your kodi.log and Shoko Server log."
 msgstr "If you do, please provide your kodi.log and Shoko Server log."
 
 #: shoko_utils
-msgctxt "#30035"
+msgctxt "#30026"
 msgid "Error Getting apikey"
 msgstr "Error Getting apikey"
 
 #: shoko_utils
-msgctxt "#30036"
+msgctxt "#30027"
 msgid "It didn't error, but it didn't init either"
 msgstr "It didn't error, but it didn't init either"
 
 #: shoko_utils
-msgctxt "#30037"
+msgctxt "#30028"
 msgid "Starting Scrobble"
 msgstr "Starting Scrobble"
 
 #: shoko_utils
-msgctxt "#30038"
+msgctxt "#30029"
 msgid "Paused Scrobble"
 msgstr "Paused Scrobble"
 
 #: shoko_utils
-msgctxt "#30039"
+msgctxt "#30030"
 msgid "Stopping Scrobble"
 msgstr "Stopping Scrobble"
