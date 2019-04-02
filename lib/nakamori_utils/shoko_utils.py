@@ -183,7 +183,7 @@ def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon
             # this should not happen
             if response is None or pyproxy.safe_int(response) > 200:
                 busy.close()
-                message_box(localized(30022), localized(30023), localized(30024), localized(30025))
+                message_box(localized(30022), localized(30023), localized(30033), localized(30034))
                 return False
 
             json_tree = json.loads(response)
@@ -198,15 +198,15 @@ def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon
                 continue
             startup_state = json_tree.get('startup_state', '')
 
-            busy.update(1, localized(30026), startup_state)
+            busy.update(1, localized(30021), startup_state)
             if startup_failed:
                 break
 
         busy.close()
 
         if startup_failed:
-            message_box(localized(30027), localized(30028), localized(30029),
-                        localized(30030))
+            message_box(localized(30017), localized(30018), localized(30019),
+                        localized(30020))
             return False
         return True
     except python_version_proxy.http_error as httperror:
@@ -257,7 +257,7 @@ def startup_handle_404():
 
 
 def show_connection_error():
-    message_box(localized(30031), localized(30032), localized(30033), localized(30034))
+    message_box(localized(30022), localized(30023), localized(30024), localized(30025))
 
 
 def get_version(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon.getSetting('port'), force=False):
@@ -350,7 +350,7 @@ def get_apikey(login, password):
         apikey_found_in_auth = str(auth['apikey'])
         return apikey_found_in_auth
     else:
-        raise Exception(localized(30035))
+        raise Exception(localized(30026))
 
 
 def can_user_connect():
@@ -359,7 +359,7 @@ def can_user_connect():
         from shoko_models.v2 import Filter
         f = Filter(0, build_full_object=True, get_children=False)
         if f.size < 1:
-            raise RuntimeError(localized(30036))
+            raise RuntimeError(localized(30027))
         return True
     except:
         # because we always check for connection first, we can assume that auth is the only problem
@@ -373,14 +373,14 @@ def trakt_scrobble(ep_id, status, progress, movie, notification):
     if status == 1:
         # start
         progress = 0
-        note_text = localized(30037)
+        note_text = localized(30028)
     elif status == 2:
         # pause
-        note_text = localized(30038)
+        note_text = localized(30029)
     elif status == 3:
         # finish
         progress = 100
-        note_text = localized(30039)
+        note_text = localized(30030)
 
     if notification:
         xbmc.executebuiltin('XBMC.Notification(%s, %s %s, 7500, %s)' % ('Trakt.tv', note_text, '',
