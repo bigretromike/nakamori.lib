@@ -19,7 +19,10 @@ except ImportError:
 
 class BasePythonProxy:
     def __init__(self):
-        pass
+        self.api_key = ''
+		
+    def set_temporary_apikey(self, apikey):
+        self.api_key = apikey
 
     @abstractmethod
     def encode(self, value):
@@ -214,7 +217,10 @@ class BasePythonProxy:
         from error_handler import ErrorPriority
         try:
             timeout = plugin_addon.getSetting('timeout')
-            apikey = plugin_addon.getSetting('apikey')
+            if self.api_key == '':
+                apikey = plugin_addon.getSetting('apikey')
+            else:
+                apikey = self.api_key
             if 'file?id' in url_in or plugin_addon.getSetting('enableCache') != 'true':
                 direct = True
             if direct:

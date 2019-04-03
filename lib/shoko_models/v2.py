@@ -1383,3 +1383,7 @@ def get_series_for_episode(ep_id):
     json_body = pyproxy.get_json(url)
     json_node = json.loads(json_body)
     return Series(json_node)
+
+	
+def set_in_memory_apikey(apikey):
+    pyproxy.set_temporary_apikey(apikey)
