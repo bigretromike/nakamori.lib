@@ -743,11 +743,7 @@ class Series(Directory):
             'votes': self.votes,
             'path': self.get_plugin_url(),
             # 'trailer': string
-<<<<<<< .mine
             # 'dateadded': string (Y-m-d h:m:s) // added below, this is true in 99% of cases, apiv3
-=======
-            # 'dateadded': string (Y-m-d h:m:s) -- IDR if API gives this. can look into
->>>>>>> .theirs
             'mediatype': 'tvshow',
             # 'dbid' <-- forbidden to use
         }
