@@ -690,6 +690,7 @@ class Series(Directory):
     def get_infolabels(self):
         cast, roles = model_utils.convert_cast_and_role_to_legacy(self.actors)
         infolabels = {
+            # See Episode.get_infolabels() for more info
             # ! general values
             # 'count': int,
             'size': self.file_size,
@@ -739,10 +740,14 @@ class Series(Directory):
             # 'lastplayed': string (Y-m-d h:m:s)
             # 'album': string
             # 'artist': list
-            # 'votes': string
+            'votes': self.votes,
             'path': self.get_plugin_url(),
             # 'trailer': string
+<<<<<<< .mine
             # 'dateadded': string (Y-m-d h:m:s) // added below, this is true in 99% of cases, apiv3
+=======
+            # 'dateadded': string (Y-m-d h:m:s) -- IDR if API gives this. can look into
+>>>>>>> .theirs
             'mediatype': 'tvshow',
             # 'dbid' <-- forbidden to use
         }
@@ -1118,57 +1123,57 @@ class Episode(Directory):
         cast, roles = model_utils.convert_cast_and_role_to_legacy(self.actors)
         infolabels = {
             # ! general values
-            # 'count': int,
+            # 'count': int, -- The info on this is vague. It's mostly used for sorting and helper functions in skins
             # 'size': long,  // added below
             'date': model_utils.get_date(self.date),
 
             # ! video values #
             'genre': self.tags,
-            # 'country': string / list
+            # 'country': string / list -- Probably going to be Japan, but there are some Chinese, US, and Korean ones
             'year': self.year,
             'episode': self.episode_number,
             'season': self.season,
-            # 'sortepisode': int,
-            # 'sortseason': int
-            # 'episodeguide': string,
-            # 'showlink': '',
-            # 'top250': int
-            # 'setid': int
-            # 'tracknumber: int
+            # 'sortepisode': int, -- This is for weird situations like a special in the middle. We don't have use for it
+            # 'sortseason': int -- it could be used in mapping things like monogatari which isn't in order, but meh
+            # 'episodeguide': string, -- pretty sure this is PVR only, but I could be mistaken
+            # 'showlink': '', -- it's another api endpoint, but we *can* populate this
+            # 'top250': int -- useless. This holds where it reached in the top 250 on charts. We don't have such info
+            # 'setid': int -- like dbid, DON'T USE
+            # 'tracknumber: int - only for music, not relevant and we don't have info
             'rating': self.rating,
             'userrating': self.user_rating,
             # 'watched': <-- deprecaded, don't use
-            'playcount': 1 if self.watched else 0,
-            # 'overlay': int,
+            # 'playcount': 1 if self.watched else 0, -- this is set later in li.set_watched_flags()
+            # 'overlay': int, -- same to above
             'cast': cast,
             'castandrole': roles,
-            # 'director': string / list
-            # 'mpaa': string
+            # 'director': string / list -- we don't have such info yet, but it could be used later
+            # 'mpaa': string -- we don't have such info yet, but it could be used later
             'plot': self.overview,
             'plotoutline': self.outline,
             'title': self.name,
             'originaltitle': self.alternate_name,
             'sorttitle': model_utils.get_sort_name(self),
             # 'duration': int (in seconds) // added below
-            # 'studio': string / list,
-            # 'tagline': string,
-            # 'writer': string/list,
+            # 'studio': string / list, -- we don't have such info yet, but it could be used later
+            # 'tagline': string, -- This is for American movies mostly. I've never understood the purpose
+            # 'writer': string/list, -- we don't have such info yet, but it could be used later
             'tvshowtitle': self.series_name,
             'premiered': self.date,
             # 'status': string
             # 'set': string <-- this is the 1000% way for name of Group of Series (bakamonogatari group), apiv3
-            # 'setoverview': overview
+            # 'setoverview': overview -- like dbid, depending on how Kodi handles it, we could use it for series plot
             # 'tag': string, list
             # 'imdbnumber': string
             # 'code': string - produciton code
             'aired': self.date,
-            # 'credits': string / list
-            # 'lastplayed': string (Y-m-d h:m:s)
-            # 'album': string
-            # 'artist': list
+            # 'credits': string / list -- we don't have such info yet, but it could be used later.
+            # 'lastplayed': string (Y-m-d h:m:s) -- we aren't given this info from API, but it could be used later
+            # 'album': string -- we don't have the info, kodi might not take it unless we mark it as a music video
+            # 'artist': list -- we don't have the info, kodi might not take it unless we mark it as a music video
             'votes': self.votes,
             'path': self.get_plugin_url(),
-            # 'trailer': string
+            # 'trailer': string -- url to a trailer video. We don't have this info, but we might be able to later
             # 'dateadded': string (Y-m-d h:m:s) // added below
             'mediatype': 'episode',
             # 'dbid' <-- forbidden to use
