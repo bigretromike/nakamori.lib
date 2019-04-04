@@ -641,6 +641,7 @@ class Series(Directory):
         self.is_movie = json_node.get('ismovie', 0) == 1
         self.file_size = json_node.get('filesize', 0)
         self.year = json_node.get('year', 0)
+        self.mpaa = self.get_mpaa_rating(json_node.get('tags', {}))
         self.outline = " ".join(self.overview.split(".", 3)[:2])  # first 3 sentence
 
         self.process_children(json_node)
@@ -717,7 +718,7 @@ class Series(Directory):
             'cast': cast,
             'castandrole': roles,
             # 'director': string / list
-            # 'mpaa': string
+            'mpaa': self.mpaa,
             'plot': self.overview,
             'plotoutline': self.outline,
             'title': self.name,
@@ -817,6 +818,27 @@ class Series(Directory):
     def apply_default_sorting(self):
         sorting_setting = plugin_addon.getSetting('default_sort_episodes')
         kodi_utils.set_user_sort_method(sorting_setting)
+
+    def get_mpaa_rating(self, tags_list):
+        """
+        shameless copy from Cazzar/ShokoMetadata.bundle
+        :return:
+        """
+        if 'kodomo' in tags_list:
+            return 'TV-Y'
+        elif 'mina' in tags_list:
+            return 'TV-G'
+        elif 'shoujo' in tags_list:
+            return 'TV-14'
+        elif 'shounen' in tags_list:
+            return 'TV-14'
+        elif 'josei' in tags_list:
+            return 'TV-14'
+        elif 'seinen' in tags_list:
+            return 'TV-MA'
+        elif '18 eestricted' in tags_list:
+            return 'TV-R'
+        return ''
 
 
 # noinspection Duplicates
