@@ -723,7 +723,7 @@ class Series(Directory):
             'originaltitle': self.alternate_name,
             'sorttitle': self.name,
             # 'duration': int (in seconds)
-            # 'studio': string / list,
+            # 'studio': string / list, // added below, great way to use
             # 'tagline': string,
             # 'writer': string/list,
             'tvshowtitle': self.name,
@@ -742,10 +742,19 @@ class Series(Directory):
             # 'votes': string
             'path': self.get_plugin_url(),
             # 'trailer': string
-            # 'dateadded': string (Y-m-d h:m:s)
+            # 'dateadded': string (Y-m-d h:m:s) // added below, this is true in 99% of cases, apiv3
             'mediatype': 'tvshow',
             # 'dbid' <-- forbidden to use
         }
+
+        f = self.items[0] if len(self.items) > 0 else None  # type: File
+        if f is not None:
+            more_infolabels = {
+                'dateadded': f.date_added,
+                'studio': f.group,
+            }
+            for key in more_infolabels:
+                infolabels[key] = more_infolabels[key]
 
         return infolabels
 
@@ -1017,6 +1026,8 @@ class Episode(Directory):
         self.user_rating = float(str(json_node.get('UserRating', '0')).replace(',', '.'))
         self.overview = model_utils.remove_anidb_links(pyproxy.decode(json_node.get('summary', '')))
         self.votes = pyproxy.safe_int(json_node.get('votes', ''))
+        self.outline = " ".join(self.overview.split(".", 3)[:2])  # first 3 sentence
+        self.tags = model_utils.get_tags(json_node.get('tags', {}))
 
         if str(json_node['eptype']) != 'Special':
             season = str(json_node.get('season', '1'))
@@ -1108,13 +1119,13 @@ class Episode(Directory):
         infolabels = {
             # ! general values
             # 'count': int,
-            # 'size': long,
+            # 'size': long,  // added below
             'date': model_utils.get_date(self.date),
 
             # ! video values #
-            # 'genre': string / list,
+            'genre': self.tags,
             # 'country': string / list
-            # 'year': int,
+            'year': self.year,
             'episode': self.episode_number,
             'season': self.season,
             # 'sortepisode': int,
@@ -1134,18 +1145,18 @@ class Episode(Directory):
             # 'director': string / list
             # 'mpaa': string
             'plot': self.overview,
-            # 'plotoutline': string (short version),
+            'plotoutline': self.outline,
             'title': self.name,
             'originaltitle': self.alternate_name,
             'sorttitle': model_utils.get_sort_name(self),
-            # 'duration': int (in seconds)
+            # 'duration': int (in seconds) // added below
             # 'studio': string / list,
             # 'tagline': string,
             # 'writer': string/list,
             'tvshowtitle': self.series_name,
             'premiered': self.date,
             # 'status': string
-            # 'set': string
+            # 'set': string <-- this is the 1000% way for name of Group of Series (bakamonogatari group), apiv3
             # 'setoverview': overview
             # 'tag': string, list
             # 'imdbnumber': string
@@ -1158,13 +1169,13 @@ class Episode(Directory):
             'votes': self.votes,
             'path': self.get_plugin_url(),
             # 'trailer': string
-            # 'dateadded': string (Y-m-d h:m:s)
+            # 'dateadded': string (Y-m-d h:m:s) // added below
             'mediatype': 'episode',
             # 'dbid' <-- forbidden to use
         }
 
         f = self.items[0] if len(self.items) > 0 else None  # type: File
-        if file is not None:
+        if f is not None:
             more_infolabels = {
                 'duration': kodi_proxy.duration_to_kodi(f.duration),
                 'size': f.size,
@@ -1309,8 +1320,7 @@ class File(Directory):
             eh.spam(self)
             return
 
-        self.name = pyproxy.decode(json_node.get('filename', 'None'))
-        self.name = os.path.split(self.name)[-1]
+        self.name = os.path.split(pyproxy.decode(json_node.get('filename', 'None')))[-1]
         self.resume_time = int(int(json_node.get('offset', '0')) / 1000)
 
         # Check for empty duration from MediaInfo check fail and handle it properly
@@ -1325,6 +1335,7 @@ class File(Directory):
         self.server_path = json_node.get('server_path', '')
 
         self.date_added = pyproxy.decode(json_node.get('created', '')).replace('T', ' ')
+        self.group = json_node.get('group_full', '')
 
         try:
             # Information about streams inside json_node file
