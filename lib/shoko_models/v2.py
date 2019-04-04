@@ -639,10 +639,11 @@ class Series(Directory):
         self.sizes = get_sizes(json_node)
         self.tags = model_utils.get_tags(json_node.get('tags', {}))
         self.is_movie = json_node.get('ismovie', 0) == 1
-        self.process_children(json_node)
         self.file_size = json_node.get('filesize', 0)
         self.year = json_node.get('year', 0)
-        self.outline = " ".join(overview.split(".", 3)[:2])  # first 3 sentence
+        self.outline = " ".join(self.overview.split(".", 3)[:2])  # first 3 sentence
+
+        self.process_children(json_node)
 
         eh.spam(self)
 
@@ -720,12 +721,12 @@ class Series(Directory):
             'plotoutline': self.outline,
             'title': self.name,
             'originaltitle': self.alternate_name,
-            'sorttitle': model_utils.get_sort_name(self),
+            'sorttitle': self.name,
             # 'duration': int (in seconds)
             # 'studio': string / list,
             # 'tagline': string,
             # 'writer': string/list,
-            'tvshowtitle': self.series_name,
+            'tvshowtitle': self.name,
             'premiered': self.date,
             # 'status': string
             # 'set': string
@@ -1126,7 +1127,7 @@ class Episode(Directory):
             'rating': self.rating,
             'userrating': self.user_rating,
             # 'watched': <-- deprecaded, don't use
-            'playcount': self.watched,
+            'playcount': 1 if self.watched else 0,
             # 'overlay': int,
             'cast': cast,
             'castandrole': roles,
