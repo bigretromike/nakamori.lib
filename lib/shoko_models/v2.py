@@ -640,6 +640,9 @@ class Series(Directory):
         self.tags = model_utils.get_tags(json_node.get('tags', {}))
         self.is_movie = json_node.get('ismovie', 0) == 1
         self.process_children(json_node)
+        self.file_size = json_node.get('filesize', 0)
+        self.year = json_node.get('year', 0)
+        self.outline = " ".join(overview.split(".", 3)[:2])  # first 3 sentence
 
         eh.spam(self)
 
@@ -688,13 +691,13 @@ class Series(Directory):
         infolabels = {
             # ! general values
             # 'count': int,
-            # 'size': long,
+            'size': self.file_size,
             'date': model_utils.get_date(self.date),
 
             # ! video values #
             'genre': self.tags,
             # 'country': string / list
-            # 'year': int,
+            'year': self.year,
             # 'episode': int
             'season': self.season,
             # 'sortepisode': int,
@@ -714,7 +717,7 @@ class Series(Directory):
             # 'director': string / list
             # 'mpaa': string
             'plot': self.overview,
-            # 'plotoutline': string (short version),
+            'plotoutline': self.outline,
             'title': self.name,
             'originaltitle': self.alternate_name,
             'sorttitle': model_utils.get_sort_name(self),
@@ -1123,7 +1126,7 @@ class Episode(Directory):
             'rating': self.rating,
             'userrating': self.user_rating,
             # 'watched': <-- deprecaded, don't use
-            # 'playcount': int,
+            'playcount': self.watched,
             # 'overlay': int,
             'cast': cast,
             'castandrole': roles,

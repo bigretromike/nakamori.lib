@@ -38,8 +38,8 @@ def get_tags(tag_node):
                     break
                 temp_genres.append(temp_genre)
                 current_length += len(temp_genre) + 3
-        temp_genre = ' | '.join(temp_genres)
-        return temp_genre
+        # temp_genre = ' | '.join(temp_genres)
+        return temp_genres
     except:
         eh.exception(ErrorPriority.NORMAL)
         return ''
