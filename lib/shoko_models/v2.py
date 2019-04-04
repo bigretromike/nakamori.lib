@@ -1061,23 +1061,55 @@ class Episode(Directory):
     def get_infolabels(self):
         cast, roles = model_utils.convert_cast_and_role_to_legacy(self.actors)
         infolabels = {
-            'aired': self.date,
+            # ! general values
+            # 'count': int,
+            # 'size': long,
             'date': model_utils.get_date(self.date),
+
+            # ! video values #
+            # 'genre': string / list,
+            # 'year': int,
             'episode': self.episode_number,
-            'originaltitle': self.alternate_name,
-            'plot': self.overview,
-            'premiered': self.date,
-            'rating': self.rating,
             'season': self.season,
-            'title': self.name,
-            'sorttitle': model_utils.get_sort_name(self),
+            # 'sortepisode': int,
+            # 'sortseason': int
+            # 'episodeguide': string,
+            # 'showlink': '',
+            'rating': self.rating,
             'userrating': self.user_rating,
-            'votes': self.votes,
-            'path': self.get_plugin_url(),
+            # 'playcount': int,
+            # 'overlay': int,
             'cast': cast,
             'castandrole': roles,
+            # 'director': string / list
+            # 'mpaa': string
+            'plot': self.overview,
+            # 'plotoutline': string (short version),
+            'title': self.name,
+            'originaltitle': self.alternate_name,
+            'sorttitle': model_utils.get_sort_name(self),
+            # 'duration': int (in seconds)
+            # 'studio': string / list,
+            # 'tagline': string,
+            # 'writer': string/list,
             'tvshowtitle': self.series_name,
+            'premiered': self.date,
+            # 'status': string
+            # 'set': string
+            # 'set': overview
+            # 'tag': string, list
+            # 'imdbnumber': string
+            # 'credits': string / list
+            # 'lastplayed': string (Y-m-d h:m:s)
+            'votes': self.votes,
+            'path': self.get_plugin_url(),
+            # 'trailer': string
+            # 'dateadded': string (Y-m-d h:m:s)
             'mediatype': 'episode',
+            # 'dbid' <-- forbidden to use
+
+            # ! unknown, unofficial
+            'aired': self.date,
         }
 
         f = self.items[0] if len(self.items) > 0 else None  # type: File
@@ -1384,6 +1416,6 @@ def get_series_for_episode(ep_id):
     json_node = json.loads(json_body)
     return Series(json_node)
 
-	
+
 def set_in_memory_apikey(apikey):
     pyproxy.set_temporary_apikey(apikey)

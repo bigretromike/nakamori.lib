@@ -20,7 +20,7 @@ except ImportError:
 class BasePythonProxy:
     def __init__(self):
         self.api_key = ''
-		
+
     def set_temporary_apikey(self, apikey):
         self.api_key = apikey
 
