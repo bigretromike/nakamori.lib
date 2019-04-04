@@ -1068,6 +1068,7 @@ class Episode(Directory):
 
             # ! video values #
             # 'genre': string / list,
+            # 'country': string / list
             # 'year': int,
             'episode': self.episode_number,
             'season': self.season,
@@ -1075,8 +1076,12 @@ class Episode(Directory):
             # 'sortseason': int
             # 'episodeguide': string,
             # 'showlink': '',
+            # 'top250': int
+            # 'setid': int
+            # 'tracknumber: int
             'rating': self.rating,
             'userrating': self.user_rating,
+            # 'watched': <-- deprecaded, don't use
             # 'playcount': int,
             # 'overlay': int,
             'cast': cast,
@@ -1096,11 +1101,15 @@ class Episode(Directory):
             'premiered': self.date,
             # 'status': string
             # 'set': string
-            # 'set': overview
+            # 'setoverview': overview
             # 'tag': string, list
             # 'imdbnumber': string
+            # 'code': string - produciton code
+            'aired': self.date,
             # 'credits': string / list
             # 'lastplayed': string (Y-m-d h:m:s)
+            # 'album': string
+            # 'artist': list
             'votes': self.votes,
             'path': self.get_plugin_url(),
             # 'trailer': string
@@ -1108,8 +1117,6 @@ class Episode(Directory):
             'mediatype': 'episode',
             # 'dbid' <-- forbidden to use
 
-            # ! unknown, unofficial
-            'aired': self.date,
         }
 
         f = self.items[0] if len(self.items) > 0 else None  # type: File
