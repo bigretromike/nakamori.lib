@@ -251,7 +251,13 @@ def exception_internal(exc_type, exc_obj, exc_tb, priority, message=''):
                 ex.exc_full_trace.append(tr)
     else:
         ex = NakamoriError(msg, exc_type, place)
-    __exceptions[priority].append(ex)
+    # TODO probably its not the best way, but while I do my stuff this started to happens
+    # I stopped using the ErrorBlocking because I didn't want to have error all over
+    if priority in __exceptions.keys():
+        __exceptions[priority].append(ex)
+    else:
+        # TODO didn't know what to do with it, but needed to see it without debug levels so `notice` it is
+        xbmc.log('ERROR FATAL ----- pie is a lie -----' + str(priority) + ' vs ' + str(__exceptions), xbmc.LOGNOTICE)
 
 
 def show_messages():
