@@ -686,20 +686,61 @@ class Series(Directory):
     def get_infolabels(self):
         cast, roles = model_utils.convert_cast_and_role_to_legacy(self.actors)
         infolabels = {
-            'aired': self.date,
+            # ! general values
+            # 'count': int,
+            # 'size': long,
             'date': model_utils.get_date(self.date),
-            'originaltitle': self.alternate_name,
+
+            # ! video values #
             'genre': self.tags,
-            'plot': self.overview,
-            'premiered': self.date,
-            'rating': self.rating,
+            # 'country': string / list
+            # 'year': int,
+            # 'episode': int
             'season': self.season,
-            'title': self.name,
+            # 'sortepisode': int,
+            # 'sortseason': int
+            # 'episodeguide': string,
+            # 'showlink': '',
+            # 'top250': int
+            # 'setid': int
+            # 'tracknumber: int
+            'rating': self.rating,
             'userrating': self.user_rating,
-            'path': self.get_plugin_url(),
+            # 'watched': <-- deprecaded, don't use
+            # 'playcount': int,
+            # 'overlay': int,
             'cast': cast,
             'castandrole': roles,
+            # 'director': string / list
+            # 'mpaa': string
+            'plot': self.overview,
+            # 'plotoutline': string (short version),
+            'title': self.name,
+            'originaltitle': self.alternate_name,
+            'sorttitle': model_utils.get_sort_name(self),
+            # 'duration': int (in seconds)
+            # 'studio': string / list,
+            # 'tagline': string,
+            # 'writer': string/list,
+            'tvshowtitle': self.series_name,
+            'premiered': self.date,
+            # 'status': string
+            # 'set': string
+            # 'setoverview': overview
+            # 'tag': string, list
+            # 'imdbnumber': string
+            # 'code': string - produciton code
+            'aired': self.date,
+            # 'credits': string / list
+            # 'lastplayed': string (Y-m-d h:m:s)
+            # 'album': string
+            # 'artist': list
+            # 'votes': string
+            'path': self.get_plugin_url(),
+            # 'trailer': string
+            # 'dateadded': string (Y-m-d h:m:s)
             'mediatype': 'tvshow',
+            # 'dbid' <-- forbidden to use
         }
 
         return infolabels
@@ -1116,7 +1157,6 @@ class Episode(Directory):
             # 'dateadded': string (Y-m-d h:m:s)
             'mediatype': 'episode',
             # 'dbid' <-- forbidden to use
-
         }
 
         f = self.items[0] if len(self.items) > 0 else None  # type: File
