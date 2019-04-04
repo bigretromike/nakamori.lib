@@ -251,13 +251,10 @@ def exception_internal(exc_type, exc_obj, exc_tb, priority, message=''):
                 ex.exc_full_trace.append(tr)
     else:
         ex = NakamoriError(msg, exc_type, place)
-    # TODO probably its not the best way, but while I do my stuff this started to happens
-    # I stopped using the ErrorBlocking because I didn't want to have error all over
-    if priority in __exceptions.keys():
-        __exceptions[priority].append(ex)
-    else:
-        # TODO didn't know what to do with it, but needed to see it without debug levels so `notice` it is
-        xbmc.log('ERROR FATAL ----- pie is a lie -----' + str(priority) + ' vs ' + str(__exceptions), xbmc.LOGNOTICE)
+    # Learning opportunity! If you don't want it to interrupt you with errors, then change the logic in show_...
+    # That way, you will still get logs of the errors, but no interruptions!
+    # With the previous logic, you are basically saying `if False: else xbmc.log()`
+    __exceptions[priority].append(ex)
 
 
 def show_messages():
@@ -346,6 +343,8 @@ def show_dialog_for_exception(ex):
     :type ex: (NakamoriError, int)
     :return:
     """
+    # If you don't want interruptions, then just return
+    return
     msg = ex[0].exc_message
     if msg == '':
         msg = ex[0].exc_type
@@ -361,6 +360,8 @@ def show_notification_for_exception(ex):
     :type ex: (NakamoriError, int)
     :return:
     """
+    # if you don't want notifications, then just return
+    return
     from proxy.python_version_proxy import python_proxy as pp
     msg = ex[0].exc_message + '\nThis occurred ' + str(ex[1]) + pp.encode(u'\u00D7 ') + ' times.'
     xbmc.executebuiltin('XBMC.Notification(Nakamori: An Error Occurred, ' + msg + ', 2000, ' +
