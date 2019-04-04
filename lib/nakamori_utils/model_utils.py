@@ -6,6 +6,7 @@ import error_handler as eh
 from error_handler import ErrorPriority
 from nakamori_utils.globalvars import *
 from proxy.python_version_proxy import python_proxy as pyproxy
+from proxy.kodi_version_proxy import kodi_proxy as kproxy
 
 
 def get_tags(tag_node):
@@ -38,8 +39,7 @@ def get_tags(tag_node):
                     break
                 temp_genres.append(temp_genre)
                 current_length += len(temp_genre) + 3
-        # temp_genre = ' | '.join(temp_genres)
-        return temp_genres
+        return kproxy.parse_tags(temp_genres)
     except:
         eh.exception(ErrorPriority.NORMAL)
         return ''

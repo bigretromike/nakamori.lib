@@ -50,6 +50,15 @@ class Kodi16Proxy:
         """
         return plugin_addon.getSetting('external_player') == 'true'
 
+    def parse_tags(self, tag_obj_string):
+        """
+        In Kodi 18+, tags are expected to be list, before it was long string;
+        :param tag_obj: long string
+        :return: string or list
+        """
+        temp_genre = ' | '.join(tag_obj_string)
+        return temp_genre
+
 
 class Kodi17Proxy(Kodi16Proxy):
     def __init__(self):
@@ -66,6 +75,9 @@ class Kodi18Proxy(Kodi17Proxy):
 
     def external_player(self, player_obj):
         return player_obj.isExternalPlayer()
+
+    def parse_tags(self, tag_obj_list):
+        return tag_obj_list
 
 
 def get_kodi_version():
