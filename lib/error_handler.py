@@ -343,8 +343,7 @@ def show_dialog_for_exception(ex):
     :type ex: (NakamoriError, int)
     :return:
     """
-    # If you don't want interruptions, then just return
-    return
+
     msg = ex[0].exc_message
     if msg == '':
         msg = ex[0].exc_type
@@ -360,8 +359,7 @@ def show_notification_for_exception(ex):
     :type ex: (NakamoriError, int)
     :return:
     """
-    # if you don't want notifications, then just return
-    return
+
     from proxy.python_version_proxy import python_proxy as pp
     msg = ex[0].exc_message + '\nThis occurred ' + str(ex[1]) + pp.encode(u'\u00D7 ') + ' times.'
     xbmc.executebuiltin('XBMC.Notification(Nakamori: An Error Occurred, ' + msg + ', 2000, ' +
