@@ -752,16 +752,27 @@ class Series(Directory):
             # 'dbid' <-- forbidden to use
         }
 
-        f = self.items[0] if len(self.items) > 0 else None  # type: File
-        if f is not None:
-            more_infolabels = {
-                'dateadded': f.date_added,
-                'studio': f.group,
-            }
-            for key in more_infolabels:
-                infolabels[key] = more_infolabels[key]
+        self.add_extra_infolabels(infolabels)
 
         return infolabels
+
+    def add_extra_infolabels(self, infolabels):
+        # items in a series are episodes, not files
+        # this is also never populated
+        #  we don't pull episodes when listing series, else it'll be slowed significantly
+        # I suggest commenting out the call and making a TODO for APIv3
+        e = self.items[0] if len(self.items) > 0 else None  # type: Episode
+        if e is None:
+            return
+        f = e.get_file()
+        if f is None:
+            return
+        more_infolabels = {
+            'dateadded': f.date_added,
+            'studio': f.group,
+        }
+        for key in more_infolabels:
+            infolabels[key] = more_infolabels[key]
 
     def process_children(self, json_node):
         items = json_node.get('eps', [])
