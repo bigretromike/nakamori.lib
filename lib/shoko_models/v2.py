@@ -1477,6 +1477,19 @@ class File(Directory):
         shoko_utils.rescan_file(self.id)
 
 
+class Sizes(object):
+    def __init__(self):
+        self.local_episodes = 0
+        self.local_specials = 0
+        self.local_total = 0
+        self.watched_episodes = 0
+        self.watched_specials = 0
+        self.watched_total = 0
+        self.total_episodes = 0
+        self.total_specials = 0
+        self.total = 0
+
+
 def get_sizes(json_node):
     result = Sizes()
     local_sizes = json_node.get('local_sizes', {})
@@ -1494,19 +1507,6 @@ def get_sizes(json_node):
     return result
 
 
-class Sizes(object):
-    def __init__(self):
-        self.local_episodes = 0
-        self.local_specials = 0
-        self.local_total = 0
-        self.watched_episodes = 0
-        self.watched_specials = 0
-        self.watched_total = 0
-        self.total_episodes = 0
-        self.total_specials = 0
-        self.total = 0
-
-
 @eh.try_function(eh.ErrorPriority.NORMAL)
 def get_series_for_episode(ep_id):
     url = server + '/api/serie/fromep'
@@ -1514,7 +1514,3 @@ def get_series_for_episode(ep_id):
     json_body = pyproxy.get_json(url)
     json_node = json.loads(json_body)
     return Series(json_node)
-
-
-def set_in_memory_apikey(apikey):
-    pyproxy.set_temporary_apikey(apikey)
