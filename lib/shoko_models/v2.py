@@ -4,6 +4,8 @@ import json
 import time
 
 from abc import abstractmethod
+
+import class_dump
 import error_handler as eh
 import nakamori_utils.model_utils
 import xbmcplugin
@@ -78,6 +80,9 @@ class Directory(object):
             result += ' - 0 items'
 
         return result
+
+    def __repr__(self):
+        return class_dump.dump_to_text(self)
 
     def apply_image_override(self, image):
         self.fanart = os.path.join(plugin_img_path, 'backgrounds', image)
