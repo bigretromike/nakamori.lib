@@ -62,7 +62,7 @@ class Directory(object):
 
     def __str__(self):
         # class name
-        result = '<s> ' % self.__class__.__name__
+        result = '<%s> ' % self.__class__.__name__
         # if it's not a full object, use the ID
         if self.name != '':
             result += self.name
