@@ -74,6 +74,8 @@ class Directory(object):
                 result += ' - %s item' % len(self.items)
             else:
                 result += ' - %s items' % len(self.items)
+        else:
+            result += ' - 0 items'
 
         return result
 
