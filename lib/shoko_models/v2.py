@@ -644,7 +644,7 @@ class Series(Directory):
         self.is_movie = json_node.get('ismovie', 0) == 1
         self.file_size = json_node.get('filesize', 0)
         self.year = json_node.get('year', 0)
-        self.mpaa = self.get_mpaa_rating(json_node.get('tags', {}))
+        self.mpaa = self.get_mpaa_rating()
         self.outline = " ".join(self.overview.split(".", 3)[:2])  # first 3 sentence
 
         self.process_children(json_node)
@@ -833,24 +833,28 @@ class Series(Directory):
         sorting_setting = plugin_addon.getSetting('default_sort_episodes')
         kodi_utils.set_user_sort_method(sorting_setting)
 
-    def get_mpaa_rating(self, tags_list):
+    def get_mpaa_rating(self):
         """
+        This is unfortunately bound by the tag filter. We may do something about it in APIv3
         shameless copy from Cazzar/ShokoMetadata.bundle
         :return:
         """
-        if 'kodomo' in tags_list:
+        # these are case sensitive, and they are not lowercase
+        if 'Kodomo' in self.tags:
             return 'TV-Y'
-        elif 'mina' in tags_list:
+        if 'Mina' in self.tags:
             return 'TV-G'
-        elif 'shoujo' in tags_list:
+        if 'Shoujo' in self.tags:
             return 'TV-14'
-        elif 'shounen' in tags_list:
+        if 'Shounen' in self.tags:
             return 'TV-14'
-        elif 'josei' in tags_list:
+        if 'Josei' in self.tags:
             return 'TV-14'
-        elif 'seinen' in tags_list:
+        if 'Seinen' in self.tags:
             return 'TV-MA'
-        elif '18 eestricted' in tags_list:
+        if 'Mature' in self.tags:
+            return 'TV-MA'
+        if '18 Restricted' in self.tags:
             return 'TV-R'
         return ''
 
