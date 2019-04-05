@@ -70,7 +70,10 @@ class Directory(object):
             result += '[%s]' % self.id
 
         if self.items is not None and len(self.items) > 0:
-            result += ' - %s items' % len(self.items)
+            if len(self.items) == 1:
+                result += ' - %s item' % len(self.items)
+            else:
+                result += ' - %s items' % len(self.items)
 
         return result
 
