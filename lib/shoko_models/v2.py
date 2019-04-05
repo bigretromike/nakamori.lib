@@ -61,7 +61,18 @@ class Directory(object):
         self.process_art(json_node)
 
     def __str__(self):
-        return '<%s> %s' % (self.__class__.__name__, self.name)
+        # class name
+        result = '<s> ' % self.__class__.__name__
+        # if it's not a full object, use the ID
+        if self.name != '':
+            result += self.name
+        else:
+            result += '[%s]' % self.id
+
+        if self.items is not None and len(self.items) > 0:
+            result += ' - %s items' % len(self.items)
+
+        return result
 
     def apply_image_override(self, image):
         self.fanart = os.path.join(plugin_img_path, 'backgrounds', image)
