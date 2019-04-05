@@ -60,6 +60,9 @@ class Directory(object):
 
         self.process_art(json_node)
 
+    def __str__(self):
+        return '<%s> %s' % (self.__class__.__name__, self.name)
+
     def apply_image_override(self, image):
         self.fanart = os.path.join(plugin_img_path, 'backgrounds', image)
         self.poster = os.path.join(plugin_img_path, 'icons', image)
