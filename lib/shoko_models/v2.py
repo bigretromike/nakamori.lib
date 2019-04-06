@@ -701,9 +701,9 @@ class Series(Directory):
         name = model_utils.title_coloring(self.name, self.sizes.local_episodes, self.sizes.total_episodes,
                                           self.sizes.local_specials, self.sizes.total_specials, False)
 
-        li = ListItem(name, path=url)
+        li = ListItem(name, path=self.url)
         infolabels = self.get_infolabels()
-        li.setPath(url)
+        li.setPath(self.url)
         li.set_watched_flags(infolabels, self.is_watched(), 1)
 
         li.setUniqueIDs({'anidb': self.anidb_id})
@@ -1161,9 +1161,9 @@ class Episode(Directory):
         """
         self.url = url
         if self.url is None:
-            self.url = url = self.get_plugin_url()
-        li = ListItem(self.name, path=url)
-        li.setPath(url)
+            self.url = self.get_plugin_url()
+        li = ListItem(self.name, path=self.url)
+        li.setPath(self.url)
         infolabels = self.get_infolabels()
 
         # set watched flags
