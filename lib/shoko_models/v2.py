@@ -640,6 +640,8 @@ class Series(Directory):
         :type json_node: Union[list,dict]
         """
         Directory.__init__(self, json_node, get_children)
+        self.url = None
+        self.item_type = 'tvshow'
         # don't redownload info on an okay object
         if build_full_object and (self.size < 0 or (get_children and len(self.items) < 1)):
             json_node = self.get_full_object()
@@ -654,7 +656,7 @@ class Series(Directory):
         self.overview = model_utils.remove_anidb_links(pyproxy.decode(json_node.get('summary', '')))
 
         self.anidb_id = pyproxy.safe_int(json_node.get('aid', 0))
-        self.season = json_node.get('season', '1')
+        self.season = pyproxy.safe_int(json_node.get('season', '1'))
         self.date = model_utils.get_airdate(json_node)
         self.rating = float(str(json_node.get('rating', '0')).replace(',', '.'))
         self.user_rating = float(str(json_node.get('userrating', '0')).replace(',', '.'))
@@ -663,6 +665,8 @@ class Series(Directory):
         self.sizes = get_sizes(json_node)
         self.tags = model_utils.get_tags(json_node.get('tags', {}))
         self.is_movie = json_node.get('ismovie', 0) == 1
+        if self.is_movie:
+            self.item_type = 'movie'
         self.file_size = json_node.get('filesize', 0)
         self.year = json_node.get('year', 0)
         self.mpaa = self.get_mpaa_rating()
@@ -683,13 +687,15 @@ class Series(Directory):
     def get_plugin_url(self):
         return puf(nakamoriplugin.show_series_menu, self.id)
 
-    def get_listitem(self):
+    def get_listitem(self, url=None):
         """
 
         :return:
         :rtype: ListItem
         """
-        url = self.get_plugin_url()
+        self.url = url
+        if self.url is None:
+            self.url = self.get_plugin_url()
 
         # We need to assume not airing, as there is no end date provided in API
         name = model_utils.title_coloring(self.name, self.sizes.local_episodes, self.sizes.total_episodes,
@@ -728,7 +734,7 @@ class Series(Directory):
             # 'episode': int
             'season': self.season,
             # 'sortepisode': int,
-            # 'sortseason': int
+            'sortseason': self.season,
             # 'episodeguide': string,
             # 'showlink': '',
             # 'top250': int
@@ -766,10 +772,10 @@ class Series(Directory):
             # 'album': string
             # 'artist': list
             'votes': self.votes,
-            'path': self.get_plugin_url(),
+            'path': self.url,
             # 'trailer': string
             # 'dateadded': string (Y-m-d h:m:s) // added below, this is true in 99% of cases, apiv3
-            'mediatype': 'tvshow',
+            'mediatype': self.item_type,
             # 'dbid' <-- forbidden to use
         }
 
@@ -1054,11 +1060,15 @@ class Episode(Directory):
         self.series_name = None
         self.series_anidb_id = 0
         self.actors = []
+        self.url = None
+        self.item_type = 'episode'
         if series is not None:
             self.series_id = series.id
             self.series_name = series.name
             self.actors = series.actors
             self.series_anidb_id = series.anidb_id
+            if series.is_movie:
+                self.item_type = 'movie'
 
         Directory.__init__(self, json_node, True)
         # don't redownload info on an okay object
@@ -1095,8 +1105,6 @@ class Episode(Directory):
             season = str(json_node.get('season', '1'))
             if 'x' in season:
                 season = season.split('x')[0]
-                if season == '0':
-                    season = '1'
         else:
             season = '0'
         self.season = pyproxy.safe_int(season)
@@ -1145,13 +1153,15 @@ class Episode(Directory):
             return WatchedStatus.PARTIAL
         return WatchedStatus.UNWATCHED
 
-    def get_listitem(self):
+    def get_listitem(self, url=None):
         """
 
         :return:
         :rtype: ListItem
         """
-        url = self.get_plugin_url()
+        self.url = url
+        if self.url is None:
+            self.url = url = self.get_plugin_url()
         li = ListItem(self.name, path=url)
         li.setPath(url)
         infolabels = self.get_infolabels()
@@ -1169,6 +1179,7 @@ class Episode(Directory):
         li.setInfo(type='video', infoLabels=infolabels)
         li.set_art(self)
         li.setCast(self.actors)
+        li.setProperty('IsPlayable', 'true')
         f = self.get_file()
         if f is not None:
             model_utils.set_stream_info(li, f)
@@ -1229,10 +1240,10 @@ class Episode(Directory):
             # 'album': string -- we don't have the info, kodi might not take it unless we mark it as a music video
             # 'artist': list -- we don't have the info, kodi might not take it unless we mark it as a music video
             'votes': self.votes,
-            'path': self.get_plugin_url(),
+            'path': self.url,
             # 'trailer': string -- url to a trailer video. We don't have this info, but we might be able to later
             # 'dateadded': string (Y-m-d h:m:s) // added below
-            'mediatype': 'episode',
+            'mediatype': self.item_type,
             # 'dbid' <-- forbidden to use
         }
 
