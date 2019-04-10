@@ -48,12 +48,12 @@ class Kodi16Proxy:
         :return: true or false
         :rtype: bool
         """
-        return plugin_addon.getSetting('external_player') == 'true'
+        return plugin_addon.getSetting('external_player').lower() == 'true'
 
     def parse_tags(self, tag_obj_string):
         """
         In Kodi 18+, tags are expected to be list, before it was long string;
-        :param tag_obj: long string
+        :param tag_obj_string: long string
         :return: string or list
         """
         temp_genre = ' | '.join(tag_obj_string)

@@ -2,8 +2,10 @@ import json
 from collections import defaultdict
 try:
     basestring
+    unicode
 except NameError:
     basestring = str  #For Python 3
+    unicode = str
 # Surprisingly, there is no better way to do this...
 
 
@@ -23,8 +25,10 @@ def dump_to_text(*args):
 
 
 def dump(obj):
-    if isinstance(obj, (basestring, int, bool, float)):
+    if isinstance(obj, basestring):
         return obj
+    if isinstance(obj, (int, bool, float)):
+        return unicode(obj)
     if isinstance(obj, (list, set, tuple)):
         return json.dumps(dump_iterable(obj))
     if isinstance(obj, (dict, defaultdict)):
