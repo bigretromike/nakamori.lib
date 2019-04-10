@@ -156,11 +156,25 @@ class Directory(object):
             xbmc.executebuiltin('XBMC.Action(ToggleWatched)')
 
         if plugin_addon.getSetting('sync_to_library') == 'true':
-            playcount = '1' if watched else '0'
+            # TODO NEED TO GET EPISODEID FROM FILE
+            # IN DB FILES ARE STORED AS PATH: plugin://plugin.video.nakamori/  FILENAME: plugin://plugin.video.nakamori/tvshows/<ID>/play
+            # <ID> is not the same as shoko ID.
+            # series are directories cmd = '{"jsonrpc":"2.0","method":"Files.GetDirectory","params":{"directory":"plugin://plugin.video.nakamori/tvshows/"},"id":1}'
+            cmd = '{"jsonrpc":"2.0","method":"Files.GetFileDetails","params":{"file":"plugin://plugin.video.nakamori/plugin://plugin.video.nakamori/tvshows/%s/play", "properties": ["episode", "title", "uniqueid", "tvshowid"]},"id":1}' % self.id
+            xbmc.log(str(cmd), xbmc.LOGNOTICE)
+            rpc = xbmc.executeJSONRPC(cmd)
+            xbmc.log(str(rpc), xbmc.LOGNOTICE)
+
+            #cmd = '{"jsonrpc":"2.0","method":"VideoLibrary.GetEpisodeDetails","params":{"episodeid":%d},"id":1}' % self.id
+            #xbmc.log(str(cmd), xbmc.LOGNOTICE)
+            #rpc = xbmc.executeJSONRPC(cmd)
+            #xbmc.log(str(rpc), xbmc.LOGNOTICE)
+
             # lastplayed = 'string'
-            xbmc.executeJSONRPC(
-                '{ "jsonrpc": "2.0", "method": "VideoLibrary.SetEpisodeDetails", "params": {"playcount": ' + playcount +
-                ' , "episodeid": ' + str(self.id) + '}, "id": 1 }')
+            #cmd = '{"jsonrpc":"2.0","method":"VideoLibrary.SetEpisodeDetails","params":{"episodeid":%d,"playcount":%d},"id":1}' % (self.id, watched)
+            #xbmc.log(str(cmd), xbmc.LOGNOTICE)
+            #rpc = xbmc.executeJSONRPC(cmd)
+            #xbmc.log(str(rpc), xbmc.LOGNOTICE)
 
         if plugin_addon.getSetting('watchedbox') == 'true':
             msg = localize(30201) + ' ' + (localize(30202) if watched else localize(30203))
