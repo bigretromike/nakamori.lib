@@ -1179,7 +1179,6 @@ class Episode(Directory):
         li.setInfo(type='video', infoLabels=infolabels)
         li.set_art(self)
         li.setCast(self.actors)
-        li.setProperty('IsPlayable', 'true')
         f = self.get_file()
         if f is not None:
             model_utils.set_stream_info(li, f)

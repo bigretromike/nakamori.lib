@@ -359,8 +359,6 @@ def show_notification_for_exception(ex):
     :type ex: (NakamoriError, int)
     :return:
     """
-
-    from proxy.python_version_proxy import python_proxy as pp
-    msg = ex[0].exc_message + '\nThis occurred ' + str(ex[1]) + pp.encode(u'\u00D7 ') + ' times.'
+    msg = ex[0].exc_message + '\nThis occurred ' + str(ex[1]) + ' times.'
     xbmc.executebuiltin('XBMC.Notification(Nakamori: An Error Occurred, ' + msg + ', 2000, ' +
                         plugin_addon.getAddonInfo('icon') + ')')
