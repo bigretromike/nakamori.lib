@@ -155,6 +155,13 @@ class Directory(object):
         else:
             xbmc.executebuiltin('XBMC.Action(ToggleWatched)')
 
+        if plugin_addon.getSetting('sync_to_library') == 'true':
+            playcount = '1' if watched else '0'
+            # lastplayed = 'string'
+            xbmc.executeJSONRPC(
+                '{ "jsonrpc": "2.0", "method": "VideoLibrary.SetEpisodeDetails", "params": {"playcount": ' + playcount +
+                ' , "episodeid": ' + str(self.id) + '}, "id": 1 }')
+
         if plugin_addon.getSetting('watchedbox') == 'true':
             msg = localize(30201) + ' ' + (localize(30202) if watched else localize(30203))
             xbmc.executebuiltin('XBMC.Notification(' + localize(30200) + ', ' + msg + ', 2000, ' +
