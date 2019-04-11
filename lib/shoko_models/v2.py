@@ -727,7 +727,7 @@ class Series(Directory):
         li.setPath(self.url)
         li.set_watched_flags(infolabels, self.is_watched(), 1)
 
-        li.setUniqueIDs({'anidb': self.anidb_id})
+        li.setUniqueIDs({'anidb': self.anidb_id, 'shoko_aid': self.id})
         self.hide_info(infolabels)
         li.setRating('anidb', float(infolabels.get('rating', 0.0)), infolabels.get('votes', 0), True)
         li.setInfo(type='video', infoLabels=infolabels)
@@ -1195,6 +1195,7 @@ class Episode(Directory):
         else:
             li.set_watched_flags(infolabels, WatchedStatus.UNWATCHED)
 
+        li.setUniqueIDs({'shoko_eid': self.id})
         self.hide_info(infolabels)
         li.setRating('anidb', float(infolabels.get('rating', 0.0)), infolabels.get('votes', 0), True)
         li.setInfo(type='video', infoLabels=infolabels)
@@ -1251,7 +1252,7 @@ class Episode(Directory):
             # 'status': string
             # 'set': string <-- this is the 1000% way for name of Group of Series (bakamonogatari group), apiv3
             # 'setoverview': overview -- like dbid, depending on how Kodi handles it, we could use it for series plot
-            # 'tag': string, list
+            'tag': 'nakamori',
             # 'imdbnumber': string
             # 'code': string - produciton code
             'aired': self.date,
