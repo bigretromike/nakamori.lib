@@ -784,7 +784,7 @@ class Series(Directory):
             # 'status': string
             # 'set': string
             # 'setoverview': overview
-            # 'tag': string, list
+            'tag': ['nakamori', 'series'],
             # 'imdbnumber': string
             # 'code': string - produciton code
             'aired': self.date,
@@ -1252,7 +1252,7 @@ class Episode(Directory):
             # 'status': string
             # 'set': string <-- this is the 1000% way for name of Group of Series (bakamonogatari group), apiv3
             # 'setoverview': overview -- like dbid, depending on how Kodi handles it, we could use it for series plot
-            'tag': 'nakamori',
+            'tag': ['nakamori', 'episode'],
             # 'imdbnumber': string
             # 'code': string - produciton code
             'aired': self.date,
