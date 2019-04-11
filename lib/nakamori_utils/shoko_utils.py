@@ -354,6 +354,7 @@ def get_apikey(login, password):
 
 
 def can_user_connect():
+    # TODO APIv3 make endpoint to ping server with creds
     # what better way to try than to just attempt to load the main menu?
     try:
         from shoko_models.v2 import Filter
