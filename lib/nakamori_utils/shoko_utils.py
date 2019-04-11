@@ -354,14 +354,11 @@ def get_apikey(login, password):
 
 
 def can_user_connect():
-    # TODO APIv3 make endpoint to ping server with creds
-    # what better way to try than to just attempt to load the main menu?
     try:
-        from shoko_models.v2 import Filter
-        f = Filter(0, build_full_object=True, get_children=False)
-        if f.size < 1:
-            raise RuntimeError(localized(30027))
-        return True
+        ping = pyproxy.get_json(server + '/api/ping')
+        if '"response":"pong"' in ping:
+            return True
+        raise RuntimeError(localized(30027))
     except:
         # because we always check for connection first, we can assume that auth is the only problem
         # we need to log in
