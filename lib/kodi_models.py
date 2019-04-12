@@ -184,6 +184,7 @@ class VideoLibraryItem(object):
                                                               'Your previouse vote was ' + str(result['userrating']),
                                                               'Do you want to vote again?'):
                                         xbmc.executebuiltin("RunScript(script.module.nakamori,/series/%s/vote)" % aid)
+                                        # TODO return rating from shoko or script and setRating to listItem
                             else:
                                 xbmc.log('no unieueid data, wont vote', xbmc.LOGNOTICE)
                         else:
@@ -216,6 +217,7 @@ class VideoLibraryItem(object):
                                                           'Your previouse vote was ' + str(result['userrating']),
                                                           'Do you want to vote again?'):
                                     xbmc.executebuiltin("RunScript(script.module.nakamori,/episode/%s/vote)" % eid)
+                                    # TODO return rating from shoko or script and setRating to listItem
                         else:
                             xbmc.log('no unieueid data, wont vote', xbmc.LOGNOTICE)
                     else:
