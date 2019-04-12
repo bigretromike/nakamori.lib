@@ -321,3 +321,40 @@ def set_user_sort_method(content):
     if method_for_sorting == Sorting.none.container_id:
         return
     set_sort_method(method_for_sorting)
+
+
+def get_media_type_from_container():
+    if xbmc.getCondVisibility('Container.Content(tvshows)'):
+        return "show"
+    elif xbmc.getCondVisibility('Container.Content(seasons)'):
+        return "season"
+    elif xbmc.getCondVisibility('Container.Content(episodes)'):
+        return "episode"
+    elif xbmc.getCondVisibility('Container.Content(movies)'):
+        return "movie"
+    elif xbmc.getCondVisibility('Container.Content(files)'):
+        return 'file'
+    elif xbmc.getCondVisibility('Container.Content(genres)'):
+        return 'genre'
+    elif xbmc.getCondVisibility('Container.Content(years)'):
+        return 'years'
+    elif xbmc.getCondVisibility('Container.Content(actors)'):
+        return 'actor'
+    elif xbmc.getCondVisibility('Container.Content(playlists)'):
+        return 'playlist'
+    elif xbmc.getCondVisibility('Container.Content(plugins)'):
+        return 'plugin'
+    elif xbmc.getCondVisibility('Container.Content(studios)'):
+        return 'studio'
+    elif xbmc.getCondVisibility('Container.Content(directors)'):
+        return 'director'
+    elif xbmc.getCondVisibility('Container.Content(sets)'):
+        return 'set'
+    elif xbmc.getCondVisibility('Container.Content(tags)'):
+        return 'tag'
+    elif xbmc.getCondVisibility('Container.Content(countries)'):
+        return 'country'
+    elif xbmc.getCondVisibility('Container.Content(roles)'):
+        return 'role'
+    else:
+        return None

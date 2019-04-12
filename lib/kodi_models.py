@@ -1,4 +1,5 @@
 import sys
+import json
 
 import xbmcgui
 import xbmcplugin
@@ -141,6 +142,88 @@ class DirectoryListing(object):
         if not self.immediate and len(self.pending) > 0:
             xbmcplugin.addDirectoryItems(self.handle, self.pending, self.pending.__len__())
         xbmcplugin.endOfDirectory(self.handle, succeeded=self.success, cacheToDisc=self.cache)
+
+
+class VideoLibraryItem(object):
+    def __init__(self):
+        from nakamori_utils import kodi_utils
+
+        self.dbid = str(xbmc.getInfoLabel('ListItem.DBID'))
+        self.media_type = kodi_utils.get_media_type_from_container()
+
+    def vote(self, vote_type):
+        if self.dbid != '':
+            if vote_type == 'series':
+                # vote series from inside episode
+                if self.media_type == 'episode':
+                    cmd = '{"jsonrpc":"2.0","method":"VideoLibrary.GetEpisodeDetails","params":{"properties":["uniqueid","showtitle","season","episode","tvshowid","userrating"],"episodeid":' + self.dbid + '},"id":1}'
+                    result = xbmc.executeJSONRPC(cmd)
+                    result = json.loads(result)
+                    if result.get('result', '') != '':
+                        result = result['result']
+                        if result.get('episodedetails', '') != '':
+                            result = result['episodedetails']
+                            self.dbid = str(result['tvshowid'])
+                # we vote for series from series or episode
+                if self.media_type in ('show', 'episode') and self.dbid != '':
+                    cmd = '{"jsonrpc":"2.0","method":"VideoLibrary.GetTVShowDetails","params":{"properties":["uniqueid","originaltitle","userrating"],"tvshowid":' + self.dbid + '},"id":1}'
+                    result = xbmc.executeJSONRPC(cmd)
+                    result = json.loads(result)
+                    if result.get('result', '') != '':
+                        result = result['result']
+                        if result.get('tvshowdetails', '') != '':
+                            result = result['tvshowdetails']
+                            xbmc.log('You trying to vote on: %s %s' % (result['label'], result['originaltitle']),
+                                     xbmc.LOGNOTICE)
+                            if 'uniqueid' in result:
+                                aid = result['uniqueid'].get('shoko_aid')
+                                if result.get('userrating', 0) == 0:
+                                    xbmc.executebuiltin("RunScript(script.module.nakamori,/series/%s/vote)" % aid)
+                                else:
+                                    if xbmcgui.Dialog().yesno('You already voted',
+                                                              'Your previouse vote was ' + str(result['userrating']),
+                                                              'Do you want to vote again?'):
+                                        xbmc.executebuiltin("RunScript(script.module.nakamori,/series/%s/vote)" % aid)
+                            else:
+                                xbmc.log('no unieueid data, wont vote', xbmc.LOGNOTICE)
+                        else:
+                            xbmc.log('cant find series', xbmc.LOGNOTICE)
+                    else:
+                        xbmc.log('no results', xbmc.LOGNOTICE)
+                else:
+                    xbmc.log('this media type (%s) is not supported for voting' % self.media_type, xbmc.LOGNOTICE)
+            elif vote_type == self.media_type:
+                # vote episode from inside episode
+                result = xbmc.executeJSONRPC(
+                    '{"jsonrpc": "2.0","method":"VideoLibrary.GetEpisodeDetails","params":{"properties":'
+                    '["uniqueid","showtitle","season","episode","tvshowid","userrating"],"episodeid":'
+                    + self.dbid + '},"id":1}')
+                result = json.loads(result)
+                if result.get('result', '') != '':
+                    result = result['result']
+                    if result.get('episodedetails', '') != '':
+                        result = result['episodedetails']
+                        xbmc.log(
+                            'You trying to vote on: %s: %s x %s' % (
+                            result['showtitle'], result['season'], result['episode']),
+                            xbmc.LOGNOTICE)
+                        if 'uniqueid' in result:
+                            eid = result['uniqueid'].get('shoko_eid')
+                            if result.get('userrating', 0) == 0:
+                                xbmc.executebuiltin("RunScript(script.module.nakamori,/episode/%s/vote)" % eid)
+                            else:
+                                if xbmcgui.Dialog().yesno('You already voted',
+                                                          'Your previouse vote was ' + str(result['userrating']),
+                                                          'Do you want to vote again?'):
+                                    xbmc.executebuiltin("RunScript(script.module.nakamori,/episode/%s/vote)" % eid)
+                        else:
+                            xbmc.log('no unieueid data, wont vote', xbmc.LOGNOTICE)
+                    else:
+                        xbmc.log('cant find episode', xbmc.LOGNOTICE)
+                else:
+                    xbmc.log('no results', xbmc.LOGNOTICE)
+        else:
+            xbmc.log('no DBID in media type: %s' % media_type, xbmc.LOGNOTICE)
 
 
 def get_tuple(item, folder=True):
