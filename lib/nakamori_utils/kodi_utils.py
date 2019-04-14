@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import json
 import sys
+import os
 
+import xbmc
 import xbmcgui
 import xbmcplugin
 
