@@ -704,7 +704,8 @@ class Series(Directory):
                     m.update(str(episode.url).encode('utf-8'))
                     m.update(str(episode.size).encode('utf-8'))
                     # TODO need a date of update of file, but how to handle serie info update?
-                    m.update(str(episode.date_added).encode('utf-8'))
+                    # for now we pick first date_added date from first file
+                    m.update(str(episode.update_date).encode('utf-8'))
             self.hash = m.hexdigest().upper()
 
         eh.spam(self)
@@ -1119,6 +1120,7 @@ class Episode(Directory):
         self.episode_type = json_node.get('eptype', 'Other')
         self.date = model_utils.get_airdate(json_node)
         self.tvdb_episode = json_node.get('season', '0x0')
+        self.update_date = None
 
         self.process_children(json_node)
 
@@ -1296,7 +1298,11 @@ class Episode(Directory):
     def process_children(self, json_node):
         for _file in json_node.get('files', []):
             try:
-                self.items.append(File(_file, True))
+                f = File(_file, True)
+                self.items.append(f)
+                # TODO REPLACE WITH PROPER UPDATE DATE MOVE THIS OUT HERE
+                if self.update_date is not None:
+                    self.update_date = f.date_added
             except:
                 pass
 
