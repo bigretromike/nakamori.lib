@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import json
 import time
+from hashlib import md5
 
 from abc import abstractmethod
 
@@ -112,6 +113,8 @@ class Directory(object):
     def get_full_object(self):
         url = self.get_api_url()
         json_body = pyproxy.get_json(url)
+        if json_body is None:
+            return None
         json_node = json.loads(json_body)
         return json_node
 
@@ -654,7 +657,7 @@ class Series(Directory):
     """
     A series object, contains a unified method of representing a series, with convenient converters
     """
-    def __init__(self, json_node, build_full_object=False, get_children=False):
+    def __init__(self, json_node, build_full_object=False, get_children=False, compute_hash=False):
         """
         Create a series object from a json node, containing everything that is relevant to a ListItem
         :param json_node: the json response from things like api/serie
@@ -692,8 +695,20 @@ class Series(Directory):
         self.year = json_node.get('year', 0)
         self.mpaa = self.get_mpaa_rating()
         self.outline = " ".join(self.overview.split(".", 3)[:2])  # first 3 sentence
+        self.hash = None
 
         self.process_children(json_node)
+
+        if compute_hash:
+            m = md5()
+            if len(self.items) > 0:
+                for episode in self.items:
+                    m.update(str(episode.url).encode('utf-8'))
+                    m.update(str(episode.size).encode('utf-8'))
+                    # TODO need a date of update of file, but how to handle serie info update?
+                    # for now we pick first date_added date from first file
+                    m.update(str(episode.update_date).encode('utf-8'))
+            self.hash = m.hexdigest().upper()
 
         eh.spam(self)
 
@@ -735,6 +750,8 @@ class Series(Directory):
         li.setProperty('TotalEpisodes', str(self.get_total_episodes()))
         li.setProperty('WatchedEpisodes', str(self.get_watched_episodes()))
         li.setProperty('UnWatchedEpisodes', str(self.get_total_episodes() - self.get_watched_episodes()))
+        if self.hash is not None:
+            li.setProperty('hash', self.hash)
         li.addContextMenuItems(self.get_context_menu_items())
         li.set_art(self)
         return li
@@ -1105,6 +1122,7 @@ class Episode(Directory):
         self.episode_type = json_node.get('eptype', 'Other')
         self.date = model_utils.get_airdate(json_node)
         self.tvdb_episode = json_node.get('season', '0x0')
+        self.update_date = None
 
         self.process_children(json_node)
 
@@ -1282,7 +1300,11 @@ class Episode(Directory):
     def process_children(self, json_node):
         for _file in json_node.get('files', []):
             try:
-                self.items.append(File(_file, True))
+                f = File(_file, True)
+                self.items.append(f)
+                # TODO REPLACE WITH PROPER UPDATE DATE MOVE THIS OUT HERE
+                if self.update_date is not None:
+                    self.update_date = f.date_added
             except:
                 pass
 
