@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import json
 import time
+from hashlib import md5
 
 from abc import abstractmethod
 
@@ -654,7 +655,7 @@ class Series(Directory):
     """
     A series object, contains a unified method of representing a series, with convenient converters
     """
-    def __init__(self, json_node, build_full_object=False, get_children=False):
+    def __init__(self, json_node, build_full_object=False, get_children=False, compute_hash=False):
         """
         Create a series object from a json node, containing everything that is relevant to a ListItem
         :param json_node: the json response from things like api/serie
@@ -692,8 +693,19 @@ class Series(Directory):
         self.year = json_node.get('year', 0)
         self.mpaa = self.get_mpaa_rating()
         self.outline = " ".join(self.overview.split(".", 3)[:2])  # first 3 sentence
+        self.hash = None
 
         self.process_children(json_node)
+
+        if compute_hash:
+            m = md5()
+            if len(self.items) > 0:
+                for episode in self.items:
+                    m.update(str(episode.url).encode('utf-8'))
+                    m.update(str(episode.size).encode('utf-8'))
+                    # TODO need a date of update of file, but how to handle serie info update?
+                    m.update(str(episode.date_added).encode('utf-8'))
+            self.hash = m.hexdigest().upper()
 
         eh.spam(self)
 
@@ -735,6 +747,8 @@ class Series(Directory):
         li.setProperty('TotalEpisodes', str(self.get_total_episodes()))
         li.setProperty('WatchedEpisodes', str(self.get_watched_episodes()))
         li.setProperty('UnWatchedEpisodes', str(self.get_total_episodes() - self.get_watched_episodes()))
+        if self.hash is not None:
+            li.setProperty('hash', self.hash)
         li.addContextMenuItems(self.get_context_menu_items())
         li.set_art(self)
         return li
