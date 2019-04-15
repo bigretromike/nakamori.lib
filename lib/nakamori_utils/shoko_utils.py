@@ -357,9 +357,12 @@ def can_user_connect():
     # what better way to try than to just attempt to load the main menu?
     try:
         # TRY to use new method that no one has yet
-        ping = pyproxy.get_json(server + '/api/ping')
-        if ping is not None and '"response":"pong"' in ping:
-            return True
+        try:
+            ping = pyproxy.get_json(server + '/api/ping')
+            if ping is not None and '"response":"pong"' in ping:
+                return True
+        except:
+            pass
         # but since no one has it, we can't count on it actually working, so fall back
         from shoko_models.v2 import Filter
         f = Filter(0, build_full_object=True, get_children=False)
