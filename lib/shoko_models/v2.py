@@ -113,6 +113,8 @@ class Directory(object):
     def get_full_object(self):
         url = self.get_api_url()
         json_body = pyproxy.get_json(url)
+        if json_body is None:
+            return None
         json_node = json.loads(json_body)
         return json_node
 
