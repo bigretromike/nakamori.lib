@@ -707,12 +707,10 @@ class Series(Directory):
             m = md5()
             if len(self.items) > 0:
                 for episode in self.items:
-                    m.update(str(episode.url).encode('utf-8'))
-                    m.update(str(episode.size).encode('utf-8'))
                     # TODO need a date of update of file, but how to handle serie info update?
                     # for now we pick first date_added date from first file
-                    m.update(str(episode.update_date).encode('utf-8'))
-            self.hash = m.hexdigest().upper()
+                    m.update(episode.hash_content)
+                self.hash = m.hexdigest().upper()
 
         eh.spam(self)
 
@@ -1127,6 +1125,7 @@ class Episode(Directory):
         self.date = model_utils.get_airdate(json_node)
         self.tvdb_episode = json_node.get('season', '0x0')
         self.update_date = None
+        self.hash_content = None
 
         self.process_children(json_node)
 
@@ -1274,7 +1273,7 @@ class Episode(Directory):
             # 'status': string
             # 'set': string <-- this is the 1000% way for name of Group of Series (bakamonogatari group), apiv3
             # 'setoverview': overview -- like dbid, depending on how Kodi handles it, we could use it for series plot
-            'tag': ['nakamori', 'episode'],
+            # 'tag': ['nakamori', 'episode'],  <-- not working for episodes
             # 'imdbnumber': string
             # 'code': string - produciton code
             'aired': self.date,
@@ -1307,8 +1306,18 @@ class Episode(Directory):
                 f = File(_file, True)
                 self.items.append(f)
                 # TODO REPLACE WITH PROPER UPDATE DATE MOVE THIS OUT HERE
-                if self.update_date is not None:
+                if self.update_date is None:
                     self.update_date = f.date_added
+                if self.hash_content is None:
+                    self.hash_content = str(self.get_plugin_url()).encode('utf-8')
+                    if f.size is not None:
+                        self.hash_content += str(f.size).encode('utf-8')
+                    if f.date_added is not None and len(f.date_added) >= 10:
+                        # datetime im broken this one should work but is not, and im not using 8 line funny workaround
+                        # str(datetime.strptime(str(f.date_added), '%Y-%m-%d %H:%M:%S').strftime('%d.%m.%Y')).encode('utf-8')
+                        # https://bugs.python.org/issue27400
+                        x = str(f.date_added)[8:10] + '.' +str(f.date_added)[5:7] + '.' + str(f.date_added)[0:4]
+                        self.hash_content += str(x).encode('utf-8')
             except:
                 pass
 
