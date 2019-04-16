@@ -657,7 +657,7 @@ class Series(Directory):
     """
     A series object, contains a unified method of representing a series, with convenient converters
     """
-    def __init__(self, json_node, build_full_object=False, get_children=False, compute_hash=False):
+    def __init__(self, json_node, build_full_object=False, get_children=False, compute_hash=False, seiyuu_pic=False):
         """
         Create a series object from a json node, containing everything that is relevant to a ListItem
         :param json_node: the json response from things like api/serie
@@ -685,7 +685,11 @@ class Series(Directory):
         self.rating = float(str(json_node.get('rating', '0')).replace(',', '.'))
         self.user_rating = float(str(json_node.get('userrating', '0')).replace(',', '.'))
         self.votes = pyproxy.safe_int(json_node.get('votes', 0))
-        self.actors = model_utils.get_cast_info(json_node)
+        if seiyuu_pic:
+            fix_seiyuu_pic = True
+        else:
+            fix_seiyuu_pic = True if plugin_addon.getSetting('fix_seiyuu_pic') == 'true' else False
+        self.actors = model_utils.get_cast_info(json_node, fix_seiyuu_pic)
         self.sizes = get_sizes(json_node)
         self.tags = model_utils.get_tags(json_node.get('tags', {}))
         self.is_movie = json_node.get('ismovie', 0) == 1

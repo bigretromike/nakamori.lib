@@ -45,10 +45,11 @@ def get_tags(tag_node):
         return ''
 
 
-def get_cast_and_role_new(data):
+def get_cast_and_role_new(data, fix_seiyuu_pic=False):
     """
     Get cast from the json and arrange in the new setCast format
     :param data: json node containing 'roles'
+    :param fix_seiyuu_pic: bool for swapping character picture with seiyuu's
     :type data: list
     :return: a list of dictionaries for the cast
     :rtype: List[Dict[str,str]]
@@ -58,7 +59,10 @@ def get_cast_and_role_new(data):
         for char in data:
             char_charname = char.get('character', '')
             char_seiyuuname = char.get('staff', '')
-            char_seiyuupic = server + char.get('character_image', '')
+            if fix_seiyuu_pic:
+                char_seiyuupic = server + char.get('staff_image', '')
+            else:
+                char_seiyuupic = server + char.get('character_image', '')
 
             # only add it if it has data
             # reorder these to match the convention (Actor is cast, character is role, in that order)
@@ -75,12 +79,12 @@ def get_cast_and_role_new(data):
     return None
 
 
-def get_cast_and_role(data):
+def get_cast_and_role(data, fix_seiyuu_pic=False):
     """
     Get cast from the json and arrange in the new setCast format
     Args:
         data: json node containing 'roles'
-
+        fix_seiyuu_pic: bool for swapping character picture with seiyuu's
     Returns: a list of dictionaries for the cast
     """
     result_list = []
@@ -88,7 +92,10 @@ def get_cast_and_role(data):
         for char in data:
             char_charname = char['role']
             char_seiyuuname = char['name']
-            char_seiyuupic = char['rolepic']
+            if fix_seiyuu_pic:
+                char_seiyuupic = char['seiyuupic']
+            else:
+                char_seiyuupic = char['rolepic']
 
             # only add it if it has data
             # reorder these to match the convention (Actor is cast, character is role, in that order)
@@ -296,10 +303,11 @@ def get_sub_streams(node):
     return streams
 
 
-def get_cast_info(json_node):
+def get_cast_info(json_node, fix_seiyuu_pic=False):
     """
     Extracts and processes cast and staff info
     :param json_node: json response
+    :param fix_seiyuu_pic: bool for swapping character picture with seiyuu's
     :return: list of cast objects { 'name': str, 'role': str, 'thumbnail': str (url) }
     :rtype:
     """
@@ -308,9 +316,9 @@ def get_cast_info(json_node):
         cast_nodes = json_node.get('roles', {})
         if len(cast_nodes) > 0:
             if cast_nodes[0].get('character', '') != '':
-                result_list = get_cast_and_role_new(cast_nodes)
+                result_list = get_cast_and_role_new(cast_nodes, fix_seiyuu_pic)
             else:
-                result_list = get_cast_and_role(cast_nodes)
+                result_list = get_cast_and_role(cast_nodes, fix_seiyuu_pic)
     return result_list
 
 
