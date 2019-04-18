@@ -59,10 +59,50 @@ def get_cast_and_role_new(data, fix_seiyuu_pic=False):
         for char in data:
             char_charname = char.get('character', '')
             char_seiyuuname = char.get('staff', '')
-            if fix_seiyuu_pic:
-                char_seiyuupic = server + char.get('staff_image', '')
-            else:
-                char_seiyuupic = server + char.get('character_image', '')
+            animated_pictures = True if plugin_addon.getSetting('seiyuu_gif') == 'true' else False
+            try:
+                if animated_pictures:
+                    # TODO as for now it eats a lot of disk space and the process it slows down loading time significantly
+                    # TODO this is as test for quality / performence
+                    file_name = str(char_seiyuuname).replace(' ', '') + str(char_charname).replace(' ', '')
+                    profileDir = xbmc.translatePath(xbmcaddon.Addon().getAddonInfo('profile'))
+                    import os
+                    if not os.path.exists(profileDir):
+                        os.mkdir(profileDir)
+                    new_image_url = os.path.join(profileDir, 'characters')
+                    if not os.path.exists(new_image_url):
+                        os.mkdir(new_image_url)
+                    new_image_url = os.path.join(new_image_url, file_name + '.gif')
+                    if not os.path.exists(new_image_url):
+                        frames = []
+                        actor_pic = server + char.get('staff_image', '')
+                        char_pic = server + char.get('character_image', '')
+                        if actor_pic != '' and char_pic != '':
+                            from PIL import ImageFont, ImageDraw, Image
+                            from io import BytesIO
+                            try:
+                                from urllib.request import urlopen
+                            except ImportError:
+                                from urllib2 import urlopen
+                            img1 = Image.open(BytesIO(urlopen(actor_pic).read()))
+                            img2 = Image.open(BytesIO(urlopen(char_pic).read()))
+                            # TODO Center characters
+                            # TODO resize image and/or crop
+                            frames.append(img1)
+                            frames.append(img2)
+                            frames[0].save(new_image_url, format='GIF', append_images=frames[1:], save_all=True, duration=500,
+                                           loop=0)
+                    char_seiyuupic = new_image_url
+                else:
+                    # region OLD
+                    if fix_seiyuu_pic:
+                        char_seiyuupic = server + char.get('staff_image', '')
+                    else:
+                        char_seiyuupic = server + char.get('character_image', '')
+                    # endregion OLD
+            except Exception as ex:
+                # TODO UNTIL THIS IS NOT POLISHED OR MOVED TO SERVER LEAVE THIS AS IS
+                xbmc.log('EEEEEEE------- ' + str(ex), xbmc.LOGNOTICE)
 
             # only add it if it has data
             # reorder these to match the convention (Actor is cast, character is role, in that order)
