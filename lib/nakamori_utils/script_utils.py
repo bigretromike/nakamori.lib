@@ -16,6 +16,16 @@ def calendar(when=0, page=0):
     xbmc.executebuiltin(url)
 
 
+def url_calendar3(when=0, page=0):
+    url = '/calendar3/%i/%i' % (when, page)
+    return run % url
+
+
+def calendar3(when=0, page=0):
+    url = url_calendar3(when, page)
+    xbmc.executebuiltin(url)
+
+
 def arbiter(wait, arg):
     url = '/arbiter/%i/%s' % (wait, arg)
     url = run % url
