@@ -1,157 +1,166 @@
+# Translators:
+# BigRetroMike, 2019
+# 
 msgid ""
 msgstr ""
+"Project-Id-Version: Nakamori Lib\n"
+"Last-Translator: BigRetroMike, 2019\n"
+"Language-Team: Spanish (Spain) (https://www.transifex.com/nakamori/teams/97622/es_ES/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Project-Id-Version: Nakamori Lib\n"
-"Language: en\n"
+"Language: es_ES\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: kodi_utils
 msgctxt "#30001"
 msgid "Server"
-msgstr "Servidor" 
+msgstr "Servidor"
 
 #: kodi_utils
 msgctxt "#30002"
 msgid "Label"
-msgstr "Etiqueta" 
+msgstr "Etiqueta"
 
 #: kodi_utils
 msgctxt "#30003"
 msgid "Date"
-msgstr "Fecha" 
+msgstr "Fecha"
 
 #: kodi_utils
 msgctxt "#30004"
 msgid "Title"
-msgstr "Título" 
+msgstr "Título"
 
 #: kodi_utils
 msgctxt "#30005"
 msgid "Time"
-msgstr "Hora" 
+msgstr "Hora"
 
 #: kodi_utils
 msgctxt "#30006"
 msgid "Genre"
-msgstr "Género" 
+msgstr "Género"
 
 #: kodi_utils
 msgctxt "#30007"
 msgid "Year"
-msgstr "Año" 
+msgstr "Año"
 
 #: kodi_utils
 msgctxt "#30008"
 msgid "Rating"
-msgstr "Clasificación" 
+msgstr "Clasificación"
 
 #: kodi_utils
 msgctxt "#30009"
 msgid "UserRating"
-msgstr "Opiniones de los usuarios" 
+msgstr "Opiniones de los usuarios"
 
 #: kodi_utils
 msgctxt "#30010"
 msgid "Episode"
-msgstr "Episodio" 
+msgstr "Episodio"
 
 #: kodi_utils
 msgctxt "#30011"
 msgid "SortTitle"
-msgstr "SortTitle" 
+msgstr "SortTitle"
 
 #: kodi_utils
 msgctxt "#30012"
 msgid "DateAdded"
-msgstr "Fecha Agregada" 
+msgstr "Fecha Agregada"
 
 #: kodi_utils
 msgctxt "#30013"
 msgid "Failed set_window_heading"
-msgstr "Falló set_window_heading" 
+msgstr "Falló set_window_heading"
 
 #: kodi_utils
 msgctxt "#30014"
 msgid "Unable to Select Item"
-msgstr "No se puede seleccionar el elemento" 
+msgstr "No se puede seleccionar el elemento"
 
 #: kodi_utils
 msgctxt "#30015"
 msgid "Unable to Select Item"
-msgstr "No se puede seleccionar el elemento" 
+msgstr "No se puede seleccionar el elemento"
 
 #: kodi_utils
 msgctxt "#30016"
 msgid "Unable to Execute JSONRPC to Kodi"
-msgstr "No se puede ejecutar JSONRPC a Kodi" 
+msgstr "No se puede ejecutar JSONRPC a Kodi"
 
 #: shoko_utils
 msgctxt "#30017"
 msgid "Server Error"
-msgstr "Error del Servidor" 
+msgstr "Error del Servidor"
 
 #: shoko_utils
 msgctxt "#30018"
 msgid "There was an error starting Shoko Server"
-msgstr "Hubo un error al iniciar el servidor Shoko." 
+msgstr "Hubo un error al iniciar el servidor Shoko."
 
 #: shoko_utils
 msgctxt "#30019"
-msgid "Check the server\'s status."
-msgstr "Compruebe el estado del servidor." 
+msgid "Check the server\\'s status."
+msgstr "Compruebe el estado del servidor."
 
 #: shoko_utils
 msgctxt "#30020"
 msgid "Feel free to ask for advice on our discord"
-msgstr "Siéntete libre de pedir consejo sobre nuestra discordia." 
+msgstr "Siéntete libre de pedir consejo sobre nuestra discordia."
 
 #: shoko_utils
 msgctxt "#30021"
 msgid "Waiting for Server Startup"
-msgstr "Esperando el inicio del servidor" 
+msgstr "Esperando el inicio del servidor"
 
 #: shoko_utils
 msgctxt "#30022"
 msgid "Connection Error"
-msgstr "Error de conexión" 
+msgstr "Error de conexión"
 
 #: shoko_utils
 msgctxt "#30023"
 msgid "There was an error connecting to Shoko Server"
-msgstr "Hubo un error al conectarse al servidor Shoko." 
+msgstr "Hubo un error al conectarse al servidor Shoko."
 
 #: shoko_utils
 msgctxt "#30024"
-msgid "If you have set up Shoko Server, feel free to ask for advice on our discord."
-msgstr "Si ha configurado el servidor Shoko, no dude en pedir consejo sobre nuestra discordia." 
+msgid ""
+"If you have set up Shoko Server, feel free to ask for advice on our discord."
+msgstr ""
+"Si ha configurado el servidor Shoko, no dude en pedir consejo sobre nuestra "
+"discordia."
 
 #: shoko_utils
 msgctxt "#30025"
 msgid "If you do, please provide your kodi.log and Shoko Server log."
-msgstr "Si lo hace, proporcione su registro kodi.log y Shoko Server." 
+msgstr "Si lo hace, proporcione su registro kodi.log y Shoko Server."
 
 #: shoko_utils
 msgctxt "#30026"
 msgid "Error Getting apikey"
-msgstr "Error al obtener apikey" 
+msgstr "Error al obtener apikey"
 
 #: shoko_utils
 msgctxt "#30027"
 msgid "It didn't error, but it didn't init either"
-msgstr "No se equivocó, pero tampoco se inició." 
+msgstr "No se equivocó, pero tampoco se inició."
 
 #: shoko_utils
 msgctxt "#30028"
 msgid "Starting Scrobble"
-msgstr "Iniciando Scrobble" 
+msgstr "Iniciando Scrobble"
 
 #: shoko_utils
 msgctxt "#30029"
 msgid "Paused Scrobble"
-msgstr "En pausa Scrobble" 
+msgstr "En pausa Scrobble"
 
 #: shoko_utils
 msgctxt "#30030"
 msgid "Stopping Scrobble"
-msgstr "Deteniendo Scrobble" 
+msgstr "Deteniendo Scrobble"
