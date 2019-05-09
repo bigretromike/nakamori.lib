@@ -1,0 +1,157 @@
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Project-Id-Version: Nakamori Lib\n"
+"Language: en\n"
+
+#: kodi_utils
+msgctxt "#30001"
+msgid "Server"
+msgstr "server" 
+
+#: kodi_utils
+msgctxt "#30002"
+msgid "Label"
+msgstr "Märka" 
+
+#: kodi_utils
+msgctxt "#30003"
+msgid "Date"
+msgstr "Datum" 
+
+#: kodi_utils
+msgctxt "#30004"
+msgid "Title"
+msgstr "Titel" 
+
+#: kodi_utils
+msgctxt "#30005"
+msgid "Time"
+msgstr "Tid" 
+
+#: kodi_utils
+msgctxt "#30006"
+msgid "Genre"
+msgstr "Genre" 
+
+#: kodi_utils
+msgctxt "#30007"
+msgid "Year"
+msgstr "År" 
+
+#: kodi_utils
+msgctxt "#30008"
+msgid "Rating"
+msgstr "Betyg" 
+
+#: kodi_utils
+msgctxt "#30009"
+msgid "UserRating"
+msgstr "Användarbetyg" 
+
+#: kodi_utils
+msgctxt "#30010"
+msgid "Episode"
+msgstr "Episod" 
+
+#: kodi_utils
+msgctxt "#30011"
+msgid "SortTitle"
+msgstr "SortTitle" 
+
+#: kodi_utils
+msgctxt "#30012"
+msgid "DateAdded"
+msgstr "Datum tillagt" 
+
+#: kodi_utils
+msgctxt "#30013"
+msgid "Failed set_window_heading"
+msgstr "Misslyckades set_window_heading" 
+
+#: kodi_utils
+msgctxt "#30014"
+msgid "Unable to Select Item"
+msgstr "Det gick inte att välja artikel" 
+
+#: kodi_utils
+msgctxt "#30015"
+msgid "Unable to Select Item"
+msgstr "Det gick inte att välja artikel" 
+
+#: kodi_utils
+msgctxt "#30016"
+msgid "Unable to Execute JSONRPC to Kodi"
+msgstr "Kan inte utföra JSONRPC till Kodi" 
+
+#: shoko_utils
+msgctxt "#30017"
+msgid "Server Error"
+msgstr "Serverfel" 
+
+#: shoko_utils
+msgctxt "#30018"
+msgid "There was an error starting Shoko Server"
+msgstr "Det gick inte att starta Shoko Server" 
+
+#: shoko_utils
+msgctxt "#30019"
+msgid "Check the server\'s status."
+msgstr "Kontrollera serverens status." 
+
+#: shoko_utils
+msgctxt "#30020"
+msgid "Feel free to ask for advice on our discord"
+msgstr "Känn dig fri att be om råd om vår discord" 
+
+#: shoko_utils
+msgctxt "#30021"
+msgid "Waiting for Server Startup"
+msgstr "Väntar på start av server" 
+
+#: shoko_utils
+msgctxt "#30022"
+msgid "Connection Error"
+msgstr "Anslutningsfel" 
+
+#: shoko_utils
+msgctxt "#30023"
+msgid "There was an error connecting to Shoko Server"
+msgstr "Det uppstod ett fel vid anslutning till Shoko Server" 
+
+#: shoko_utils
+msgctxt "#30024"
+msgid "If you have set up Shoko Server, feel free to ask for advice on our discord."
+msgstr "Om du har konfigurerat Shoko Server, var god och fråga om rådgivning." 
+
+#: shoko_utils
+msgctxt "#30025"
+msgid "If you do, please provide your kodi.log and Shoko Server log."
+msgstr "Om du gör det, vänligen ange din kodi.log och Shoko Server logg." 
+
+#: shoko_utils
+msgctxt "#30026"
+msgid "Error Getting apikey"
+msgstr "Fel Hämta apikey" 
+
+#: shoko_utils
+msgctxt "#30027"
+msgid "It didn't error, but it didn't init either"
+msgstr "Det gjorde inte fel, men det gjorde inte heller" 
+
+#: shoko_utils
+msgctxt "#30028"
+msgid "Starting Scrobble"
+msgstr "Starta Scrobble" 
+
+#: shoko_utils
+msgctxt "#30029"
+msgid "Paused Scrobble"
+msgstr "Paused Scrobble" 
+
+#: shoko_utils
+msgctxt "#30030"
+msgid "Stopping Scrobble"
+msgstr "Stoppar Scrobble" 

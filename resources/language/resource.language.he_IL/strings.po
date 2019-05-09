@@ -1,0 +1,157 @@
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Project-Id-Version: Nakamori Lib\n"
+"Language: en\n"
+
+#: kodi_utils
+msgctxt "#30001"
+msgid "Server"
+msgstr "שרת" 
+
+#: kodi_utils
+msgctxt "#30002"
+msgid "Label"
+msgstr "תווית" 
+
+#: kodi_utils
+msgctxt "#30003"
+msgid "Date"
+msgstr "תאריך" 
+
+#: kodi_utils
+msgctxt "#30004"
+msgid "Title"
+msgstr "כותרת" 
+
+#: kodi_utils
+msgctxt "#30005"
+msgid "Time"
+msgstr "זמן" 
+
+#: kodi_utils
+msgctxt "#30006"
+msgid "Genre"
+msgstr "ז'אנר" 
+
+#: kodi_utils
+msgctxt "#30007"
+msgid "Year"
+msgstr "שנה" 
+
+#: kodi_utils
+msgctxt "#30008"
+msgid "Rating"
+msgstr "דירוג" 
+
+#: kodi_utils
+msgctxt "#30009"
+msgid "UserRating"
+msgstr "דירוג משתמש" 
+
+#: kodi_utils
+msgctxt "#30010"
+msgid "Episode"
+msgstr "פרק" 
+
+#: kodi_utils
+msgctxt "#30011"
+msgid "SortTitle"
+msgstr "SortTitle" 
+
+#: kodi_utils
+msgctxt "#30012"
+msgid "DateAdded"
+msgstr "תאריך הוסף" 
+
+#: kodi_utils
+msgctxt "#30013"
+msgid "Failed set_window_heading"
+msgstr "נכשל set_window_heading" 
+
+#: kodi_utils
+msgctxt "#30014"
+msgid "Unable to Select Item"
+msgstr "לא ניתן לבחור פריט" 
+
+#: kodi_utils
+msgctxt "#30015"
+msgid "Unable to Select Item"
+msgstr "לא ניתן לבחור פריט" 
+
+#: kodi_utils
+msgctxt "#30016"
+msgid "Unable to Execute JSONRPC to Kodi"
+msgstr "לא ניתן לבצע את JSONRPC לקודי" 
+
+#: shoko_utils
+msgctxt "#30017"
+msgid "Server Error"
+msgstr "שגיאת שרת" 
+
+#: shoko_utils
+msgctxt "#30018"
+msgid "There was an error starting Shoko Server"
+msgstr "אירעה שגיאה בעת הפעלת שרת Shoko" 
+
+#: shoko_utils
+msgctxt "#30019"
+msgid "Check the server\'s status."
+msgstr "בדוק את מצב השרת." 
+
+#: shoko_utils
+msgctxt "#30020"
+msgid "Feel free to ask for advice on our discord"
+msgstr "אתה מוזמן לבקש עצה על המחלוקת שלנו" 
+
+#: shoko_utils
+msgctxt "#30021"
+msgid "Waiting for Server Startup"
+msgstr "ממתין להפעלת שרת" 
+
+#: shoko_utils
+msgctxt "#30022"
+msgid "Connection Error"
+msgstr "בעיית חיבור" 
+
+#: shoko_utils
+msgctxt "#30023"
+msgid "There was an error connecting to Shoko Server"
+msgstr "אירעה שגיאה בהתחברות לשרת Shoko" 
+
+#: shoko_utils
+msgctxt "#30024"
+msgid "If you have set up Shoko Server, feel free to ask for advice on our discord."
+msgstr "אם יש לך להגדיר שרת Shoko, אל תהסס לבקש עצה על המחלוקת שלנו." 
+
+#: shoko_utils
+msgctxt "#30025"
+msgid "If you do, please provide your kodi.log and Shoko Server log."
+msgstr "אם תעשה זאת, ספק את יומן ה- kodi.log ואת יומן ה- Shoko." 
+
+#: shoko_utils
+msgctxt "#30026"
+msgid "Error Getting apikey"
+msgstr "שגיאה מקבל אפיקי" 
+
+#: shoko_utils
+msgctxt "#30027"
+msgid "It didn't error, but it didn't init either"
+msgstr "זה לא טעה, אבל זה גם לא יזום" 
+
+#: shoko_utils
+msgctxt "#30028"
+msgid "Starting Scrobble"
+msgstr "מתחיל Scrobble" 
+
+#: shoko_utils
+msgctxt "#30029"
+msgid "Paused Scrobble"
+msgstr "מושהה Scrobble" 
+
+#: shoko_utils
+msgctxt "#30030"
+msgid "Stopping Scrobble"
+msgstr "עצירת Scrobble" 
