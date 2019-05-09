@@ -1,0 +1,164 @@
+# Translators:
+# Jim Jiang <jim@lotlab.org>, 2019
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Nakamori Lib\n"
+"Last-Translator: Jim Jiang <jim@lotlab.org>, 2019\n"
+"Language-Team: Chinese (China) (https://www.transifex.com/nakamori/teams/97622/zh_CN/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: kodi_utils
+msgctxt "#30001"
+msgid "Server"
+msgstr "服务器"
+
+#: kodi_utils
+msgctxt "#30002"
+msgid "Label"
+msgstr "标签"
+
+#: kodi_utils
+msgctxt "#30003"
+msgid "Date"
+msgstr "日期"
+
+#: kodi_utils
+msgctxt "#30004"
+msgid "Title"
+msgstr "标题"
+
+#: kodi_utils
+msgctxt "#30005"
+msgid "Time"
+msgstr "时间"
+
+#: kodi_utils
+msgctxt "#30006"
+msgid "Genre"
+msgstr "体裁"
+
+#: kodi_utils
+msgctxt "#30007"
+msgid "Year"
+msgstr "年份"
+
+#: kodi_utils
+msgctxt "#30008"
+msgid "Rating"
+msgstr "评分"
+
+#: kodi_utils
+msgctxt "#30009"
+msgid "UserRating"
+msgstr "用户评分"
+
+#: kodi_utils
+msgctxt "#30010"
+msgid "Episode"
+msgstr "分集"
+
+#: kodi_utils
+msgctxt "#30011"
+msgid "SortTitle"
+msgstr "排序标题"
+
+#: kodi_utils
+msgctxt "#30012"
+msgid "DateAdded"
+msgstr "添加日期"
+
+#: kodi_utils
+msgctxt "#30013"
+msgid "Failed set_window_heading"
+msgstr "设置窗口标题失败"
+
+#: kodi_utils
+msgctxt "#30014"
+msgid "Unable to Select Item"
+msgstr "无法选择项目"
+
+#: kodi_utils
+msgctxt "#30015"
+msgid "Unable to Select Item"
+msgstr "无法选择项目"
+
+#: kodi_utils
+msgctxt "#30016"
+msgid "Unable to Execute JSONRPC to Kodi"
+msgstr "无法在Kodi上执行JSONRPC"
+
+#: shoko_utils
+msgctxt "#30017"
+msgid "Server Error"
+msgstr "服务器错误"
+
+#: shoko_utils
+msgctxt "#30018"
+msgid "There was an error starting Shoko Server"
+msgstr "启动Shoko服务器时出现了一些错误"
+
+#: shoko_utils
+msgctxt "#30019"
+msgid "Check the server\\'s status."
+msgstr "请检查服务器的状态"
+
+#: shoko_utils
+msgctxt "#30020"
+msgid "Feel free to ask for advice on our discord"
+msgstr "可以在我们的Discord上询问"
+
+#: shoko_utils
+msgctxt "#30021"
+msgid "Waiting for Server Startup"
+msgstr "等待服务启动"
+
+#: shoko_utils
+msgctxt "#30022"
+msgid "Connection Error"
+msgstr "连接错误"
+
+#: shoko_utils
+msgctxt "#30023"
+msgid "There was an error connecting to Shoko Server"
+msgstr "连接到Shoko服务器时出现了一些问题"
+
+#: shoko_utils
+msgctxt "#30024"
+msgid ""
+"If you have set up Shoko Server, feel free to ask for advice on our discord."
+msgstr "若你已经设置好了Shoko服务器，可以到我们的Discord上询问。"
+
+#: shoko_utils
+msgctxt "#30025"
+msgid "If you do, please provide your kodi.log and Shoko Server log."
+msgstr "询问时请同时提供Kodi.log和Shoko服务器的日志"
+
+#: shoko_utils
+msgctxt "#30026"
+msgid "Error Getting apikey"
+msgstr "获取API KEY错误"
+
+#: shoko_utils
+msgctxt "#30027"
+msgid "It didn't error, but it didn't init either"
+msgstr "没有出现错误，但也没有初始化。"
+
+#: shoko_utils
+msgctxt "#30028"
+msgid "Starting Scrobble"
+msgstr "启动记录上传"
+
+#: shoko_utils
+msgctxt "#30029"
+msgid "Paused Scrobble"
+msgstr "暂停记录上传"
+
+#: shoko_utils
+msgctxt "#30030"
+msgid "Stopping Scrobble"
+msgstr "停止记录上传"
