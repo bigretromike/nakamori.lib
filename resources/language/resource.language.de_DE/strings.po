@@ -1,10 +1,11 @@
 # Translators:
 # BigRetroMike, 2019
+# Baine <baine@inbox.ru>, 2019
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: Nakamori Lib\n"
-"Last-Translator: BigRetroMike, 2019\n"
+"Last-Translator: Baine <baine@inbox.ru>, 2019\n"
 "Language-Team: German (Germany) (https://www.transifex.com/nakamori/teams/97622/de_DE/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -20,7 +21,7 @@ msgstr "Server"
 #: kodi_utils
 msgctxt "#30002"
 msgid "Label"
-msgstr "Etikette"
+msgstr "Label"
 
 #: kodi_utils
 msgctxt "#30003"
@@ -65,7 +66,7 @@ msgstr "Folge"
 #: kodi_utils
 msgctxt "#30011"
 msgid "SortTitle"
-msgstr "SortTitle"
+msgstr "Sotierungs-Titel"
 
 #: kodi_utils
 msgctxt "#30012"
@@ -110,7 +111,7 @@ msgstr "Überprüfen Sie den Serverstatus."
 #: shoko_utils
 msgctxt "#30020"
 msgid "Feel free to ask for advice on our discord"
-msgstr "Zögern Sie nicht, sich zu unserer Zwietracht beraten zu lassen"
+msgstr "Zögere nicht uns um Hilfe zu bitten"
 
 #: shoko_utils
 msgctxt "#30021"
@@ -140,13 +141,13 @@ msgstr ""
 msgctxt "#30025"
 msgid "If you do, please provide your kodi.log and Shoko Server log."
 msgstr ""
-"Wenn Sie dies tun, geben Sie bitte Ihr kodi.log- und Shoko Server-Protokoll "
-"an."
+"Wenn Sie dies tun, stelle bitte deine kodi.log- und Shoko Server-Protokoll "
+"zur Verfügung."
 
 #: shoko_utils
 msgctxt "#30026"
 msgid "Error Getting apikey"
-msgstr "Fehler beim Abrufen der Apikey"
+msgstr "Fehler beim Abrufen der API-Schlüssel"
 
 #: shoko_utils
 msgctxt "#30027"
@@ -161,7 +162,7 @@ msgstr "Scrobble starten"
 #: shoko_utils
 msgctxt "#30029"
 msgid "Paused Scrobble"
-msgstr "Angehaltenes Scrobble"
+msgstr "Scrobble angehalten"
 
 #: shoko_utils
 msgctxt "#30030"
