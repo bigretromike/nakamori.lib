@@ -1143,7 +1143,7 @@ class Episode(Directory):
         self.outline = " ".join(self.overview.split(".", 3)[:2])  # first 3 sentence
         self.tags = model_utils.get_tags(json_node.get('tags', {}))
 
-        if str(json_node['eptype']) != 'Special':
+        if self.episode_type != 'Special':
             season = str(json_node.get('season', '1'))
             if 'x' in season:
                 season = season.split('x')[0]
