@@ -1,0 +1,168 @@
+# Translators:
+# BigRetroMike, 2019
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Nakamori Lib\n"
+"Last-Translator: BigRetroMike, 2019\n"
+"Language-Team: Russian (Russia) (https://www.transifex.com/nakamori/teams/97622/ru_RU/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ru_RU\n"
+"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n%100>=11 && n%100<=14)? 2 : 3);\n"
+
+#: kodi_utils
+msgctxt "#30001"
+msgid "Server"
+msgstr "сервер"
+
+#: kodi_utils
+msgctxt "#30002"
+msgid "Label"
+msgstr "этикетка"
+
+#: kodi_utils
+msgctxt "#30003"
+msgid "Date"
+msgstr "Дата"
+
+#: kodi_utils
+msgctxt "#30004"
+msgid "Title"
+msgstr "заглавие"
+
+#: kodi_utils
+msgctxt "#30005"
+msgid "Time"
+msgstr "Время"
+
+#: kodi_utils
+msgctxt "#30006"
+msgid "Genre"
+msgstr "Жанр"
+
+#: kodi_utils
+msgctxt "#30007"
+msgid "Year"
+msgstr "Год"
+
+#: kodi_utils
+msgctxt "#30008"
+msgid "Rating"
+msgstr "Рейтинг"
+
+#: kodi_utils
+msgctxt "#30009"
+msgid "UserRating"
+msgstr "Рейтинг пользователей"
+
+#: kodi_utils
+msgctxt "#30010"
+msgid "Episode"
+msgstr "Эпизод"
+
+#: kodi_utils
+msgctxt "#30011"
+msgid "SortTitle"
+msgstr "SortTitle"
+
+#: kodi_utils
+msgctxt "#30012"
+msgid "DateAdded"
+msgstr "Дата Добавлена"
+
+#: kodi_utils
+msgctxt "#30013"
+msgid "Failed set_window_heading"
+msgstr "Сбой set_window_heading"
+
+#: kodi_utils
+msgctxt "#30014"
+msgid "Unable to Select Item"
+msgstr "Невозможно выбрать элемент"
+
+#: kodi_utils
+msgctxt "#30015"
+msgid "Unable to Select Item"
+msgstr "Невозможно выбрать элемент"
+
+#: kodi_utils
+msgctxt "#30016"
+msgid "Unable to Execute JSONRPC to Kodi"
+msgstr "Невозможно выполнить JSONRPC для Kodi"
+
+#: shoko_utils
+msgctxt "#30017"
+msgid "Server Error"
+msgstr "Ошибка сервера"
+
+#: shoko_utils
+msgctxt "#30018"
+msgid "There was an error starting Shoko Server"
+msgstr "При запуске Shoko Server произошла ошибка"
+
+#: shoko_utils
+msgctxt "#30019"
+msgid "Check the server\\'s status."
+msgstr "Проверьте состояние сервера."
+
+#: shoko_utils
+msgctxt "#30020"
+msgid "Feel free to ask for advice on our discord"
+msgstr "Не стесняйтесь спрашивать совета по поводу наших разногласий"
+
+#: shoko_utils
+msgctxt "#30021"
+msgid "Waiting for Server Startup"
+msgstr "Ожидание запуска сервера"
+
+#: shoko_utils
+msgctxt "#30022"
+msgid "Connection Error"
+msgstr "Ошибка соединения"
+
+#: shoko_utils
+msgctxt "#30023"
+msgid "There was an error connecting to Shoko Server"
+msgstr "При подключении к серверу Shoko произошла ошибка"
+
+#: shoko_utils
+msgctxt "#30024"
+msgid ""
+"If you have set up Shoko Server, feel free to ask for advice on our discord."
+msgstr ""
+"Если вы настроили сервер Shoko, не стесняйтесь спрашивать совета по поводу "
+"наших разногласий."
+
+#: shoko_utils
+msgctxt "#30025"
+msgid "If you do, please provide your kodi.log and Shoko Server log."
+msgstr ""
+"Если вы это сделаете, пожалуйста, предоставьте ваш kodi.log и журнал Shoko "
+"Server."
+
+#: shoko_utils
+msgctxt "#30026"
+msgid "Error Getting apikey"
+msgstr "Ошибка при получении apikey"
+
+#: shoko_utils
+msgctxt "#30027"
+msgid "It didn't error, but it didn't init either"
+msgstr "Это не ошибка, но и не инициация"
+
+#: shoko_utils
+msgctxt "#30028"
+msgid "Starting Scrobble"
+msgstr "Начиная Scrobble"
+
+#: shoko_utils
+msgctxt "#30029"
+msgid "Paused Scrobble"
+msgstr "Приостановлено Scrobble"
+
+#: shoko_utils
+msgctxt "#30030"
+msgid "Stopping Scrobble"
+msgstr "Остановка Scrobble"

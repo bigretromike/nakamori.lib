@@ -1,0 +1,165 @@
+# Translators:
+# BigRetroMike, 2019
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Nakamori Lib\n"
+"Last-Translator: BigRetroMike, 2019\n"
+"Language-Team: Arabic (Saudi Arabia) (https://www.transifex.com/nakamori/teams/97622/ar_SA/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ar_SA\n"
+"Plural-Forms: nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5);\n"
+
+#: kodi_utils
+msgctxt "#30001"
+msgid "Server"
+msgstr "الخادم"
+
+#: kodi_utils
+msgctxt "#30002"
+msgid "Label"
+msgstr "ضع الكلمة المناسبة"
+
+#: kodi_utils
+msgctxt "#30003"
+msgid "Date"
+msgstr "تاريخ"
+
+#: kodi_utils
+msgctxt "#30004"
+msgid "Title"
+msgstr "عنوان"
+
+#: kodi_utils
+msgctxt "#30005"
+msgid "Time"
+msgstr "زمن"
+
+#: kodi_utils
+msgctxt "#30006"
+msgid "Genre"
+msgstr "نوع أدبي"
+
+#: kodi_utils
+msgctxt "#30007"
+msgid "Year"
+msgstr "عام"
+
+#: kodi_utils
+msgctxt "#30008"
+msgid "Rating"
+msgstr "تقييم"
+
+#: kodi_utils
+msgctxt "#30009"
+msgid "UserRating"
+msgstr "تقييم المستخدم"
+
+#: kodi_utils
+msgctxt "#30010"
+msgid "Episode"
+msgstr "حلقة"
+
+#: kodi_utils
+msgctxt "#30011"
+msgid "SortTitle"
+msgstr "SortTitle"
+
+#: kodi_utils
+msgctxt "#30012"
+msgid "DateAdded"
+msgstr "تم إضافة التاريخ"
+
+#: kodi_utils
+msgctxt "#30013"
+msgid "Failed set_window_heading"
+msgstr "فشل set_window_heading"
+
+#: kodi_utils
+msgctxt "#30014"
+msgid "Unable to Select Item"
+msgstr "غير قادر على تحديد عنصر"
+
+#: kodi_utils
+msgctxt "#30015"
+msgid "Unable to Select Item"
+msgstr "غير قادر على تحديد عنصر"
+
+#: kodi_utils
+msgctxt "#30016"
+msgid "Unable to Execute JSONRPC to Kodi"
+msgstr "غير قادر على تنفيذ JSONRPC على Kodi"
+
+#: shoko_utils
+msgctxt "#30017"
+msgid "Server Error"
+msgstr "خطأ في الخادم"
+
+#: shoko_utils
+msgctxt "#30018"
+msgid "There was an error starting Shoko Server"
+msgstr "حدث خطأ أثناء بدء تشغيل Shoko Server"
+
+#: shoko_utils
+msgctxt "#30019"
+msgid "Check the server\\'s status."
+msgstr "تحقق من حالة الخادم."
+
+#: shoko_utils
+msgctxt "#30020"
+msgid "Feel free to ask for advice on our discord"
+msgstr "لا تتردد في طلب المشورة بشأن خلافنا"
+
+#: shoko_utils
+msgctxt "#30021"
+msgid "Waiting for Server Startup"
+msgstr "في انتظار بدء تشغيل الخادم"
+
+#: shoko_utils
+msgctxt "#30022"
+msgid "Connection Error"
+msgstr "خطأ في الإتصال"
+
+#: shoko_utils
+msgctxt "#30023"
+msgid "There was an error connecting to Shoko Server"
+msgstr "حدث خطأ أثناء الاتصال بخادم Shoko Server"
+
+#: shoko_utils
+msgctxt "#30024"
+msgid ""
+"If you have set up Shoko Server, feel free to ask for advice on our discord."
+msgstr ""
+"إذا قمت بإعداد خادم Shoko Server ، فلا تتردد في طلب المشورة بشأن خلافنا."
+
+#: shoko_utils
+msgctxt "#30025"
+msgid "If you do, please provide your kodi.log and Shoko Server log."
+msgstr "إذا قمت بذلك ، يرجى تقديم سجل kodi.log وخادم Shoko Server."
+
+#: shoko_utils
+msgctxt "#30026"
+msgid "Error Getting apikey"
+msgstr "خطأ في الحصول على apikey"
+
+#: shoko_utils
+msgctxt "#30027"
+msgid "It didn't error, but it didn't init either"
+msgstr "لم يخطئ ، لكنه لم يبدِ أيضًا"
+
+#: shoko_utils
+msgctxt "#30028"
+msgid "Starting Scrobble"
+msgstr "بدء الخربشة"
+
+#: shoko_utils
+msgctxt "#30029"
+msgid "Paused Scrobble"
+msgstr "توقف مؤقت"
+
+#: shoko_utils
+msgctxt "#30030"
+msgid "Stopping Scrobble"
+msgstr "وقف الخربشة"

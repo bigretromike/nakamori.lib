@@ -1,0 +1,167 @@
+# Translators:
+# BigRetroMike, 2019
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Nakamori Lib\n"
+"Last-Translator: BigRetroMike, 2019\n"
+"Language-Team: French (France) (https://www.transifex.com/nakamori/teams/97622/fr_FR/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: fr_FR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: kodi_utils
+msgctxt "#30001"
+msgid "Server"
+msgstr "Serveur"
+
+#: kodi_utils
+msgctxt "#30002"
+msgid "Label"
+msgstr "Étiquette"
+
+#: kodi_utils
+msgctxt "#30003"
+msgid "Date"
+msgstr "Rendez-vous amoureux"
+
+#: kodi_utils
+msgctxt "#30004"
+msgid "Title"
+msgstr "Titre"
+
+#: kodi_utils
+msgctxt "#30005"
+msgid "Time"
+msgstr "Temps"
+
+#: kodi_utils
+msgctxt "#30006"
+msgid "Genre"
+msgstr "Genre"
+
+#: kodi_utils
+msgctxt "#30007"
+msgid "Year"
+msgstr "Année"
+
+#: kodi_utils
+msgctxt "#30008"
+msgid "Rating"
+msgstr "Évaluation"
+
+#: kodi_utils
+msgctxt "#30009"
+msgid "UserRating"
+msgstr "Note de l'utilisateur"
+
+#: kodi_utils
+msgctxt "#30010"
+msgid "Episode"
+msgstr "Épisode"
+
+#: kodi_utils
+msgctxt "#30011"
+msgid "SortTitle"
+msgstr "SortTitle"
+
+#: kodi_utils
+msgctxt "#30012"
+msgid "DateAdded"
+msgstr "Date ajoutée"
+
+#: kodi_utils
+msgctxt "#30013"
+msgid "Failed set_window_heading"
+msgstr "Echec de set_window_heading"
+
+#: kodi_utils
+msgctxt "#30014"
+msgid "Unable to Select Item"
+msgstr "Impossible de sélectionner un élément"
+
+#: kodi_utils
+msgctxt "#30015"
+msgid "Unable to Select Item"
+msgstr "Impossible de sélectionner un élément"
+
+#: kodi_utils
+msgctxt "#30016"
+msgid "Unable to Execute JSONRPC to Kodi"
+msgstr "Impossible d'exécuter JSONRPC sur Kodi"
+
+#: shoko_utils
+msgctxt "#30017"
+msgid "Server Error"
+msgstr "erreur du serveur"
+
+#: shoko_utils
+msgctxt "#30018"
+msgid "There was an error starting Shoko Server"
+msgstr "Une erreur s'est produite lors du démarrage de Shoko Server."
+
+#: shoko_utils
+msgctxt "#30019"
+msgid "Check the server\\'s status."
+msgstr "Vérifiez l’état du serveur."
+
+#: shoko_utils
+msgctxt "#30020"
+msgid "Feel free to ask for advice on our discord"
+msgstr "N'hésitez pas à demander conseil sur notre discorde"
+
+#: shoko_utils
+msgctxt "#30021"
+msgid "Waiting for Server Startup"
+msgstr "En attente de démarrage du serveur"
+
+#: shoko_utils
+msgctxt "#30022"
+msgid "Connection Error"
+msgstr "Erreur de connexion"
+
+#: shoko_utils
+msgctxt "#30023"
+msgid "There was an error connecting to Shoko Server"
+msgstr "Une erreur s'est produite lors de la connexion à Shoko Server."
+
+#: shoko_utils
+msgctxt "#30024"
+msgid ""
+"If you have set up Shoko Server, feel free to ask for advice on our discord."
+msgstr ""
+"Si vous avez configuré Shoko Server, n'hésitez pas à demander conseil sur "
+"notre discorde."
+
+#: shoko_utils
+msgctxt "#30025"
+msgid "If you do, please provide your kodi.log and Shoko Server log."
+msgstr ""
+"Si vous le faites, veuillez fournir vos journaux kodi.log et Shoko Server."
+
+#: shoko_utils
+msgctxt "#30026"
+msgid "Error Getting apikey"
+msgstr "Erreur lors de l'apikey"
+
+#: shoko_utils
+msgctxt "#30027"
+msgid "It didn't error, but it didn't init either"
+msgstr "Il n'a pas commis d'erreur, mais il n'a pas non plus commencé"
+
+#: shoko_utils
+msgctxt "#30028"
+msgid "Starting Scrobble"
+msgstr "Scrobble de départ"
+
+#: shoko_utils
+msgctxt "#30029"
+msgid "Paused Scrobble"
+msgstr "Scrobble en pause"
+
+#: shoko_utils
+msgctxt "#30030"
+msgid "Stopping Scrobble"
+msgstr "Arrêter Scrobble"

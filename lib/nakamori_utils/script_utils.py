@@ -17,7 +17,7 @@ def calendar(when=0, page=0):
 
 
 def url_calendar3(when=0, page=0):
-    url = '/calendar3/%i/%i' % (when, page)
+    url = '/calendar3/%s/%s' % (when, page)
     return run % url
 
 
