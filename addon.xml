@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="script.module.nakamori-lib" name="Nakamori Lib" version="3.1.0~beta35" provider-name="BigRetroMike, da3dsoul">
+<addon id="script.module.nakamori-lib" name="Nakamori Lib" version="3.1.0" provider-name="BigRetroMike, da3dsoul">
     <requires>
         <import addon="xbmc.python" version="2.25.0" />
     </requires>
@@ -14,7 +14,7 @@
         <website>https://shokunin.monogatari.pl/</website>
         <source>http://github.com/bigretromike/nakamori.lib</source>
         <license>GNU GENERAL PUBLIC LICENSE. Version 2, June 1991</license>
-        <news>3.0.8[CR]- small typo[CR]- show error message for get_json</news>
+        <news>3.1.0[CR]- only god of github knows</news>
         <assets>
             <icon>resources/icon.png</icon>
             <fanart>resources/fanart.jpg</fanart>
