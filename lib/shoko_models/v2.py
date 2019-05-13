@@ -1368,11 +1368,11 @@ class Episode(Directory):
 
         # Vote Episode
         if plugin_addon.getSetting('context_show_vote_Episode') == 'true':
-            context_menu.append((localize(30125), script_utils.url_show_episode_vote_dialog(self.id)))
+            context_menu.append((localize(30125), script_utils.url_vote_for_episode(self.id)))
 
         # Vote Series
         if plugin_addon.getSetting('context_show_vote_Series') == 'true' and self.series_id != 0:
-            context_menu.append((localize(30124), script_utils.url_show_series_vote_dialog(self.series_id)))
+            context_menu.append((localize(30124), script_utils.url_vote_for_series(self.series_id)))
 
         # Metadata
         if plugin_addon.getSetting('context_show_info') == 'true':
