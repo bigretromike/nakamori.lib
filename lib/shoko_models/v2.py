@@ -1304,7 +1304,11 @@ class Episode(Directory):
         for _file in json_node.get('files', []):
             try:
                 f = File(_file, True)
-                self.items.append(f)
+
+                # add only video files to items list
+                if f.isVideo:
+                    self.items.append(f)
+
                 # TODO REPLACE WITH PROPER UPDATE DATE MOVE THIS OUT HERE
                 if self.update_date is None:
                     self.update_date = f.date_added
@@ -1318,7 +1322,8 @@ class Episode(Directory):
                         # https://bugs.python.org/issue27400
                         x = str(f.date_added)[8:10] + '.' +str(f.date_added)[5:7] + '.' + str(f.date_added)[0:4]
                         self.hash_content += str(x).encode('utf-8')
-            except:
+            except Exception as ex:
+                xbmcgui.Dialog().ok(str(ex))
                 pass
 
     def get_context_menu_items(self):
@@ -1450,6 +1455,12 @@ class File(Directory):
             return
 
         self.name = os.path.split(pyproxy.decode(json_node.get('filename', 'None')))[-1]
+        # mark file if it contains video or not (by checking for subtitles extension - which is smaller pool)
+        self.file_name, self.file_extension = os.path.splitext(self.name)
+        self.isVideo = False if self.file_extension in ['.srt', '.sub', '.sbv', '.vtt', '.idx', '.ssa', '.ass',
+                                                        '.smi', '.psb', '.usf', '.ssf', '.ttml', '.dfxp', '.xml',
+                                                        '.smil'] else True
+
         self.resume_time = int(int(json_node.get('offset', '0')) / 1000)
 
         # Check for empty duration from MediaInfo check fail and handle it properly
