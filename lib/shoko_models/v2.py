@@ -1323,8 +1323,7 @@ class Episode(Directory):
                         x = str(f.date_added)[8:10] + '.' +str(f.date_added)[5:7] + '.' + str(f.date_added)[0:4]
                         self.hash_content += str(x).encode('utf-8')
             except Exception as ex:
-                xbmcgui.Dialog().ok(str(ex))
-                pass
+                eh.exception(eh.ErrorPriority.Highest, ex)
 
     def get_context_menu_items(self):
         # Calls to Plugin from Context Menus need 'RunPlugin(%s)' %
