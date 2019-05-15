@@ -483,6 +483,20 @@ def set_stream_info(listitem, f):
             listitem.addStreamInfo('subtitle', subs[stream2])
 
 
+def make_text_nice(data=''):
+    """
+    Make any anidb text look nice, clean and sleek by removing links, annotations, comments, empty lines
+    :param data: text that is too ugly to be shown
+    :return: text that is a bit nicer
+    """
+    data = remove_anidb_links(data)
+    # the only one I could care to make settings if someone ask for
+    data = remove_anidb_annotations(data)
+    data = remove_anidb_comments(data)
+    data = remove_multi_empty_lines(data)
+    return data
+
+
 def remove_anidb_links(data=''):
     """
     Remove anidb links from descriptions
@@ -492,9 +506,38 @@ def remove_anidb_links(data=''):
     Returns: new string without links
 
     """
-    # remove urls that start with anidb, with the following spaces
-    p = re.compile(r'(http://anidb.net/[0-9A-z/\-_.?=&]+[ ]*\[)([\S ]+?)(\])')
+    p = re.compile(r'(https?://anidb\.net/[0-9A-z/\-_.?=&]+[ ]*\[)([\S ]+?)(\])')
     return p.sub(r'\2', data)
+
+
+def remove_anidb_comments(data=''):
+    """
+    Remove comments that topically start with *, --, ~ from description
+    :param data: text to clean
+    :return: text after clean
+    """
+    data = re.sub(r'^(\*|--|~) .*', "", data, flags=re.MULTILINE)
+    return data.strip(" \n")
+
+
+def remove_anidb_annotations(data=''):
+    """
+    Remove annotations containing Source, Note, Summary from description
+    :param data: text to clean
+    :return: text after clean
+    """
+    data = re.sub(r'\n(Source|Note|Summary):.*', "", data, flags=re.DOTALL)
+    return data.strip(" \n")
+
+
+def remove_multi_empty_lines(data=''):
+    """
+    Remove multiply empty lines to save some space
+    :param data: text to clean
+    :return: text after clean
+    """
+    data = re.sub(r'\n\n+', r'\n\n', data)
+    return data.strip(" \n")
 
 
 def add_default_parameters(url, obj_id, level):

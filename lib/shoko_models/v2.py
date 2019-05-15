@@ -558,7 +558,7 @@ class Group(Directory):
         self.actors = model_utils.get_cast_info(json_node)
         self.sizes = get_sizes(json_node)
         self.tags = model_utils.get_tags(json_node.get('tags', {}))
-        self.overview = model_utils.remove_anidb_links(pyproxy.decode(json_node.get('summary', '')))
+        self.overview = model_utils.make_text_nice(pyproxy.decode(json_node.get('summary', '')))
 
         self.process_children(json_node)
 
@@ -677,7 +677,7 @@ class Series(Directory):
             return
 
         self.alternate_name = model_utils.get_title(json_node, 'en', 'official')
-        self.overview = model_utils.remove_anidb_links(pyproxy.decode(json_node.get('summary', '')))
+        self.overview = model_utils.make_text_nice(pyproxy.decode(json_node.get('summary', '')))
 
         self.anidb_id = pyproxy.safe_int(json_node.get('aid', 0))
         self.season = pyproxy.safe_int(json_node.get('season', '1'))
@@ -1138,7 +1138,7 @@ class Episode(Directory):
 
         self.rating = float(str(json_node.get('rating', '0')).replace(',', '.'))
         self.user_rating = float(str(json_node.get('UserRating', '0')).replace(',', '.'))
-        self.overview = model_utils.remove_anidb_links(pyproxy.decode(json_node.get('summary', '')))
+        self.overview = model_utils.make_text_nice(pyproxy.decode(json_node.get('summary', '')))
         self.votes = pyproxy.safe_int(json_node.get('votes', ''))
         self.outline = " ".join(self.overview.split(".", 3)[:2])  # first 3 sentence
         self.tags = model_utils.get_tags(json_node.get('tags', {}))
