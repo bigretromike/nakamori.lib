@@ -44,22 +44,23 @@ class BasePythonProxy:
 
     def get_data(self, url, referer, timeout, apikey):
         import error_handler as eh
-        req = Request(self.encode(url))
-        req.add_header('Accept', 'application/json')
-        req.add_header('apikey', apikey)
-
+        headers = {
+            'Accept': 'application/json',
+            'apikey': apikey,
+        }
         if referer is not None:
             referer = quote(self.encode(referer)).replace('%3A', ':')
             if len(referer) > 1:
-                req.add_header('Referer', referer)
+                headers['Referer'] = referer
         if '127.0.0.1' not in url and 'localhost' not in url:
-            req.add_header('Accept-encoding', 'gzip')
+            headers['Accept-Encoding'] = 'gzip'
+
+        req = Request(self.encode(url), headers=headers)
         data = None
 
         eh.spam('Getting data...')
         eh.spam('Url: ', url)
-        eh.spam('Headers:')
-        eh.spam(req.headers)
+        eh.spam('Headers:', headers)
         response = urlopen(req, timeout=int(timeout))
         if response.info().get('Content-Encoding') == 'gzip':
             try:
@@ -156,9 +157,15 @@ class BasePythonProxy:
         from error_handler import ErrorPriority
         if data_in is not None:
             eh.spam(data_in)
-            req = Request(self.encode(url), self.encode(data_in), {'Content-Type': 'application/json'})
-            req.add_header('apikey', plugin_addon.getSetting('apikey'))
-            req.add_header('Accept', 'application/json')
+            headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            }
+            apikey = plugin_addon.getSetting('apikey')
+            if apikey is not None and apikey != '':
+                headers['apikey'] = apikey
+            req = Request(self.encode(url), self.encode(data_in), headers)
+
             data_out = None
             try:
                 response = urlopen(req, timeout=int(plugin_addon.getSetting('timeout')))
@@ -269,7 +276,7 @@ class BasePythonProxy:
                 elif code == '503':
                     error_msg = 'Service Unavailable: Check netsh http'
                 elif code == '401' or code == '403':
-                    error_msg = 'The was refused as unauthorized'
+                    error_msg = 'The connection was refused as unauthorized'
 
                 code = self.safe_int(code)
                 raise HTTPError(request.get_full_url(), code, error_msg, request.headers, None)
