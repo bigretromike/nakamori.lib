@@ -58,22 +58,24 @@ class BasePythonProxy:
         req = Request(self.encode(url), headers=headers)
         data = None
 
-        eh.spam('Getting data...')
-        eh.spam('Url: ', url)
+        eh.spam('Getting Data ---')
+        eh.spam('URL: ', url)
         eh.spam('Headers:', headers)
         response = urlopen(req, timeout=int(timeout))
         if response.info().get('Content-Encoding') == 'gzip':
+            eh.spam('Got gzipped response. Decompressing')
             try:
                 buf = BytesIO(response.read())
                 f = gzip.GzipFile(fileobj=buf)
                 data = f.read()
-            except:
-                pass
+            except Exception as e:
+                eh.spam('Failed to decompress.', e.message)
         else:
             data = response.read()
         response.close()
 
-        eh.spam(data)
+        eh.spam('Response Body:', data)
+        eh.spam('Checking Response for a text error.\n')
 
         if data is not None and data != '':
             self.parse_possible_error(req, data)
@@ -155,29 +157,36 @@ class BasePythonProxy:
         """
         import error_handler as eh
         from error_handler import ErrorPriority
-        if data_in is not None:
-            eh.spam(data_in)
-            headers = {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-            }
-            apikey = plugin_addon.getSetting('apikey')
-            if apikey is not None and apikey != '':
-                headers['apikey'] = apikey
-            req = Request(self.encode(url), self.encode(data_in), headers)
+        if data_in is None:
+            data_in = b''
 
-            data_out = None
-            try:
-                response = urlopen(req, timeout=int(plugin_addon.getSetting('timeout')))
-                data_out = response.read()
-                response.close()
-                eh.spam(data_out)
-            except:
-                eh.exception(ErrorPriority.HIGH)
-            return data_out
-        else:
-            eh.error('Tried to POST data with no body')
-            return None
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        }
+        apikey = plugin_addon.getSetting('apikey')
+        if apikey is not None and apikey != '':
+            headers['apikey'] = apikey
+
+        eh.spam('POSTing Data ---')
+        eh.spam('URL:', url)
+        eh.spam('Headers:', headers)
+        eh.spam('POST Body:', data_in)
+
+        req = Request(self.encode(url), self.encode(data_in), headers)
+
+        data_out = None
+        try:
+            response = urlopen(req, timeout=int(plugin_addon.getSetting('timeout')))
+            data_out = response.read()
+            response.close()
+            eh.spam('Response Body:', data_out)
+            eh.spam('Checking Response for a text error.\n')
+            if data_out is not None and data_out != '':
+                self.parse_possible_error(req, data_out)
+        except:
+            eh.exception(ErrorPriority.HIGH)
+        return data_out
 
     def parse_parameters(self, input_string):
         """Parses a parameter string starting at the first ? found in inputString
@@ -224,7 +233,7 @@ class BasePythonProxy:
         from error_handler import ErrorPriority
         try:
             timeout = plugin_addon.getSetting('timeout')
-            if self.api_key == '':
+            if self.api_key is None or self.api_key == '':
                 apikey = plugin_addon.getSetting('apikey')
             else:
                 apikey = self.api_key
@@ -234,17 +243,21 @@ class BasePythonProxy:
                 body = self.get_data(url_in, None, timeout, apikey)
             else:
                 import cache
+                eh.spam('Getting a Cached Response ---')
+                eh.spam('URL:', url_in)
                 db_row = cache.get_data_from_cache(url_in)
                 if db_row is not None:
                     expire_second = time.time() - float(db_row[1])
                     if expire_second > int(plugin_addon.getSetting('expireCache')):
                         # expire, get new date
+                        eh.spam('The cached data is stale.')
                         body = self.get_data(url_in, None, timeout, apikey)
                         cache.remove_cache(url_in)
                         cache.add_cache(url_in, body)
                     else:
                         body = db_row[0]
                 else:
+                    eh.spam('No cached data was found for the URL.')
                     body = self.get_data(url_in, None, timeout, apikey)
                     cache.add_cache(url_in, body)
         except http_error as err:
