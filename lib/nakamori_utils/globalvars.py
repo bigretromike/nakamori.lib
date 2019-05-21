@@ -32,5 +32,5 @@ tag_setting_flags |= 1 << 6 if plugin_addon.getSetting('ProgrammingTags') == 'tr
 tag_setting_flags |= 1 << 7 if plugin_addon.getSetting('GenreTags') == 'true' else 0
 tag_setting_flags |= 1 << 31 if plugin_addon.getSetting('InvertTags') == 'Show' else 0
 # this helped with issue that alpin in docker
-if tag_setting_flags == 0:
-    tag_setting_flags = 1
+# if tag_setting_flags == 0:
+#    tag_setting_flags = 1
