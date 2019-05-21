@@ -261,8 +261,7 @@ class BasePythonProxy:
                     body = self.get_data(url_in, None, timeout, apikey)
                     cache.add_cache(url_in, body)
         except http_error as err:
-            body = err.code
-            return body
+            raise err
         except:
             eh.exception(ErrorPriority.HIGH)
             body = None
