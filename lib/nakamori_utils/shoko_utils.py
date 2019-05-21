@@ -358,11 +358,14 @@ def can_user_connect():
     try:
         # TRY to use new method that no one has yet
         try:
-            ping = pyproxy.get_json(server + '/api/ping')
-            if ping is not None and '"response":"pong"' in ping:
+            ping = pyproxy.get_json(server + '/api/ping', True)
+            if ping is not None and 'pong' in ping:
                 return True
-        except:
-            pass
+        except python_version_proxy.http_error as ex:
+            # return false if it's an unauthorized response
+            if ex.code == 401:
+                return False
+            # else
         # but since no one has it, we can't count on it actually working, so fall back
         from shoko_models.v2 import Filter
         f = Filter(0, build_full_object=True, get_children=False)
