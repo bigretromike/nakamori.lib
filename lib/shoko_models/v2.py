@@ -657,7 +657,7 @@ class Series(Directory):
     """
     A series object, contains a unified method of representing a series, with convenient converters
     """
-    def __init__(self, json_node, build_full_object=False, get_children=False, compute_hash=False, seiyuu_pic=False):
+    def __init__(self, json_node, build_full_object=False, get_children=False, compute_hash=False, seiyuu_pic=False, use_aid=False):
         """
         Create a series object from a json node, containing everything that is relevant to a ListItem
         :param json_node: the json response from things like api/serie
@@ -666,6 +666,8 @@ class Series(Directory):
         Directory.__init__(self, json_node, get_children)
         self.url = None
         self.item_type = 'tvshow'
+        self.use_aid = use_aid
+
         # don't redownload info on an okay object
         if build_full_object and (self.size < 0 or (get_children and len(self.items) < 1)):
             json_node = self.get_full_object()
@@ -720,7 +722,10 @@ class Series(Directory):
         return url
 
     def url_prefix(self):
-        return 'serie'
+        if self.use_aid:
+            return 'serie/fromaid'
+        else:
+            return 'serie'
 
     def get_plugin_url(self):
         try:
