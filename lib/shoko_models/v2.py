@@ -799,7 +799,7 @@ class Series(Directory):
             'sorttitle': self.name,
             # 'duration': int (in seconds)
             # 'studio': string / list, // added below, great way to use
-            # 'tagline': string,
+            'tagline': ', '.join(self.tags),
             # 'writer': string/list,
             'tvshowtitle': self.name,
             'premiered': self.date,
