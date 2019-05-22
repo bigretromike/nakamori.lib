@@ -723,7 +723,10 @@ class Series(Directory):
         return 'serie'
 
     def get_plugin_url(self):
-        return puf(nakamoriplugin.show_series_menu, self.id)
+        try:
+            return puf(nakamoriplugin.show_series_menu, self.id)
+        except:
+            return str(self.id)
 
     def get_listitem(self, url=None):
         """
