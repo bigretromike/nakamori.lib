@@ -22,7 +22,7 @@ def url_calendar3(when=0, page=0):
 
 
 def url_series_info(aid=0):
-    url = 'seriesinfo/%s' % aid
+    url = '/seriesinfo/%s' % aid
     return run % url
 
 
