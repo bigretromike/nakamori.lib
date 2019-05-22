@@ -21,6 +21,16 @@ def url_calendar3(when=0, page=0):
     return run % url
 
 
+def url_series_info(aid=0):
+    url = 'seriesinfo/%s' % aid
+    return run % url
+
+
+def series_info(aid=0):
+    url = url_series_info(aid)
+    xbmc.executebuiltin(url)
+
+
 def calendar3(when=0, page=0):
     url = url_calendar3(when, page)
     xbmc.executebuiltin(url)
