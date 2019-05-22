@@ -54,6 +54,8 @@ class BasePythonProxy:
                 headers['Referer'] = referer
         if '127.0.0.1' not in url and 'localhost' not in url:
             headers['Accept-Encoding'] = 'gzip'
+        if '/Stream/' in url:
+            headers['api-version'] = '1.0'
 
         req = Request(self.encode(url), headers=headers)
         data = None
