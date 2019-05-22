@@ -722,10 +722,12 @@ class Series(Directory):
         return url
 
     def url_prefix(self):
-        if self.use_aid:
-            return 'serie/fromaid'
-        else:
-            return 'serie'
+        try:
+            if self.use_aid:
+                return 'serie/fromaid'
+        except:
+            pass
+        return 'serie'
 
     def get_plugin_url(self):
         try:
