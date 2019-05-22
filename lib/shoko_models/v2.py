@@ -1326,7 +1326,7 @@ class Episode(Directory):
                         x = str(f.date_added)[8:10] + '.' +str(f.date_added)[5:7] + '.' + str(f.date_added)[0:4]
                         self.hash_content += str(x).encode('utf-8')
             except Exception as ex:
-                eh.exception(eh.ErrorPriority.Highest, ex)
+                eh.exception(eh.ErrorPriority.HIGHEST, ex)
 
     def get_context_menu_items(self):
         # Calls to Plugin from Context Menus need 'RunPlugin(%s)' %
@@ -1495,6 +1495,14 @@ class File(Directory):
             self.sub_streams = {}
 
         eh.spam(self)
+
+    def get_full_object(self):
+        url = self.get_api_url()
+        json_body = pyproxy.get_json(url, True)
+        if json_body is None:
+            return None
+        json_node = json.loads(json_body)
+        return json_node
 
     def get_api_url(self):
         url = self.base_url()

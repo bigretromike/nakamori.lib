@@ -237,7 +237,7 @@ class BasePythonProxy:
                 apikey = plugin_addon.getSetting('apikey')
             else:
                 apikey = self.api_key
-            if 'file?id' in url_in or plugin_addon.getSetting('enableCache') != 'true':
+            if plugin_addon.getSetting('enableCache') != 'true':
                 direct = True
             if direct:
                 body = self.get_data(url_in, None, timeout, apikey)
@@ -261,8 +261,7 @@ class BasePythonProxy:
                     body = self.get_data(url_in, None, timeout, apikey)
                     cache.add_cache(url_in, body)
         except http_error as err:
-            body = err.code
-            return body
+            raise err
         except:
             eh.exception(ErrorPriority.HIGH)
             body = None
