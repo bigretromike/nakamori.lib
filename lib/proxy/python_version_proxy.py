@@ -63,21 +63,18 @@ class BasePythonProxy:
         eh.spam('Getting Data ---')
         eh.spam('URL: ', url)
         eh.spam('Headers:', headers)
-        try:
-            response = urlopen(req, timeout=int(timeout))
-            if response.info().get('Content-Encoding') == 'gzip':
-                eh.spam('Got gzipped response. Decompressing')
-                try:
-                    buf = BytesIO(response.read())
-                    f = gzip.GzipFile(fileobj=buf)
-                    data = f.read()
-                except Exception as e:
-                    eh.spam('Failed to decompress.', e.message)
-            else:
-                data = response.read()
-            response.close()
-        except Exception as e:
-            eh.spam('Failed to urlopen with error: ', e.message)
+        response = urlopen(req, timeout=int(timeout))
+        if response.info().get('Content-Encoding') == 'gzip':
+            eh.spam('Got gzipped response. Decompressing')
+            try:
+                buf = BytesIO(response.read())
+                f = gzip.GzipFile(fileobj=buf)
+                data = f.read()
+            except Exception as e:
+                eh.spam('Failed to decompress.', e.message)
+        else:
+            data = response.read()
+        response.close()
 
         eh.spam('Response Body:', data)
         eh.spam('Checking Response for a text error.\n')
