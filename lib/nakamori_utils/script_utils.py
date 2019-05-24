@@ -16,11 +16,6 @@ def calendar(when=0, page=0):
     xbmc.executebuiltin(url)
 
 
-def url_calendar3(when=0, page=0):
-    url = '/calendar3/%s/%s' % (when, page)
-    return run % url
-
-
 def url_series_info(id=0, aid=0):
     if aid > 0:
         url = '/seriesinfo/aid/%s' % aid
@@ -31,11 +26,6 @@ def url_series_info(id=0, aid=0):
 
 def series_info(id=0, aid=0):
     url = url_series_info(id, aid)
-    xbmc.executebuiltin(url)
-
-
-def calendar3(when=0, page=0):
-    url = url_calendar3(when, page)
     xbmc.executebuiltin(url)
 
 
@@ -87,6 +77,11 @@ def whats_new():
 
 def url_settings():
     url = '/dialog/settings'
+    return run % url
+
+
+def url_script_settings():
+    url = '/dialog/script_settings'
     return run % url
 
 
