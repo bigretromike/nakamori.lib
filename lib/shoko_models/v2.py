@@ -935,6 +935,23 @@ class Series(Directory):
             return 'TV-R'
         return ''
 
+    def suggest_rating_based_on_episode_rating(self):
+        rating_sum = 0.0
+        items_count = 0
+        for ep in self.items:
+            if ep.episode_type == 'Episode':
+                rating_sum += ep.user_rating
+                items_count += 1
+        if items_count > 0:
+            return rating_sum/items_count
+        return 0
+
+    def did_you_rate_every_episode(self):
+        for ep in self.items:
+            if ep.user_rating == 0 and ep.episode_type == 'Episode':
+                return False
+        return True
+
 
 # noinspection Duplicates
 class SeriesTypeList(Series):
