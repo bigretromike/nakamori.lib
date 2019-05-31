@@ -1544,7 +1544,7 @@ class File(Directory):
         if os.path.isfile(pyproxy.encode(self.server_path)):
             if self.server_path.startswith(u'\\\\'):
                 return u'smb:' + self.server_path.replace('\\', '/')
-            return self.file_url
+            return self.server_path
         return self.file_url
 
     def get_listitem(self):
