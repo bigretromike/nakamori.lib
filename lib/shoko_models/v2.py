@@ -1243,7 +1243,7 @@ class Episode(Directory):
         else:
             li.set_watched_flags(infolabels, WatchedStatus.UNWATCHED)
 
-        li.setUniqueIDs({'shoko_eid': self.id})
+        li.setUniqueIDs({'shoko_eid': self.id, 'shoko_aid': self.series_id, 'anidb': self.series_anidb_id})
         self.hide_info(infolabels)
         li.setRating('anidb', float(infolabels.get('rating', 0.0)), infolabels.get('votes', 0), True)
         li.setInfo(type='video', infoLabels=infolabels)
