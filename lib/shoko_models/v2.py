@@ -1243,12 +1243,16 @@ class Episode(Directory):
         else:
             li.set_watched_flags(infolabels, WatchedStatus.UNWATCHED)
 
-        li.setUniqueIDs({'shoko_eid': self.id, 'shoko_aid': self.series_id, 'anidb': self.series_anidb_id})
         self.hide_info(infolabels)
         li.setRating('anidb', float(infolabels.get('rating', 0.0)), infolabels.get('votes', 0), True)
         li.setInfo(type='video', infoLabels=infolabels)
         li.set_art(self)
         li.setCast(self.actors)
+
+        li.setUniqueIDs({'shoko_eid': self.id})
+        if self.series_id != 0:
+            li.setUniqueIDs({'shoko_aid': self.series_id})
+
         f = self.get_file()
         if f is not None:
             model_utils.set_stream_info(li, f)
