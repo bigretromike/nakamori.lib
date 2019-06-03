@@ -1330,7 +1330,7 @@ class Episode(Directory):
     def process_children(self, json_node):
         for _file in json_node.get('files', []):
             try:
-                f = File(_file, True, ep_id=self.id)
+                f = File(_file, True)
 
                 # add only video files to items list
                 if f.isVideo:
@@ -1462,7 +1462,7 @@ class File(Directory):
     """
     A file object, contains a unified method of representing a json_node file, with convenient converters
     """
-    def __init__(self, json_node, build_full_object=False, ep_id=0):
+    def __init__(self, json_node, build_full_object=False):
         """
         Create a file object from a json node, containing everything that is relevant to a ListItem
         :param json_node: the json response from things like api/file
@@ -1471,7 +1471,7 @@ class File(Directory):
         Directory.__init__(self, json_node)
         self.server_path = ''
         self.file_url = ''
-        self.ep_id = ep_id
+
         # don't redownload info on an okay object
         if build_full_object and self.size < 0:
             json_node = self.get_full_object()
@@ -1558,9 +1558,6 @@ class File(Directory):
         li.setPath(url)
         infolabels = self.get_infolabels()
         li.setInfo(type='video', infoLabels=infolabels)
-
-        if self.ep_id != 0:
-            li.setUniqueIDs({'shoko_eid': self.ep_id})
 
         # Files don't have watched states in the API, so this is all that's needed
         if self.resume_time > 0 and plugin_addon.getSetting('file_resume') == 'true':
