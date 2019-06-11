@@ -160,13 +160,13 @@ class Directory(object):
 
         if plugin_addon.getSetting('sync_to_library') == 'true':
             # TODO NEED TO GET EPISODEID FROM FILE
-            # IN DB FILES ARE STORED AS PATH: plugin://plugin.video.nakamori/  FILENAME: plugin://plugin.video.nakamori/tvshows/<ID>/play
+            # IN DB FILES ARE STORED AS PATH: plugin://plugin.video.nakamori/  FILENAME: plugin://plugin.video.nakamori/tvshows/<ID>/ep/<EP_ID>/play
             # <ID> is not the same as shoko ID.
             # series are directories cmd = '{"jsonrpc":"2.0","method":"Files.GetDirectory","params":{"directory":"plugin://plugin.video.nakamori/tvshows/"},"id":1}'
-            cmd = '{"jsonrpc":"2.0","method":"Files.GetFileDetails","params":{"file":"plugin://plugin.video.nakamori/plugin://plugin.video.nakamori/tvshows/%s/play", "properties": ["episode", "title", "uniqueid", "tvshowid"]},"id":1}' % self.id
-            xbmc.log(str(cmd), xbmc.LOGNOTICE)
-            rpc = xbmc.executeJSONRPC(cmd)
-            xbmc.log(str(rpc), xbmc.LOGNOTICE)
+            #cmd = '{"jsonrpc":"2.0","method":"Files.GetFileDetails","params":{"file":"plugin://plugin.video.nakamori/plugin://plugin.video.nakamori/tvshows/%s/play", "properties": ["episode", "title", "uniqueid", "tvshowid"]},"id":1}' % self.id
+            #xbmc.log(str(cmd), xbmc.LOGNOTICE)
+            #rpc = xbmc.executeJSONRPC(cmd)
+            #xbmc.log(str(rpc), xbmc.LOGNOTICE)
 
             #cmd = '{"jsonrpc":"2.0","method":"VideoLibrary.GetEpisodeDetails","params":{"episodeid":%d},"id":1}' % self.id
             #xbmc.log(str(cmd), xbmc.LOGNOTICE)
@@ -178,6 +178,8 @@ class Directory(object):
             #xbmc.log(str(cmd), xbmc.LOGNOTICE)
             #rpc = xbmc.executeJSONRPC(cmd)
             #xbmc.log(str(rpc), xbmc.LOGNOTICE)
+            # TODO make this work - but not here :-)
+            pass
 
         if plugin_addon.getSetting('watchedbox') == 'true':
             msg = localize(30201) + ' ' + (localize(30202) if watched else localize(30203))
@@ -419,7 +421,7 @@ class Filter(Directory):
         """
         Directory.__init__(self, json_node, get_children)
         # we are making this overrideable for Unsorted and such
-        self.plugin_url = 'plugin://plugin.video.nakamori/menu/filter/%s' % self.id
+        self.plugin_url = 'plugin://plugin.video.nakamori/menu/filter/%s/' % self.id
         self.directory_filter = False
 
         if build_full_object:
@@ -427,7 +429,7 @@ class Filter(Directory):
             if self.size < 0:
                 # First, download basic info
                 json_node = self.get_full_object()
-                self.plugin_url = 'plugin://plugin.video.nakamori/menu/filter/%s' % self.id
+                self.plugin_url = 'plugin://plugin.video.nakamori/menu/filter/%s/' % self.id
                 Directory.__init__(self, json_node, get_children)
                 self.directory_filter = json_node.get('type', 'filter') == 'filters'
             # then download children, optimized for type
@@ -1243,12 +1245,16 @@ class Episode(Directory):
         else:
             li.set_watched_flags(infolabels, WatchedStatus.UNWATCHED)
 
-        li.setUniqueIDs({'shoko_eid': self.id})
         self.hide_info(infolabels)
         li.setRating('anidb', float(infolabels.get('rating', 0.0)), infolabels.get('votes', 0), True)
         li.setInfo(type='video', infoLabels=infolabels)
         li.set_art(self)
         li.setCast(self.actors)
+
+        li.setUniqueIDs({'shoko_eid': self.id})
+        if self.series_id != 0:
+            li.setUniqueIDs({'shoko_aid': self.series_id})
+
         f = self.get_file()
         if f is not None:
             model_utils.set_stream_info(li, f)
@@ -1471,6 +1477,7 @@ class File(Directory):
         Directory.__init__(self, json_node)
         self.server_path = ''
         self.file_url = ''
+
         # don't redownload info on an okay object
         if build_full_object and self.size < 0:
             json_node = self.get_full_object()

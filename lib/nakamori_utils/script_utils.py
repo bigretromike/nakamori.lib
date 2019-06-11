@@ -7,7 +7,7 @@ run = 'RunScript(script.module.nakamori,%s)'
 
 
 def url_calendar(when=0, page=0):
-    url = '/calendar/%i/%i' % (when, page)
+    url = '/calendar/%i/%i/' % (when, page)
     return run % url
 
 
@@ -18,9 +18,9 @@ def calendar(when=0, page=0):
 
 def url_series_info(id=0, aid=0):
     if aid > 0:
-        url = '/seriesinfo/aid/%s' % aid
+        url = '/seriesinfo/aid/%s/' % aid
     else:
-        url = '/seriesinfo/%s' % id
+        url = '/seriesinfo/%s/' % id
     return run % url
 
 
@@ -171,7 +171,7 @@ def cohesion():
 
 
 def url_show_series_vote_dialog(series_id):
-    url = '/dialog/vote_series/%i' % series_id
+    url = '/dialog/vote_series/%i/' % series_id
     return run % url
 
 
@@ -181,7 +181,7 @@ def show_series_vote_dialog(series_id):
 
 
 def url_show_episode_vote_dialog(ep_id):
-    url = '/dialog/vote_episode/%i' % ep_id
+    url = '/dialog/vote_episode/%i/' % ep_id
     return run % url
 
 
@@ -271,7 +271,7 @@ def set_group_watched_status(group_id, watched, wait=False):
 
 
 def url_move_to_item(index):
-    url = '/menu/episode/move_to_item/%i' % index
+    url = '/menu/episode/move_to_item/%i/' % index
     return run % url
 
 
