@@ -147,7 +147,8 @@ class DirectoryListing(object):
     def __del__(self):
         if not self.immediate and len(self.pending) > 0:
             xbmcplugin.addDirectoryItems(self.handle, self.pending, self.pending.__len__())
-        xbmcplugin.endOfDirectory(self.handle, succeeded=self.success, cacheToDisc=self.cache)
+        if xbmcplugin is not None:
+            xbmcplugin.endOfDirectory(self.handle, succeeded=self.success, cacheToDisc=self.cache)
 
 
 class VideoLibraryItem(object):
