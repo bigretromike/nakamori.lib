@@ -270,7 +270,7 @@ def refresh():
     Allow time for the ui to reload
     """
     xbmc.executebuiltin('Container.Refresh')
-    xbmc.sleep(int(plugin_addon.getSetting('refresh_wait')))
+    xbmc.sleep(1000)
 
 
 def message_box(title, text, text2=None, text3=None):
@@ -360,3 +360,30 @@ def get_media_type_from_container():
         return 'role'
     else:
         return None
+
+
+def get_device_id(reset=False):
+    import xbmcvfs
+    client_id = xbmcgui.Window(10000).getProperty('nakamori_deviceId')
+
+    if client_id:
+        return client_id
+    directory = xbmc.translatePath(plugin_addon.getAddonInfo('profile'))
+    nakamori_guid = os.path.join(directory, "nakamori_guid")
+    file_guid = xbmcvfs.File(nakamori_guid)
+    client_id = file_guid.read()
+
+    if not client_id or reset:
+        client_id = str("%012X" % create_id())
+        file_guid = xbmcvfs.File(nakamori_guid, "w")
+        file_guid.write(client_id)
+
+    file_guid.close()
+
+    xbmcgui.Window(10000).setProperty('nakamori_deviceId', client_id)
+    return client_id
+
+
+def create_id():
+    from uuid import uuid4
+    return uuid4()

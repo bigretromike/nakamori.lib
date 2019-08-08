@@ -2,6 +2,7 @@
 # Yes this was super tedious and the reason that I want a routing registry
 import xbmc
 from proxy.python_version_proxy import python_proxy as pyproxy
+from nakamori_utils.globalvars import *
 
 run = 'RunScript(script.module.nakamori,%s)'
 
@@ -278,3 +279,23 @@ def url_move_to_item(index):
 def move_to_item(index):
     url = url_move_to_item(index)
     xbmc.executebuiltin(url)
+
+
+def url_probe_file(file_id):
+    url = '/file/%i/probe' % file_id
+    return run % url
+
+
+def url_probe_episode(ep_id):
+    url = '/episode/%i/probe' % ep_id
+    return run % url
+
+
+def url_transcode_file(file_id):
+    url = '/file/%i/transcode' % file_id
+    return run % url
+
+
+def url_transcode_episode(ep_id):
+    url = '/episode/%i/transcode' % ep_id
+    return run % url

@@ -1419,6 +1419,18 @@ class Episode(Directory):
         if plugin_addon.getSetting('context_refresh') == 'true':
             context_menu.append((localize(30131), 'Container.Refresh'))
 
+        # Eigakan
+        # Probe
+        if plugin_addon.getSetting('enableEigakan') == 'true':
+            if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
+                context_menu.append(('Probe', script_utils.url_probe_episode(ep_id=self.id)))
+                context_menu.append(('Transcode', script_utils.url_transcode_episode(ep_id=self.id)))
+            else:
+                file_ = self.get_file()
+                file_id = file_.id
+                context_menu.append(('Probe', script_utils.url_probe_file(file_id=file_id)))
+                context_menu.append(('Transcode', script_utils.url_transcode_file(file_id=file_id)))
+
         # the default ones that say the rest are kodi's
         context_menu += Directory.get_context_menu_items(self)
 
