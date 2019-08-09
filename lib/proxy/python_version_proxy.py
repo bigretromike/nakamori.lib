@@ -7,6 +7,8 @@ from abc import abstractmethod
 
 from nakamori_utils.globalvars import plugin_addon
 
+from socket import timeout
+
 try:
     from urllib.parse import urlparse, quote, unquote_plus, quote_plus, urlencode
     from urllib.request import urlopen, Request
@@ -135,25 +137,27 @@ class BasePythonProxy:
             url += array3[0] + '=' + array3[1] + '&'
         return url[:-1]
 
-    def post_json(self, url_in, body):
+    def post_json(self, url_in, body, custom_timeout=int(plugin_addon.getSetting('timeout'))):
         """
         Push data to server using 'POST' method
         :param url_in:
         :param body:
+        :custom_timeout: if not given timeout from plugin setting will be used
         :return:
         """
         if len(body) > 3:
             proper_body = '{' + body + '}'
-            return self.post_data(url_in, proper_body)
+            return self.post_data(url=url_in, data_in=proper_body, custom_timeout=custom_timeout)
         else:
             return None
 
-    def post_data(self, url, data_in):
+    def post_data(self, url, data_in, custom_timeout=int(plugin_addon.getSetting('timeout'))):
         """
         Send a message to the server and wait for a response
         Args:
             url: the URL to send the data to
             data_in: the message to send (in json)
+            custom_timeout: if not given timeout from plugin setting will be used
 
         Returns: The response from the server
         """
@@ -166,6 +170,7 @@ class BasePythonProxy:
             'Content-Type': 'application/json',
             'Accept': 'application/json',
         }
+
         apikey = plugin_addon.getSetting('apikey')
         if apikey is not None and apikey != '':
             headers['apikey'] = apikey
@@ -179,13 +184,19 @@ class BasePythonProxy:
 
         data_out = None
         try:
-            response = urlopen(req, timeout=int(plugin_addon.getSetting('timeout')))
+            response = urlopen(req, timeout=custom_timeout)
             data_out = response.read()
             response.close()
             eh.spam('Response Body:', data_out)
             eh.spam('Checking Response for a text error.\n')
             if data_out is not None and data_out != '':
                 self.parse_possible_error(req, data_out)
+        except timeout:
+            # if using very short time out to not wait for response it will throw time out err,
+            # but we check if that was intended by checking custom_timeout
+            # if it wasn't intended we handle it the old way
+            if custom_timeout == int(plugin_addon.getSetting('timeout')):
+                eh.exception(ErrorPriority.HIGH)
         except:
             eh.exception(ErrorPriority.HIGH)
         return data_out

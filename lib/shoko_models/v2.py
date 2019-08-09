@@ -49,6 +49,7 @@ class Directory(object):
         self.fanart = ''
         self.poster = ''
         self.banner = ''
+        self.icon = ''
         self.size = -1
         self.get_children = get_children
         self.sort_index = 0
@@ -122,6 +123,7 @@ class Directory(object):
         thumb = ''
         fanart = ''
         banner = ''
+        icon = ''
         try:
             if len(json_node['art']['thumb']) > 0:
                 thumb = json_node['art']['thumb'][0]['url']
@@ -137,11 +139,17 @@ class Directory(object):
                 banner = json_node['art']['banner'][0]['url']
                 if banner is not None and ':' not in banner:
                     banner = server + banner
+
+            # TODO need to play with this a little more
+            if kodi_utils.get_cond_visibility('System.HasAddon(resource.images.studios.white)') == 1:
+                if hasattr(self, 'studio'):
+                    icon = 'resource://resource.images.studios.white/{studio}.png'.format(studio=self.studio)
         except:
             pass
         self.fanart = fanart
         self.poster = thumb
         self.banner = banner
+        self.icon = icon
 
     def process_children(self, json_node):
         pass
@@ -702,6 +710,7 @@ class Series(Directory):
         self.file_size = json_node.get('filesize', 0)
         self.year = json_node.get('year', 0)
         self.mpaa = self.get_mpaa_rating()
+        self.studio = ''
         self.outline = " ".join(self.overview.split(".", 3)[:2])  # first 3 sentence
         self.hash = None
 
@@ -846,6 +855,9 @@ class Series(Directory):
         f = e.get_file()
         if f is None:
             return
+
+        # if kodi_utils.get_cond_visibility('System.HasAddon(resource.images.studios.white)') == 1:
+
         more_infolabels = {
             'dateadded': f.date_added,
             'studio': f.group,
@@ -1420,7 +1432,7 @@ class Episode(Directory):
             context_menu.append((localize(30131), 'Container.Refresh'))
 
         # Eigakan
-        # Probe
+        # Probe / Transcode
         if plugin_addon.getSetting('enableEigakan') == 'true':
             if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
                 context_menu.append(('Probe', script_utils.url_probe_episode(ep_id=self.id)))

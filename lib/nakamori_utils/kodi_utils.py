@@ -326,37 +326,37 @@ def set_user_sort_method(content):
 
 
 def get_media_type_from_container():
-    if xbmc.getCondVisibility('Container.Content(tvshows)'):
+    if get_cond_visibility('Container.Content(tvshows)'):
         return "show"
-    elif xbmc.getCondVisibility('Container.Content(seasons)'):
+    elif get_cond_visibility('Container.Content(seasons)'):
         return "season"
-    elif xbmc.getCondVisibility('Container.Content(episodes)'):
+    elif get_cond_visibility('Container.Content(episodes)'):
         return "episode"
-    elif xbmc.getCondVisibility('Container.Content(movies)'):
+    elif get_cond_visibility('Container.Content(movies)'):
         return "movie"
-    elif xbmc.getCondVisibility('Container.Content(files)'):
+    elif get_cond_visibility('Container.Content(files)'):
         return 'file'
-    elif xbmc.getCondVisibility('Container.Content(genres)'):
+    elif get_cond_visibility('Container.Content(genres)'):
         return 'genre'
-    elif xbmc.getCondVisibility('Container.Content(years)'):
+    elif get_cond_visibility('Container.Content(years)'):
         return 'years'
-    elif xbmc.getCondVisibility('Container.Content(actors)'):
+    elif get_cond_visibility('Container.Content(actors)'):
         return 'actor'
-    elif xbmc.getCondVisibility('Container.Content(playlists)'):
+    elif get_cond_visibility('Container.Content(playlists)'):
         return 'playlist'
-    elif xbmc.getCondVisibility('Container.Content(plugins)'):
+    elif get_cond_visibility('Container.Content(plugins)'):
         return 'plugin'
-    elif xbmc.getCondVisibility('Container.Content(studios)'):
+    elif get_cond_visibility('Container.Content(studios)'):
         return 'studio'
-    elif xbmc.getCondVisibility('Container.Content(directors)'):
+    elif get_cond_visibility('Container.Content(directors)'):
         return 'director'
-    elif xbmc.getCondVisibility('Container.Content(sets)'):
+    elif get_cond_visibility('Container.Content(sets)'):
         return 'set'
-    elif xbmc.getCondVisibility('Container.Content(tags)'):
+    elif get_cond_visibility('Container.Content(tags)'):
         return 'tag'
-    elif xbmc.getCondVisibility('Container.Content(countries)'):
+    elif get_cond_visibility('Container.Content(countries)'):
         return 'country'
-    elif xbmc.getCondVisibility('Container.Content(roles)'):
+    elif get_cond_visibility('Container.Content(roles)'):
         return 'role'
     else:
         return None
@@ -387,3 +387,7 @@ def get_device_id(reset=False):
 def create_id():
     from uuid import uuid4
     return uuid4()
+
+
+def get_cond_visibility(condition):
+    return xbmc.getCondVisibility(condition)
