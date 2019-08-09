@@ -1375,7 +1375,10 @@ class Episode(Directory):
         context_menu = []
         # Play
         if plugin_addon.getSetting('context_show_play') == 'true':
-            context_menu.append((localize(30065), 'Action(Select)'))
+            # I change this to play, because with 'show info' this does not play file
+            url = 'RunPlugin(%s)' % puf(nakamoriplugin.play_video, self.id, self.get_file().id)
+            context_menu.append((localize(30065), url))
+            # context_menu.append((localize(30065), 'Action(Select)'))
 
         # Resume
         if self.get_file() is not None and self.get_file().resume_time > 0 \
@@ -1433,15 +1436,18 @@ class Episode(Directory):
 
         # Eigakan
         # Probe / Transcode
+        # TODO lang fix
         if plugin_addon.getSetting('enableEigakan') == 'true':
             if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
                 context_menu.append(('Probe', script_utils.url_probe_episode(ep_id=self.id)))
                 context_menu.append(('Transcode', script_utils.url_transcode_episode(ep_id=self.id)))
+                context_menu.append(('Direct Play', 'RunPlugin(%s)' % puf(nakamoriplugin.direct_play_video, self.id)))
             else:
                 file_ = self.get_file()
                 file_id = file_.id
                 context_menu.append(('Probe', script_utils.url_probe_file(file_id=file_id)))
                 context_menu.append(('Transcode', script_utils.url_transcode_file(file_id=file_id)))
+                context_menu.append(('Direct Play', 'RunPlugin(%s)' % puf(nakamoriplugin.direct_play_video, self.id, self.get_file().id)))
 
         # the default ones that say the rest are kodi's
         context_menu += Directory.get_context_menu_items(self)
