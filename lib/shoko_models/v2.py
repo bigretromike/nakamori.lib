@@ -1119,12 +1119,6 @@ class SeriesTypeList(Series):
                 return sizes.total_specials
         return 0
 
-    def add_sort_methods(self, handle):
-        pass
-
-    def apply_default_sorting(self):
-        pass
-
 
 # noinspection Duplicates
 class Episode(Directory):
