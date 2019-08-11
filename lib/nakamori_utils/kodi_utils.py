@@ -234,7 +234,8 @@ def move_to_next():
             xbmc.sleep(interval)
             elapsed += interval
         # endregion Fuck if I know....
-        move_position_on_list_to_next(control_list)
+        if isinstance(control_list, xbmcgui.ControlList):
+            move_position_on_list_to_next(control_list)
     except:
         eh.exception(ErrorPriority.HIGH, localize2(30014))
 
@@ -267,13 +268,14 @@ def move_to_index(index, absolute=False):
                 wind = xbmcgui.Window(xbmcgui.getCurrentWindowId())
                 control_list = wind.getControl(wind.getFocusId())
                 if isinstance(control_list, xbmcgui.ControlList):
-                    breakmove_position_on_list
+                    break
             except:
                 pass
             xbmc.sleep(interval)
             elapsed += interval
         # endregion Fuck if I know....
-        move_position_on_list(control_list, index, absolute)
+        if isinstance(control_list, xbmcgui.ControlList):
+            move_position_on_list(control_list, index, absolute)
     except:
         eh.exception(ErrorPriority.HIGH, localize2(30014))
 
@@ -298,7 +300,8 @@ def move_position_on_list(control_list, position=0, absolute=False):
     except:
         try:
             control_list.selectItem(position - 1)
-        except:
+        except Exception as e:
+            xbmc.log(' -----> ERROR -----> %s' % e, xbmc.LOGNOTICE)
             eh.exception(ErrorPriority.HIGH, localize2(30015))
 
 
@@ -436,9 +439,13 @@ def is_dialog_active():
     x = -1
     try:
         x = xbmcgui.getCurrentWindowDialogId()
+        x = int(x)
         xbmc.log('----- > is_dialog_is_visible: %s' % x, xbmc.LOGNOTICE)
     except:
         pass
-    if x == -1:
-        return False
-    return True
+    # https://github.com/xbmc/xbmc/blob/master/xbmc/guilib/WindowIDs.h
+    if 10099 <= x <= 10160:
+        return True
+    #if x == -1 or x == 9999:
+    #    return False
+    return False
