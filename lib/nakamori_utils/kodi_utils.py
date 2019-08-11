@@ -213,7 +213,7 @@ def search_box():
     return search_text
 
 
-def move_to_index(index, absolute=False):
+def move_to_next():
     try:
         # putting this in a method crashes kodi to desktop.
         # region Fuck if I know....
@@ -234,6 +234,45 @@ def move_to_index(index, absolute=False):
             xbmc.sleep(interval)
             elapsed += interval
         # endregion Fuck if I know....
+        move_position_on_list_to_next(control_list)
+    except:
+        eh.exception(ErrorPriority.HIGH, localize2(30014))
+
+
+def move_position_on_list_to_next(control_list):
+    position = control_list.getSelectedPosition()
+    if position != -1:
+        try:
+            control_list.selectItem(position+1)
+        except:
+            try:
+                if position != 0:
+                    control_list.selectItem(position - 1)
+            except:
+                eh.exception(ErrorPriority.HIGH, localize2(30015))
+
+
+def move_to_index(index, absolute=False):
+    try:
+        # putting this in a method crashes kodi to desktop.
+        # region Fuck if I know....
+        elapsed = 0
+        interval = 250
+        wait_time = 4000
+        control_list = None
+        while True:
+            if elapsed >= wait_time:
+                break
+            try:
+                wind = xbmcgui.Window(xbmcgui.getCurrentWindowId())
+                control_list = wind.getControl(wind.getFocusId())
+                if isinstance(control_list, xbmcgui.ControlList):
+                    breakmove_position_on_list
+            except:
+                pass
+            xbmc.sleep(interval)
+            elapsed += interval
+        # endregion Fuck if I know....
         move_position_on_list(control_list, index, absolute)
     except:
         eh.exception(ErrorPriority.HIGH, localize2(30014))
@@ -244,7 +283,7 @@ def move_position_on_list(control_list, position=0, absolute=False):
     Move to the position in a list - use episode number for position
     Args:
         control_list: the list control
-        position: the index of the item not including settings
+        position: the move_position_on_listindex of the item not including settings
         absolute: bypass setting and set position directly
     """
     if not absolute:
