@@ -104,6 +104,7 @@ class DirectoryListing(object):
 
     def set_content(self, content_type):
         self.content_type = content_type
+
         if self.content_type != '':
             xbmcplugin.setContent(self.handle, content_type)
 

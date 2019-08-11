@@ -391,3 +391,15 @@ def create_id():
 
 def get_cond_visibility(condition):
     return xbmc.getCondVisibility(condition)
+
+
+def is_dialog_active():
+    x = -1
+    try:
+        x = xbmcgui.getCurrentWindowDialogId()
+        xbmc.log('----- > is_dialog_is_visible: %s' % x, xbmc.LOGNOTICE)
+    except:
+        pass
+    if x == -1:
+        return False
+    return True
