@@ -235,8 +235,8 @@ def move_to_next():
             elapsed += interval
         # endregion Fuck if I know....
         if isinstance(control_list, xbmcgui.ControlList):
-            xbmc.log(' > ===== >> == %s == %s ' % (control_list.size, control_list.getListItem(0).getLabel()), xbmc.LOGNOTICE)
-            move_position_on_list_to_next(control_list)
+            if control_list.size > 0:
+                move_position_on_list_to_next(control_list)
     except:
         eh.exception(ErrorPriority.HIGH, localize2(30014))
 

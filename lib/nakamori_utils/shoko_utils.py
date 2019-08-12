@@ -400,5 +400,16 @@ def trakt_scrobble(ep_id, status, progress, movie, notification):
         xbmc.executebuiltin('XBMC.Notification(%s, %s %s, 7500, %s)' % ('Trakt.tv', note_text, '',
                                                                         plugin_addon.getAddonInfo('icon')))
 
-    pyproxy.get_json(server + '/api/ep/scrobble?id=%i&ismovie=%s&status=%i&progress=%i' %
-                     (ep_id, movie, status, progress))
+    try:
+        pyproxy.get_json(server + '/api/ep/scrobble?id=%i&ismovie=%s&status=%i&progress=%i' % (ep_id, movie,
+                                                                                               status, progress))
+    except python_version_proxy.http_error as htex:
+        if htex.code == 500:
+            try:
+                xbmc.sleep(1000)
+                pyproxy.get_json(server + '/api/ep/scrobble?id=%i&ismovie=%s&status=%i&progress=%i' % (ep_id, movie,
+                                                                                                       status, progress))
+            except:
+                xbmc.log('trakt_scrobble error - double exception', xbmc.LOGNOTICE)
+        else:
+            xbmc.log('trakt_scrobble error - single exception', xbmc.LOGNOTICE)

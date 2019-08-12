@@ -1571,6 +1571,10 @@ class File(Directory):
         return 'plugin://plugin.video.nakamori/episode/%s/file/%s/play_without_marking' % (0, self.id)
 
     @property
+    def remote_url_for_player(self):
+        return self.file_url
+
+    @property
     def url_for_player(self):
         if os.path.isfile(pyproxy.encode(self.server_path)):
             if self.server_path.startswith(u'\\\\'):
