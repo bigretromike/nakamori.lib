@@ -197,8 +197,11 @@ class BasePythonProxy:
             # if it wasn't intended we handle it the old way
             if custom_timeout == int(plugin_addon.getSetting('timeout')):
                 eh.exception(ErrorPriority.HIGH)
+        except http_error as err:
+            raise err
         except:
             eh.exception(ErrorPriority.HIGH)
+
         return data_out
 
     def parse_parameters(self, input_string):

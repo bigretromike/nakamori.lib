@@ -1386,6 +1386,19 @@ class Episode(Directory):
             context_menu.append((localize(30132), 'RunPlugin(%s)' % puf(nakamoriplugin.play_video_without_marking,
                                                                         self.id, self.get_file().id)))
 
+        # Play (transcode)
+        if plugin_addon.getSetting('context_show_force_transcode') == 'true' and plugin_addon.getSetting('eigakan_handshake') == 'true':
+            context_menu.append((localize(30174), 'RunPlugin(%s)' % puf(nakamoriplugin.transcode_play_video,
+                                                                        self.id, self.get_file().id)))
+
+        # Play (Direct)
+        if plugin_addon.getSetting('enableEigakan') == 'true' and plugin_addon.getSetting('context_show_directplay') == 'true':
+            if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
+                context_menu.append((localize(30175), 'RunPlugin(%s)' % puf(nakamoriplugin.direct_play_video, self.id)))
+            else:
+                context_menu.append((localize(30175), 'RunPlugin(%s)' % puf(nakamoriplugin.direct_play_video, self.id,
+                                                                          self.get_file().id)))
+
         # Inspect
         if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
             context_menu.append((localize(30133), script_utils.url_file_list(self.id)))
@@ -1420,28 +1433,33 @@ class Episode(Directory):
             context_menu.append((localize(30123), 'Action(Info)'))
 
         # View Cast
-        if plugin_addon.getSetting('context_view_cast') == 'true' and self.series_id != 0:
+        # this was comment out, leaving until clean up
+        #if plugin_addon.getSetting('context_view_cast') == 'true' and self.series_id != 0:
             # context_menu.append((localize(30134), 'RunPlugin(%s&cmd=viewCast)'))
-            pass
+        #    pass
+
+        # Probe
+        if plugin_addon.getSetting('enableEigakan') == 'true' and plugin_addon.getSetting('context_show_probe') == 'true':
+            if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
+                context_menu.append((localize(30177), script_utils.url_probe_episode(ep_id=self.id)))
+            else:
+                file_ = self.get_file()
+                file_id = file_.id
+                context_menu.append((localize(30177), script_utils.url_probe_file(file_id=file_id)))
+
+        # Transcode
+        if plugin_addon.getSetting('enableEigakan') == 'true':
+            if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
+                context_menu.append((localize(30176), script_utils.url_transcode_episode(ep_id=self.id)))
+            else:
+                file_ = self.get_file()
+                file_id = file_.id
+                context_menu.append((localize(30176), script_utils.url_transcode_file(file_id=file_id)))
 
         # Refresh
         if plugin_addon.getSetting('context_refresh') == 'true':
             context_menu.append((localize(30131), 'Container.Refresh'))
 
-        # Eigakan
-        # Probe / Transcode
-        # TODO lang fix
-        if plugin_addon.getSetting('enableEigakan') == 'true':
-            if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
-                context_menu.append(('Probe', script_utils.url_probe_episode(ep_id=self.id)))
-                context_menu.append(('Transcode', script_utils.url_transcode_episode(ep_id=self.id)))
-                context_menu.append(('Direct Play', 'RunPlugin(%s)' % puf(nakamoriplugin.direct_play_video, self.id)))
-            else:
-                file_ = self.get_file()
-                file_id = file_.id
-                context_menu.append(('Probe', script_utils.url_probe_file(file_id=file_id)))
-                context_menu.append(('Transcode', script_utils.url_transcode_file(file_id=file_id)))
-                context_menu.append(('Direct Play', 'RunPlugin(%s)' % puf(nakamoriplugin.direct_play_video, self.id, self.get_file().id)))
 
         # the default ones that say the rest are kodi's
         context_menu += Directory.get_context_menu_items(self)
