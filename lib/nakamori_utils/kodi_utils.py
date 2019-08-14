@@ -9,7 +9,7 @@ import xbmcplugin
 
 from nakamori_utils.globalvars import *
 import error_handler as eh
-from error_handler import ErrorPriority
+from error_handler import ErrorPriority, log
 from nakamori_utils.globalvars import plugin_addon
 from proxy.python_version_proxy import python_proxy as pyproxy
 from proxy.python_version_proxy import http_error as http_err
@@ -222,44 +222,8 @@ def move_to_next():
     select = get_kodi_setting('videolibrary.tvshowsselectfirstunwatcheditem') > 0 \
              or plugin_addon.getSetting('select_unwatched') == 'true'
     if select:
-        try:
-            # putting this in a method crashes kodi to desktop.
-            # region Fuck if I know....
-            elapsed = 0
-            interval = 250
-            wait_time = 4000
-            control_list = None
-            while True:
-                if elapsed >= wait_time:
-                    break
-                try:
-                    wind = xbmcgui.Window(xbmcgui.getCurrentWindowId())
-                    control_list = wind.getControl(wind.getFocusId())
-                    if isinstance(control_list, xbmcgui.ControlList):
-                        break
-                except:
-                    pass
-                xbmc.sleep(interval)
-                elapsed += interval
-            # endregion Fuck if I know....
-            if isinstance(control_list, xbmcgui.ControlList):
-                if control_list.size > 0:
-                    move_position_on_list_to_next(control_list)
-        except:
-            eh.exception(ErrorPriority.HIGH, localize2(30014))
-
-
-def move_position_on_list_to_next(control_list):
-    position = control_list.getSelectedPosition()
-    if position != -1:
-        try:
-            control_list.selectItem(position+1)
-        except:
-            try:
-                if position != 0:
-                    control_list.selectItem(position - 1)
-            except:
-                eh.exception(ErrorPriority.HIGH, localize2(30015))
+        # looks like controlist allways returns 0 in size
+        xbmc.executebuiltin('Action(Down)', True)
 
 
 def move_to_index(index, absolute=False):
@@ -450,8 +414,10 @@ def is_dialog_active():
         x = int(x)
         eh.spam('----- > is_dialog_is_visible: %s' % x)
     except:
+        eh.spam('----- > is_dialog_is_visible: NONE')
         pass
     # https://github.com/xbmc/xbmc/blob/master/xbmc/guilib/WindowIDs.h
+    # 10138 - busy,loading
     if 10099 <= x <= 10160:
         return True
     #if x == -1 or x == 9999:
