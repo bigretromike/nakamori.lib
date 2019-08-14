@@ -299,3 +299,27 @@ def url_transcode_file(file_id):
 def url_transcode_episode(ep_id):
     url = '/episode/%i/transcode' % ep_id
     return run % url
+
+def url_add_favorite(s_id):
+    url = '/favorite/%i/add' % s_id
+    return run % url
+
+def add_favorite(s_id):
+    url = url_add_favorite(s_id)
+    xbmc.executebuiltin(url)
+
+def url_remove_favorite(s_id):
+    url = '/favorite/%i/remove' % s_id
+    return run % url
+
+def remove_favorite(s_id):
+    url = url_remove_favorite(s_id)
+    xbmc.executebuiltin(url)
+
+def url_clear_favorite():
+    url = '/favorite/clear'
+    return run % url
+
+def clear_favorite():
+    url = url_clear_favorite()
+    xbmc.executebuiltin(url)

@@ -52,7 +52,7 @@ class Directory(object):
         self.icon = ''
         self.size = -1
         self.get_children = get_children
-        self.sort_index = 0
+        self.sort_index = 1
         self.sizes = None
         if isinstance(json_node, (str, int, unicode)):
             self.id = json_node
@@ -224,8 +224,8 @@ class Directory(object):
         context_menu = []
         if plugin_addon.getSetting('show_refresh') == 'true':
             context_menu += [(plugin_addon.getLocalizedString(30131), script_utils.url_refresh())]
-        context_menu += [('  ', 'empty'), (plugin_addon.getLocalizedString(30147), 'empty'),
-                         (plugin_addon.getLocalizedString(30148), 'empty')]
+        context_menu += [('  ', 'empty'), ('  ', 'empty'), (plugin_addon.getLocalizedString(30147), 'empty')]
+        # ,(plugin_addon.getLocalizedString(30148), 'empty')]
         return context_menu
 
     def __iter__(self):
@@ -713,6 +713,7 @@ class Series(Directory):
         self.studio = ''
         self.outline = " ".join(self.overview.split(".", 3)[:2])  # first 3 sentence
         self.hash = None
+        self.in_favorite = False
 
         self.process_children(json_node)
 
@@ -902,8 +903,15 @@ class Series(Directory):
         if plugin_addon.getSetting('context_show_vote_Series') == 'true':
             context_menu.append((localize(30124), script_utils.url_vote_for_series(self.id)))
 
-        # TODO Things to add: View Cast, Play All, Related, Similar
+        # Favorite
+        if plugin_addon.getSetting('show_favorites') == 'true':
+            if self.in_favorite:
+                context_menu.append((localize(30213), script_utils.url_remove_favorite(self.id)))
+            else:
+                context_menu.append((localize(30212), script_utils.url_add_favorite(self.id)))
 
+        # TODO Things to add: View Cast, Play All, Related, Similar
+        context_menu += Directory.get_context_menu_items(self)
         return context_menu
 
     def vote(self, value):
@@ -965,6 +973,9 @@ class Series(Directory):
             if ep.user_rating == 0 and ep.episode_type == 'Episode':
                 return False
         return True
+
+    def is_in_favorite(self):
+        self.in_favorite = True
 
 
 # noinspection Duplicates
