@@ -323,3 +323,17 @@ def url_clear_favorite():
 def clear_favorite():
     url = url_clear_favorite()
     xbmc.executebuiltin(url)
+
+def log_setsuzoku(category, action, event):
+    url = '/log/%s/%s/%s' % (category, action, event)
+    xbmc.executebuiltin(run % url)
+
+
+def url_move_to_item_and_enter(index):
+    url = '/menu/move_to_item_and_enter/%i/' % index
+    return run % url
+
+
+def move_to_item_and_enter(index):
+    url = url_move_to_item_and_enter(index)
+    xbmc.executebuiltin(url)

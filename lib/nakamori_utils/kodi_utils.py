@@ -13,6 +13,8 @@ from error_handler import ErrorPriority, log
 from nakamori_utils.globalvars import plugin_addon
 from proxy.python_version_proxy import python_proxy as pyproxy
 from proxy.python_version_proxy import http_error as http_err
+from nakamori_utils.script_utils import log_setsuzoku
+from setsuzoku import Category, Action, Event
 
 try:
     from sqlite3 import dbapi2 as database
@@ -157,6 +159,8 @@ def clear_listitem_cache():
     Clear mark for nakamori files in kodi db
     :return:
     """
+    log_setsuzoku(Category.MAINTENANCE, Action.LISTITEM, Event.CLEAN)
+
     ret = xbmcgui.Dialog().yesno(plugin_addon.getLocalizedString(30104),
                                  plugin_addon.getLocalizedString(30081), plugin_addon.getLocalizedString(30112))
     if ret:
@@ -182,6 +186,8 @@ def clear_image_cache():
     Clear image cache in kodi db
     :return:
     """
+    log_setsuzoku(Category.MAINTENANCE, Action.IMAGE, Event.CLEAN)
+
     ret = xbmcgui.Dialog().yesno(plugin_addon.getLocalizedString(30104),
                                  plugin_addon.getLocalizedString(30081), plugin_addon.getLocalizedString(30112))
     if ret:
@@ -270,6 +276,7 @@ def move_position_on_list(control_list, position=0, absolute=False):
             position = int(position + 1)
     try:
         control_list.selectItem(position)
+        xbmc.log(' move_position_on_list : %s ' % position, xbmc.LOGNOTICE)
     except:
         try:
             control_list.selectItem(position - 1)
@@ -386,9 +393,13 @@ def get_device_id(reset=False):
     nakamori_guid = os.path.join(directory, "nakamori_guid")
     file_guid = xbmcvfs.File(nakamori_guid)
     client_id = file_guid.read()
+    if client_id:
+        if len(client_id) < 16:
+            # reset device_id if its in old format
+            reset = True
 
     if not client_id or reset:
-        client_id = str("%012X" % create_id())
+        client_id = str("%016X" % create_id())
         file_guid = xbmcvfs.File(nakamori_guid, "w")
         file_guid.write(client_id)
 
@@ -400,6 +411,7 @@ def get_device_id(reset=False):
 
 def create_id():
     from uuid import uuid4
+    log_setsuzoku(Category.SETTINGS, Action.DEVICEID, Event.CREATE)
     return uuid4()
 
 
@@ -427,6 +439,7 @@ def is_dialog_active():
 
 def send_profile():
     eh.spam('Trying to send_profile(). Wish me luck!')
+    log_setsuzoku(Category.EIGAKAN, Action.PROFILE, Event.SEND)
     # setup client on server
     settings = {}
 
@@ -502,6 +515,7 @@ def is_addon_enabled(addonid='inputstream.adaptive'):
     if type(xret) is bool:
         return xret
     return False
+
 
 def enable_addon(addonid='inputstream.adaptive'):
     x = xbmc.executeJSONRPC(

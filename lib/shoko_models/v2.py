@@ -210,6 +210,7 @@ class Directory(object):
         li = ListItem(self.name, path=url)
         li.setPath(url)
         infolabels = self.get_infolabels()
+        li.set_watched_flags(infolabels, self.is_watched())
         li.setInfo(type='video', infoLabels=infolabels)
         li.set_art(self)
         context = self.get_context_menu_items()
@@ -714,6 +715,7 @@ class Series(Directory):
         self.outline = " ".join(self.overview.split(".", 3)[:2])  # first 3 sentence
         self.hash = None
         self.in_favorite = False
+        self.match = json_node.get('match', '')
 
         self.process_children(json_node)
 
