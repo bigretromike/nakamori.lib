@@ -113,7 +113,7 @@ def run_import():
     Same as pressing run import in Shoko. It performs many tasks, such as checking for files that are not added
     :return: None
     """
-    perform_server_action('/folder/import', object_id=None, refresh='awhile')
+    perform_server_action('folder/import', object_id=None, refresh='awhile')
 
 
 def scan_folder(object_id):
