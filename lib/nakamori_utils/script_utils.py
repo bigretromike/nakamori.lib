@@ -12,8 +12,28 @@ def url_calendar(when=0, page=0):
     return run % url
 
 
+def url_ac_calendar(when=0, page=0):
+    url = '/ac_calendar/%i/%i/' % (when, page)
+
+    return run % url
+
+def url_cr_calendar(when=0, page=0):
+    url = '/cr_calendar/%i/%i/' % (when, page)
+    return run % url
+
+
 def calendar(when=0, page=0):
     url = url_calendar(when, page)
+    xbmc.executebuiltin(url)
+
+
+def ac_calendar(when=0, page=0):
+    url = url_ac_calendar(when, page)
+    xbmc.executebuiltin(url)
+
+
+def cr_calendar(when=0, page=0):
+    url = url_cr_calendar(when, page)
     xbmc.executebuiltin(url)
 
 
