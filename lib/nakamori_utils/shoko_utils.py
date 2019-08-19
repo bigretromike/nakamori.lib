@@ -118,12 +118,31 @@ def run_import():
 
 def scan_folder(object_id):
     """
-    THE API FOR THIS IS BROKEN. DON'T TRY TO USE IT
     Scans an import folder. This checks files for hashes and adds new ones. It takes longer than run import
     :param object_id:
     :return:
     """
-    pass
+    perform_server_action('rescan', object_id=object_id)
+
+
+def scan_dropfolder():
+    perform_server_action('folder/scan', refresh='awhile')
+
+
+def rescan_unlinked():
+    perform_server_action('rescanunlinked', refresh='awhile')
+
+
+def rehash_unlinked():
+    perform_server_action('rehashunlinked', refresh='awhile')
+
+
+def rescan_manuallinks():
+    perform_server_action('rescanmanuallinks', refresh='awhile')
+
+
+def rehash_manuallinks():
+    perform_server_action('rehashmanuallinks', refresh='awhile')
 
 
 def remove_missing_files():
@@ -413,3 +432,7 @@ def trakt_scrobble(ep_id, status, progress, movie, notification):
                 xbmc.log('trakt_scrobble error - double exception', xbmc.LOGNOTICE)
         else:
             xbmc.log('trakt_scrobble error - single exception', xbmc.LOGNOTICE)
+
+
+def calendar_refresh():
+    perform_server_action('serie/calendar/refresh')

@@ -16,6 +16,7 @@ except: # For Python 3
 
 _enable_logging = xbmcaddon.Addon('plugin.video.nakamori').getSetting('feedback')
 
+
 class Category(object):
     PLUGIN = 'plugin'
     SCRIPT = 'script'
@@ -27,6 +28,7 @@ class Category(object):
     SHOKO = 'shoko'
     SYSTEM = 'system'
     CALENDAR = 'calendar'
+
 
 class Action(object):
     MENU = 'menu'
@@ -50,6 +52,7 @@ class Action(object):
     KODI = 'kodi'
     TYPE1 = 'type1'
     TYPE2 = 'type2'
+
 
 class Event(object):
     FAVORITE = 'favorite'
@@ -78,6 +81,7 @@ class Event(object):
     WATCHED = 'watched'
     SYNC = 'sync'
     EXTERNAL = 'external'
+    BOOKMARK = 'bookmark'
 
 
 def log_call(category, action, event, value=1):

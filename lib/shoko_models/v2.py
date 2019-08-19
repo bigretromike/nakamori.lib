@@ -912,6 +912,11 @@ class Series(Directory):
             else:
                 context_menu.append((localize(30212), script_utils.url_add_favorite(self.id)))
 
+        # Bookmark
+        if plugin_addon.getSetting('show_bookmark') == 'true':
+            context_menu.append((localize(30216), script_utils.url_add_bookmark(self.anidb_id)))
+            context_menu.append((localize(30217), script_utils.url_remove_bookmark(self.anidb_id)))
+
         # TODO Things to add: View Cast, Play All, Related, Similar
         context_menu += Directory.get_context_menu_items(self)
         return context_menu
@@ -1717,3 +1722,242 @@ def get_series_for_episode(ep_id):
     json_body = pyproxy.get_json(url)
     json_node = json.loads(json_body)
     return Series(json_node)
+
+
+class ImportFolder(object):
+    def __init__(self, json_node, build_full_object=False):
+        self.id = 0
+        self.name = ''
+        self.type = ''
+        self.location = ''
+        self.isDropSource = False
+        self.isDropDestination = False
+        self.isWatched = False
+        self.filesize = 0
+        self.size = 0
+        self.capacity = ''
+
+        if isinstance(json_node, int):
+            self.id = int(json_node)
+            return
+
+        if build_full_object:
+            json_node = self.get_full_object()
+        self.process(json_node)
+        self.plugin_url = 'plugin://plugin.video.nakamori/menu/folder/%s/' % self.id
+        self.extra_data()
+
+    def extra_data(self):
+        json_extra = pyproxy.get_json(server + '/api/serie/infobyfolder?id=%s' % self.id)
+        if json_extra is not None:
+            json_extra = json.loads(json_extra)
+            self.size = int(json_extra.get('size', 0))
+            self.filesize = int(json_extra.get('filesize', 0))
+            capacity, units = convert_units(self.filesize)
+            self.capacity = '%s %s' % (capacity, units)
+
+    def process(self, json_node):
+        body = json_node
+        self.id = int(body.get('ImportFolderID', 0))
+        self.location = body.get('ImportFolderLocation' '')
+        self.name = body.get('ImportFolderName', 'NA')
+        if self.name == 'NA':
+            self.name = self.location
+        self.type = int(body.get('ImportFolderType', 0))
+        self.isDropSource = True if int(body.get('isDropSource', 0)) == 1 else False
+        self.isDropDestination = True if int(body.get('isDropDestination', 0)) == 1 else False
+        self.isWatched = True if int(body.get('isWatched', 0)) == 1 else False
+
+    def get_full_object(self):
+        url = self.get_api_url()
+        json_body = pyproxy.get_json(url)
+        if json_body is None:
+            return None
+        json_node = json.loads(json_body)
+        return json_node
+
+    def get_api_url(self):
+        url = self.base_url()
+        return url
+
+    def base_url(self):
+        return server + '/api/' + self.url_prefix()
+
+    def url_prefix(self):
+        return 'folder/%s' % self.id
+
+    def get_plugin_url(self):
+        return self.plugin_url
+
+    def get_infolabels(self):
+        return {'Title': self.name, 'Plot': self.capacity}
+
+    def get_listitem(self):
+        url = self.get_plugin_url()
+        li = ListItem(self.name, path=url)
+        li.setPath(url)
+        infolabels = self.get_infolabels()
+        li.setInfo(type='video', infoLabels=infolabels)
+        # li.set_art(self)
+        context = self.get_context_menu_items()
+        if context is not None and len(context) > 0:
+            li.addContextMenuItems(context)
+        return li
+
+    def get_context_menu_items(self):
+        context_menu = []
+        # TODO edit folder https://github.com/ShokoAnime/ShokoServer/blob/master/Shoko.Server/API/v2/Modules/Common.cs#L93
+        # TODO delete folder https://github.com/ShokoAnime/ShokoServer/blob/master/Shoko.Server/API/v2/Modules/Common.cs#L121
+
+        context_menu += [('rescan this folder', script_utils.url_folder_scan(self.id))]
+        context_menu += [('  ', 'empty'), ('  ', 'empty'), (plugin_addon.getLocalizedString(30147), 'empty')]
+        return context_menu
+
+
+class ImportFolders(object):
+    def __init__(self):
+        self.items = []
+        self.size = 0
+
+        json_node = self.get_full_object()
+        if json_node is not None:
+            self.process_children(json_node)
+
+    def process_children(self, json_node):
+        for i in json_node:
+            try:
+                self.items.append(ImportFolder(i))
+            except:
+                pass
+        self.size = len(self.items)
+
+    def get_full_object(self):
+        url = self.get_api_url()
+        json_body = pyproxy.get_json(url)
+        if json_body is None:
+            return None
+        json_node = json.loads(json_body)
+        return json_node
+
+    def get_api_url(self):
+        url = self.base_url()
+        return url
+
+    def base_url(self):
+        return server + '/api/' + self.url_prefix()
+
+    def url_prefix(self):
+        return 'folder/list'
+
+
+class Queue(object):
+    def __init__(self, role):
+        self.count = 0
+        self.isrunning = False
+        self.state = ''
+
+        self.role = role
+
+        json_node = self.get_full_object()
+        if json_node is not None:
+            self.process(json_node)
+
+    def process(self, json_node):
+        self.count = int(json_node.get('count', 0))
+        self.isrunning = True if str(json_node.get('isrunning', 'False')) == 'True' else False
+        self.state = json_node.get('state', 'Idle')
+
+    def get_full_object(self):
+        url = self.get_api_url()
+        json_body = pyproxy.get_json(url)
+        if json_body is None:
+            return None
+        json_node = json.loads(json_body)
+        return json_node
+
+    def get_api_url(self):
+        url = self.base_url()
+        return url
+
+    def base_url(self):
+        return server + '/api/' + self.url_prefix()
+
+    def url_prefix(self):
+        return 'queue/%s/get' % self.role
+
+    def pause(self):
+        url = server + '/api/queue/%s/stop' % self.role
+        pyproxy.get_json(url)
+        self.isrunning = False
+
+    def start(self):
+        url = server + '/api/queue/%s/start' % self.role
+        pyproxy.get_json(url)
+        self.isrunning = True
+
+    def clear(self):
+        url = server + '/api/queue/%s/clear' % self.role
+        pyproxy.get_json(url)
+
+    def get_context_menu_items(self):
+        context_menu = []
+        # TODO LANG FIX
+        if self.isrunning:
+            context_menu += [('pause', script_utils.url_command_queue(self.role, 'stop'))]
+        else:
+            context_menu += [('start', script_utils.url_command_queue(self.role, 'start'))]
+        context_menu += [('clear', script_utils.url_command_queue(self.role, 'clear'))]
+        return context_menu
+
+    def get_infolabels(self):
+        return {'Title': self.role, 'Plot': self.state}
+
+    def get_listitem(self):
+        url = ''  # self.get_plugin_url()
+        li = ListItem(self.get_name(), path=url)
+        li.setPath(url)
+        infolabels = self.get_infolabels()
+        li.setInfo(type='video', infoLabels=infolabels)
+
+        context = self.get_context_menu_items()
+        if context is not None and len(context) > 0:
+            li.addContextMenuItems(context)
+        return li
+
+    def get_name(self):
+        color = 'red'
+        if self.isrunning:
+            color = "green"
+        name = '[COLOR %s]%s[/COLOR] %s' % (color, self.role, self.count if self.count > 0 else '')
+        return name
+
+
+class QueueHasher(Queue):
+    def __init__(self):
+        Queue.__init__(self, 'hasher')
+
+
+class QueueImages(Queue):
+    def __init__(self):
+        Queue.__init__(self, 'images')
+
+
+class QueueGeneral(Queue):
+    def __init__(self):
+        Queue.__init__(self, 'general')
+
+
+def convert_units(input):
+    size = int(input)
+    # 2**10 = 1024
+    power = 2 ** 10
+    n = 0
+    power_labels = {0: '', 1: 'Ki', 2: 'Mi', 3: 'Gi', 4: 'Ti', 5: 'Pi', 6: 'Ei', 7: 'Zi', 8: 'Yi'}
+    while size > power:
+        size /= power
+        n += 1
+    return size, power_labels[n] + 'B'
+
+
+
+
