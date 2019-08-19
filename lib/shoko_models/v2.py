@@ -223,7 +223,7 @@ class Directory(object):
 
     def get_context_menu_items(self):
         context_menu = []
-        if plugin_addon.getSetting('show_refresh') == 'true':
+        if plugin_addon.getSetting('context_refresh') == 'true':
             context_menu += [(plugin_addon.getLocalizedString(30131), script_utils.url_refresh())]
         context_menu += [('  ', 'empty'), ('  ', 'empty'), (plugin_addon.getLocalizedString(30147), 'empty')]
         # ,(plugin_addon.getLocalizedString(30148), 'empty')]
