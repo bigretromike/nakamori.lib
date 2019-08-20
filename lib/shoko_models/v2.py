@@ -1901,12 +1901,11 @@ class Queue(object):
 
     def get_context_menu_items(self):
         context_menu = []
-        # TODO LANG FIX
         if self.isrunning:
-            context_menu += [('pause', script_utils.url_command_queue(self.role, 'stop'))]
+            context_menu += [(localize(30219), script_utils.url_command_queue(self.role, 'stop'))]
         else:
-            context_menu += [('start', script_utils.url_command_queue(self.role, 'start'))]
-        context_menu += [('clear', script_utils.url_command_queue(self.role, 'clear'))]
+            context_menu += [(localize(30220), script_utils.url_command_queue(self.role, 'start'))]
+        context_menu += [(localize(30228), script_utils.url_command_queue(self.role, 'clear'))]
         return context_menu
 
     def get_infolabels(self):
