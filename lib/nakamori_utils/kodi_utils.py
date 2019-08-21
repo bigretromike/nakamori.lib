@@ -424,7 +424,9 @@ def is_dialog_active():
     try:
         x = xbmcgui.getCurrentWindowDialogId()
         x = int(x)
-        eh.spam('----- > is_dialog_is_visible: %s' % x)
+        log('----- > is_dialog_window_is_visible: %s' % x)
+        # if there is any, wait 0.25s
+        xbmc.sleep(250)
     except:
         eh.spam('----- > is_dialog_is_visible: NONE')
         pass
@@ -432,8 +434,6 @@ def is_dialog_active():
     # 10138 - busy,loading
     if 10099 <= x <= 10160:
         return True
-    #if x == -1 or x == 9999:
-    #    return False
     return False
 
 
