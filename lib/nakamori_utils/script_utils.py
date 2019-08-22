@@ -121,16 +121,6 @@ def shoko_menu():
     xbmc.executebuiltin(url)
 
 
-def url_new_search(save):
-    url = '/dialog/search/%s' % save
-    return run % url
-
-
-def new_search(save):
-    url = url_new_search(save)
-    xbmc.executebuiltin(url, True)
-
-
 def url_remove_search_term(query):
     url = '/search/remove/%s' % pyproxy.quote(pyproxy.quote(query))
     return run % url

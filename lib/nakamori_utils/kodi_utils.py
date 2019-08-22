@@ -524,3 +524,7 @@ def enable_addon(addonid='inputstream.adaptive'):
     if y in x:
         return True
     return False
+
+
+def bold(value):
+    return ''.join(['[B]', value, '[/B]'])

@@ -668,7 +668,7 @@ class Series(Directory):
     """
     A series object, contains a unified method of representing a series, with convenient converters
     """
-    def __init__(self, json_node, build_full_object=False, get_children=False, compute_hash=False, seiyuu_pic=False, use_aid=False):
+    def __init__(self, json_node, build_full_object=False, get_children=False, compute_hash=False, seiyuu_pic=False, use_aid=False, in_bookmark=False):
         """
         Create a series object from a json node, containing everything that is relevant to a ListItem
         :param json_node: the json response from things like api/serie
@@ -715,6 +715,7 @@ class Series(Directory):
         self.outline = " ".join(self.overview.split(".", 3)[:2])  # first 3 sentence
         self.hash = None
         self.in_favorite = False
+        self.in_bookmark = in_bookmark
         self.match = json_node.get('match', '')
 
         self.process_children(json_node)
@@ -914,8 +915,10 @@ class Series(Directory):
 
         # Bookmark
         if plugin_addon.getSetting('show_bookmark') == 'true':
-            context_menu.append((localize(30216), script_utils.url_add_bookmark(self.anidb_id)))
-            context_menu.append((localize(30217), script_utils.url_remove_bookmark(self.anidb_id)))
+            if self.in_bookmark:
+                context_menu.append((localize(30217), script_utils.url_remove_bookmark(self.anidb_id)))
+            else:
+                context_menu.append((localize(30216), script_utils.url_add_bookmark(self.anidb_id)))
 
         # TODO Things to add: View Cast, Play All, Related, Similar
         context_menu += Directory.get_context_menu_items(self)
