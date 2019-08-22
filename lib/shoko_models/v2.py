@@ -1193,7 +1193,7 @@ class Episode(Directory):
         self.year = pyproxy.safe_int(json_node.get('year', ''))
 
         self.rating = float(str(json_node.get('rating', '0')).replace(',', '.'))
-        self.user_rating = float(str(json_node.get('UserRating', '0')).replace(',', '.'))
+        self.user_rating = float(str(json_node.get('userrating', '0')).replace(',', '.'))
         self.overview = model_utils.make_text_nice(pyproxy.decode(json_node.get('summary', '')))
         self.votes = pyproxy.safe_int(json_node.get('votes', ''))
         self.outline = " ".join(self.overview.split(".", 3)[:2])  # first 3 sentence
