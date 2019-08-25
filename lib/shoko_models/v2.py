@@ -223,8 +223,12 @@ class Directory(object):
 
     def get_context_menu_items(self):
         context_menu = []
+
+        # Refresh
         if plugin_addon.getSetting('context_refresh') == 'true':
             context_menu += [(plugin_addon.getLocalizedString(30131), script_utils.url_refresh())]
+
+        # Information about Kodi menu being below
         context_menu += [('  ', 'empty'), ('  ', 'empty'), (plugin_addon.getLocalizedString(30147), 'empty')]
         # ,(plugin_addon.getLocalizedString(30148), 'empty')]
         return context_menu
@@ -1476,11 +1480,6 @@ class Episode(Directory):
                 file_ = self.get_file()
                 file_id = file_.id
                 context_menu.append((localize(30176), script_utils.url_transcode_file(file_id=file_id)))
-
-        # Refresh
-        if plugin_addon.getSetting('context_refresh') == 'true':
-            context_menu.append((localize(30131), 'Container.Refresh'))
-
 
         # the default ones that say the rest are kodi's
         context_menu += Directory.get_context_menu_items(self)
