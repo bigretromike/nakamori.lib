@@ -191,11 +191,12 @@ def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon
             message_box(localized(30017), localized(30018), localized(30019), localized(30020))
             return False
 
+        was_canceled = False
         busy = xbmcgui.DialogProgress()
         busy.create(localized(30021), startup_state)
         busy.update(1)
         # poll every second until the server gives us a response that we want
-        while not busy.iscanceled():
+        while True:
             xbmc.sleep(1000)
             response = pyproxy.get_json(url, True)
 
@@ -221,7 +222,14 @@ def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon
             if startup_failed:
                 break
 
+            if busy.iscanceled():
+                was_canceled = True
+                break
+
         busy.close()
+
+        if was_canceled:
+            return False
 
         if startup_failed:
             message_box(localized(30017), localized(30018), localized(30019),
