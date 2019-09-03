@@ -1198,6 +1198,7 @@ class Episode(Directory):
         self.alternate_name = model_utils.get_title(json_node, 'x-jat', 'main')
 
         self.watched = pyproxy.safe_int(json_node.get('view', 0)) != 0
+        self.watched_date = str(json_node.get('view_date', ''))
         self.year = pyproxy.safe_int(json_node.get('year', ''))
 
         self.rating = float(str(json_node.get('rating', '0')).replace(',', '.'))
