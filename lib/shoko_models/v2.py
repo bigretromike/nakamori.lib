@@ -696,7 +696,7 @@ class Series(Directory):
         self.alternate_name = model_utils.get_title(json_node, 'en', 'official')
         self.overview = model_utils.make_text_nice(pyproxy.decode(json_node.get('summary', '')))
 
-        self.anidb_id = pyproxy.safe_int(json_node.get('aid', 0))
+        self.anidb_aid = pyproxy.safe_int(json_node.get('aid', 0))
         self.season = pyproxy.safe_int(json_node.get('season', '1'))
         self.date = model_utils.get_airdate(json_node)
         self.rating = float(str(json_node.get('rating', '0')).replace(',', '.'))
@@ -773,7 +773,7 @@ class Series(Directory):
         li.setPath(self.url)
         li.set_watched_flags(infolabels, self.is_watched(), 1)
 
-        li.setUniqueIDs({'anidb': self.anidb_id, 'shoko_aid': self.id})
+        li.setUniqueIDs({'anidb_aid': self.anidb_aid, 'shoko_aid': self.id})
         self.hide_info(infolabels)
         li.setRating('anidb', float(infolabels.get('rating', 0.0)), infolabels.get('votes', 0), True)
         li.setInfo(type='video', infoLabels=infolabels)
@@ -920,9 +920,9 @@ class Series(Directory):
         # Bookmark
         if plugin_addon.getSetting('show_bookmark') == 'true':
             if self.in_bookmark:
-                context_menu.append((localize(30217), script_utils.url_remove_bookmark(self.anidb_id)))
+                context_menu.append((localize(30217), script_utils.url_remove_bookmark(self.anidb_aid)))
             else:
-                context_menu.append((localize(30216), script_utils.url_add_bookmark(self.anidb_id)))
+                context_menu.append((localize(30216), script_utils.url_add_bookmark(self.anidb_aid)))
 
         # TODO Things to add: View Cast, Play All, Related, Similar
         context_menu += Directory.get_context_menu_items(self)
@@ -1158,7 +1158,8 @@ class Episode(Directory):
         """
         self.series_id = 0
         self.series_name = None
-        self.series_anidb_id = 0
+        self.anidb_aid = 0
+        self.anidb_eid = 0
         self.actors = []
         self.url = None
         self.item_type = 'episode'
@@ -1166,7 +1167,7 @@ class Episode(Directory):
             self.series_id = series.id
             self.series_name = series.name
             self.actors = series.actors
-            self.series_anidb_id = series.anidb_id
+            self.anidb_aid = series.anidb_aid
             if series.is_movie:
                 self.item_type = 'movie'
 
@@ -1182,6 +1183,9 @@ class Episode(Directory):
 
         self.episode_number = pyproxy.safe_int(json_node.get('epnumber', ''))
         self.episode_type = json_node.get('eptype', 'Other')
+        if self.anidb_aid == 0:
+            self.anidb_aid = pyproxy.safe_int(json_node.get('aid', 0))
+        self.anidb_eid = pyproxy.safe_int(json_node.get('eid', 0))
         self.date = model_utils.get_airdate(json_node)
         self.tvdb_episode = json_node.get('season', '0x0')
         self.update_date = None
@@ -1282,9 +1286,9 @@ class Episode(Directory):
         li.set_art(self)
         li.setCast(self.actors)
 
-        li.setUniqueIDs({'shoko_eid': self.id})
+        li.setUniqueIDs({'anidb_eid': self.anidb_eid, 'shoko_eid': self.id})
         if self.series_id != 0:
-            li.setUniqueIDs({'shoko_aid': self.series_id})
+            li.setUniqueIDs({'anidb_aid': self.anidb_aid, 'shoko_aid': self.series_id})
 
         f = self.get_file()
         if f is not None:
