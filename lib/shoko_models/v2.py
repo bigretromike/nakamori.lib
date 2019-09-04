@@ -754,7 +754,7 @@ class Series(Directory):
         except:
             return str(self.id)
 
-    def get_listitem(self, url=None):
+    def get_listitem(self, url=None, disable_coloring=False):
         """
 
         :return:
@@ -764,16 +764,19 @@ class Series(Directory):
         if self.url is None:
             self.url = self.get_plugin_url()
 
-        # We need to assume not airing, as there is no end date provided in API
-        name = model_utils.title_coloring(self.name, self.sizes.local_episodes, self.sizes.total_episodes,
-                                          self.sizes.local_specials, self.sizes.total_specials, False)
+        if disable_coloring:
+            name = self.name
+        else:
+            # We need to assume not airing, as there is no end date provided in API
+            name = model_utils.title_coloring(self.name, self.sizes.local_episodes, self.sizes.total_episodes,
+                                              self.sizes.local_specials, self.sizes.total_specials, False)
 
         li = ListItem(name, path=self.url)
         infolabels = self.get_infolabels()
         li.setPath(self.url)
         li.set_watched_flags(infolabels, self.is_watched(), 1)
 
-        li.setUniqueIDs({'anidb_aid': self.anidb_aid, 'shoko_aid': self.id})
+        li.setUniqueIDs({'anidb': self.anidb_aid, 'anidb_aid': self.anidb_aid, 'shoko_aid': self.id})
         self.hide_info(infolabels)
         li.setRating('anidb', float(infolabels.get('rating', 0.0)), infolabels.get('votes', 0), True)
         li.setInfo(type='video', infoLabels=infolabels)
@@ -1221,7 +1224,7 @@ class Episode(Directory):
     def get_file(self):
         """
         :return: the first file in the list, or None if not populated
-        :rtype: File
+        :rtype: File / None
         """
         if len(self.items) > 0 and self.items[0] is not None:
             return self.items[0]

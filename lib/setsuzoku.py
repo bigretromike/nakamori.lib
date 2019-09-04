@@ -82,6 +82,8 @@ class Event(object):
     SYNC = 'sync'
     EXTERNAL = 'external'
     BOOKMARK = 'bookmark'
+    TVSHOW = 'tvshow'
+    MOVIE = 'movie'
 
 
 def log_call(category, action, event, value=1):
