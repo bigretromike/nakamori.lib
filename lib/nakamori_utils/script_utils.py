@@ -444,3 +444,13 @@ def url_shoko_removemissing():
 def url_calendar_refresh():
     url = '/shoko/calendarrefresh/'
     return run % url
+
+
+def url_playlist_series(series_id):
+    url = '/series/%i/playlist/' % series_id
+    return run % url
+
+
+def playlist_series(series_id, wait=False):
+    url = url_playlist_series(series_id)
+    xbmc.executebuiltin(url, wait)

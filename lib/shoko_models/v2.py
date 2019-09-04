@@ -12,18 +12,9 @@ import nakamori_utils.model_utils
 import xbmcplugin
 from nakamori_utils.kodi_utils import Sorting
 
-try:
-    import nakamoriplugin
-    # This puts a dependency on plugin, which is a no no. It'll need to be replaced later
-    puf = nakamoriplugin.routing_plugin.url_for
-except:
-    import sys
-    if len(sys.argv) > 2:
-        eh.exception(eh.ErrorPriority.BLOCKING)
-
 from kodi_models import ListItem, WatchedStatus
 from nakamori_utils.globalvars import *
-from nakamori_utils import kodi_utils, shoko_utils, script_utils
+from nakamori_utils import kodi_utils, shoko_utils, script_utils, plugin_utils
 from nakamori_utils import model_utils
 
 from proxy.kodi_version_proxy import kodi_proxy
@@ -161,11 +152,13 @@ class Directory(object):
         url = self.base_url()
         url += '/watch' if watched else '/unwatch'
         url = pyproxy.set_parameter(url, 'id', self.id)
+        # TODO DEPRECATED
         if plugin_addon.getSetting('syncwatched') == 'true':
             pyproxy.get_json(url)
         else:
             xbmc.executebuiltin('XBMC.Action(ToggleWatched)')
 
+        # TODO DEPRECATED
         if plugin_addon.getSetting('sync_to_library') == 'true':
             # TODO NEED TO GET EPISODEID FROM FILE
             # IN DB FILES ARE STORED AS PATH: plugin://plugin.video.nakamori/  FILENAME: plugin://plugin.video.nakamori/tvshows/<ID>/ep/<EP_ID>/play
@@ -434,7 +427,7 @@ class Filter(Directory):
         """
         Directory.__init__(self, json_node, get_children)
         # we are making this overrideable for Unsorted and such
-        self.plugin_url = 'plugin://plugin.video.nakamori/menu/filter/%s/' % self.id
+        self.plugin_url = plugin_utils.url_show_filter_menu(self.id)
         self.directory_filter = False
 
         if build_full_object:
@@ -442,7 +435,7 @@ class Filter(Directory):
             if self.size < 0:
                 # First, download basic info
                 json_node = self.get_full_object()
-                self.plugin_url = 'plugin://plugin.video.nakamori/menu/filter/%s/' % self.id
+                self.plugin_url = plugin_utils.url_show_filter_menu(self.id)
                 Directory.__init__(self, json_node, get_children)
                 self.directory_filter = json_node.get('type', 'filter') == 'filters'
             # then download children, optimized for type
@@ -500,7 +493,7 @@ class Filter(Directory):
             self.name = 'Unsorted Files'
             self.sort_index = 6
             self.apply_image_override('unsort.png')
-            self.plugin_url = puf(nakamoriplugin.show_unsorted_menu)
+            self.plugin_url = plugin_utils.show_unsorted_menu()
 
     def process_children(self, json_node):
         items = json_node.get('filters', [])
@@ -594,7 +587,7 @@ class Group(Directory):
         return 'group'
 
     def get_plugin_url(self):
-        return puf(nakamoriplugin.show_group_menu, self.id, self.filter_id)
+        return plugin_utils.urlshow_group_menu(self.id, self.filter_id)
 
     def get_listitem(self):
         """
@@ -750,7 +743,7 @@ class Series(Directory):
 
     def get_plugin_url(self):
         try:
-            return puf(nakamoriplugin.show_series_menu, self.id)
+            return plugin_utils.url_show_series_menu(self.id)
         except:
             return str(self.id)
 
@@ -1020,7 +1013,7 @@ class SeriesTypeList(Series):
                 pass
 
     def get_plugin_url(self):
-        return puf(nakamoriplugin.show_series_episode_types_menu, self.id, self.episode_type)
+        return plugin_utils.url_show_series_episode_types_menu(self.id, self.episode_type)
 
     def get_listitem(self):
         """
@@ -1252,8 +1245,10 @@ class Episode(Directory):
     def url_prefix(self):
         return 'ep'
 
-    def get_plugin_url(self):
-        return 'plugin://plugin.video.nakamori/episode/%s/file/%s/play' % (self.id, 0)
+    def get_plugin_url(self, party_mode=False):
+        if party_mode:
+            return plugin_utils.url_play_video(self.id, 0, short=True)
+        return plugin_utils.url_play_video(self.id, 0, short=True)
 
     def is_watched(self):
         if self.watched:
@@ -1297,8 +1292,8 @@ class Episode(Directory):
         f = self.get_file()
         if f is not None:
             model_utils.set_stream_info(li, f)
-        li.addContextMenuItems(self.get_context_menu_items())
 
+        li.addContextMenuItems(self.get_context_menu_items())
         return li
 
     def get_infolabels(self):
@@ -1403,7 +1398,7 @@ class Episode(Directory):
         # Play
         if plugin_addon.getSetting('context_show_play') == 'true':
             # I change this to play, because with 'show info' this does not play file
-            url = 'RunPlugin(%s)' % puf(nakamoriplugin.play_video, self.id, self.get_file().id)
+            url = plugin_utils.url_play_video(self.id, self.get_file().id)
             context_menu.append((localize(30065), url))
             # context_menu.append((localize(30065), 'Action(Select)'))
 
@@ -1411,26 +1406,23 @@ class Episode(Directory):
         if self.get_file() is not None and self.get_file().resume_time > 0 \
                 and plugin_addon.getSetting('file_resume') == 'true':
             label = localize(30141) + ' (%s)' % time.strftime('%H:%M:%S', time.gmtime(self.get_file().resume_time))
-            url = 'RunPlugin(%s)' % puf(nakamoriplugin.resume_video, self.id, self.get_file().id)
+            url = plugin_utils.url_resume_video(self.id, self.get_file().id)
             context_menu.append((label, url))
 
         # Play (No Scrobble)
         if plugin_addon.getSetting('context_show_play_no_watch') == 'true':
-            context_menu.append((localize(30132), 'RunPlugin(%s)' % puf(nakamoriplugin.play_video_without_marking,
-                                                                        self.id, self.get_file().id)))
+            context_menu.append((localize(30132), plugin_utils.url_play_video_without_marking(self.id, self.get_file().id)))
 
         # Play (transcode)
         if plugin_addon.getSetting('context_show_force_transcode') == 'true' and plugin_addon.getSetting('eigakan_handshake') == 'true':
-            context_menu.append((localize(30174), 'RunPlugin(%s)' % puf(nakamoriplugin.transcode_play_video,
-                                                                        self.id, self.get_file().id)))
+            context_menu.append((localize(30174), plugin_utils.url_transcode_play_video(self.id, self.get_file().id)))
 
         # Play (Direct)
         if plugin_addon.getSetting('enableEigakan') == 'true' and plugin_addon.getSetting('context_show_directplay') == 'true':
             if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
-                context_menu.append((localize(30175), 'RunPlugin(%s)' % puf(nakamoriplugin.direct_play_video, self.id)))
+                context_menu.append((localize(30175), plugin_utils.url_direct_play_video(self.id)))
             else:
-                context_menu.append((localize(30175), 'RunPlugin(%s)' % puf(nakamoriplugin.direct_play_video, self.id,
-                                                                          self.get_file().id)))
+                context_menu.append((localize(30175), plugin_utils.url_direct_play_video(self.id, self.get_file().id)))
 
         # Inspect
         if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
@@ -1488,6 +1480,8 @@ class Episode(Directory):
                 file_ = self.get_file()
                 file_id = file_.id
                 context_menu.append((localize(30176), script_utils.url_transcode_file(file_id=file_id)))
+
+        context_menu.append((localize(30130), script_utils.url_playlist_series(series_id=self.series_id)))
 
         # the default ones that say the rest are kodi's
         context_menu += Directory.get_context_menu_items(self)
@@ -1614,7 +1608,7 @@ class File(Directory):
         return 'file'
 
     def get_plugin_url(self):
-        return 'plugin://plugin.video.nakamori/episode/%s/file/%s/play_without_marking' % (0, self.id)
+        return plugin_utils.url_play_video_without_marking(0, self.id, short=True)
 
     @property
     def remote_url_for_player(self):
@@ -1754,7 +1748,7 @@ class ImportFolder(object):
         if build_full_object:
             json_node = self.get_full_object()
         self.process(json_node)
-        self.plugin_url = 'plugin://plugin.video.nakamori/menu/folder/%s/' % self.id
+        self.plugin_url = plugin_utils.url_show_folder_menu(self.id)
         self.extra_data()
 
     def extra_data(self):
