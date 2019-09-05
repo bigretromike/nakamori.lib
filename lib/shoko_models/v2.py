@@ -920,6 +920,9 @@ class Series(Directory):
             else:
                 context_menu.append((localize(30216), script_utils.url_add_bookmark(self.anidb_aid)))
 
+        # Playlist Mode
+        context_menu.append((localize(30130), script_utils.url_playlist_series(series_id=self.id)))
+
         # TODO Things to add: View Cast, Play All, Related, Similar
         context_menu += Directory.get_context_menu_items(self)
         return context_menu
@@ -1481,7 +1484,9 @@ class Episode(Directory):
                 file_id = file_.id
                 context_menu.append((localize(30176), script_utils.url_transcode_file(file_id=file_id)))
 
-        context_menu.append((localize(30130), script_utils.url_playlist_series(series_id=self.series_id)))
+        # Playlist Mode
+        if not self.watched:
+            context_menu.append((localize(30130), script_utils.url_playlist_series(series_id=self.series_id)))
 
         # the default ones that say the rest are kodi's
         context_menu += Directory.get_context_menu_items(self)
