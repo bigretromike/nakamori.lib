@@ -102,9 +102,9 @@ class Directory(object):
     def base_url(self):
         return server + '/api/' + self.url_prefix()
 
-    def get_full_object(self):
+    def get_full_object(self, force_cache=False, cache_time=0):
         url = self.get_api_url()
-        json_body = pyproxy.get_json(url)
+        json_body = pyproxy.get_json(url, force_cache=force_cache, cache_time=cache_time)
         if json_body is None:
             return None
         json_node = json.loads(json_body)
@@ -665,7 +665,7 @@ class Series(Directory):
     """
     A series object, contains a unified method of representing a series, with convenient converters
     """
-    def __init__(self, json_node, build_full_object=False, get_children=False, compute_hash=False, seiyuu_pic=False, use_aid=False, in_bookmark=False):
+    def __init__(self, json_node, build_full_object=False, get_children=False, compute_hash=False, seiyuu_pic=False, use_aid=False, in_bookmark=False, force_cache=False, cache_time=0):
         """
         Create a series object from a json node, containing everything that is relevant to a ListItem
         :param json_node: the json response from things like api/serie
@@ -678,7 +678,7 @@ class Series(Directory):
 
         # don't redownload info on an okay object
         if build_full_object and (self.size < 0 or (get_children and len(self.items) < 1)):
-            json_node = self.get_full_object()
+            json_node = self.get_full_object(force_cache=force_cache, cache_time=cache_time)
             Directory.__init__(self, json_node, get_children)
         self.episode_types = []
         # check again, as we might have replaced it above
@@ -993,13 +993,13 @@ class SeriesTypeList(Series):
     """
     The Episode Type List for a series
     """
-    def __init__(self, json_node, episode_type, get_children=False):
+    def __init__(self, json_node, episode_type, get_children=False, force_cache=False, cache_time=0):
         self.episode_type = episode_type
         if isinstance(json_node, (int, str, unicode)):
             self.id = json_node
             self.get_children = get_children
-            json_node = self.get_full_object()
-        Series.__init__(self, json_node, get_children=get_children)
+            json_node = self.get_full_object(force_cache=force_cache, cache_time=cache_time)
+        Series.__init__(self, json_node, get_children=get_children, force_cache=force_cache, cache_time=cache_time)
 
     def process_children(self, json_node):
         items = json_node.get('eps', [])
@@ -1247,8 +1247,8 @@ class Episode(Directory):
 
     def get_plugin_url(self, party_mode=False):
         if party_mode:
-            return plugin_utils.url_play_video(self.id, 0, short=True)
-        return plugin_utils.url_play_video(self.id, 0, short=True)
+            return plugin_utils.url_play_video(self.id, 0)
+        return plugin_utils.url_play_video(self.id, 0)
 
     def is_watched(self):
         if self.watched:
@@ -1398,7 +1398,7 @@ class Episode(Directory):
         # Play
         if plugin_addon.getSetting('context_show_play') == 'true':
             # I change this to play, because with 'show info' this does not play file
-            url = plugin_utils.url_play_video(self.id, self.get_file().id)
+            url = plugin_utils.url_play_video(self.id, self.get_file().id, runplugin=True)
             context_menu.append((localize(30065), url))
             # context_menu.append((localize(30065), 'Action(Select)'))
 
@@ -1406,23 +1406,23 @@ class Episode(Directory):
         if self.get_file() is not None and self.get_file().resume_time > 0 \
                 and plugin_addon.getSetting('file_resume') == 'true':
             label = localize(30141) + ' (%s)' % time.strftime('%H:%M:%S', time.gmtime(self.get_file().resume_time))
-            url = plugin_utils.url_resume_video(self.id, self.get_file().id)
+            url = plugin_utils.url_resume_video(self.id, self.get_file().id, runplugin=True)
             context_menu.append((label, url))
 
         # Play (No Scrobble)
         if plugin_addon.getSetting('context_show_play_no_watch') == 'true':
-            context_menu.append((localize(30132), plugin_utils.url_play_video_without_marking(self.id, self.get_file().id)))
+            context_menu.append((localize(30132), plugin_utils.url_play_video_without_marking(self.id, self.get_file().id, runplugin=True)))
 
         # Play (transcode)
         if plugin_addon.getSetting('context_show_force_transcode') == 'true' and plugin_addon.getSetting('eigakan_handshake') == 'true':
-            context_menu.append((localize(30174), plugin_utils.url_transcode_play_video(self.id, self.get_file().id)))
+            context_menu.append((localize(30174), plugin_utils.url_transcode_play_video(self.id, self.get_file().id, runplugin=True)))
 
         # Play (Direct)
         if plugin_addon.getSetting('enableEigakan') == 'true' and plugin_addon.getSetting('context_show_directplay') == 'true':
             if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
-                context_menu.append((localize(30175), plugin_utils.url_direct_play_video(self.id)))
+                context_menu.append((localize(30175), plugin_utils.url_direct_play_video(self.id, runplugin=True)))
             else:
-                context_menu.append((localize(30175), plugin_utils.url_direct_play_video(self.id, self.get_file().id)))
+                context_menu.append((localize(30175), plugin_utils.url_direct_play_video(self.id, self.get_file().id, runplugin=True)))
 
         # Inspect
         if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
@@ -1608,7 +1608,7 @@ class File(Directory):
         return 'file'
 
     def get_plugin_url(self):
-        return plugin_utils.url_play_video_without_marking(0, self.id, short=True)
+        return plugin_utils.url_play_video_without_marking(0, self.id)
 
     @property
     def remote_url_for_player(self):

@@ -238,11 +238,13 @@ class BasePythonProxy:
     def isnumeric(self, value):
         pass
 
-    def get_json(self, url_in, direct=False):
+    def get_json(self, url_in, direct=False, force_cache=False, cache_time=0):
         """
         use 'get' to return json body as string
         :param url_in:
         :param direct: force to bypass cache
+        :param force_cache: force to use cache even if disabled
+        :param cache_time: ignore setting to set custom cache expiration time, mainly to expire data quicker to refresh watch flags
         :return:
         """
         import error_handler as eh
@@ -253,9 +255,10 @@ class BasePythonProxy:
                 apikey = plugin_addon.getSetting('apikey')
             else:
                 apikey = self.api_key
+            # if cache is disabled, overwrite argument and force it to direct
             if plugin_addon.getSetting('enableCache') != 'true':
                 direct = True
-            if direct:
+            if direct and not force_cache:
                 body = self.get_data(url_in, None, timeout, apikey)
             else:
                 import cache
@@ -263,8 +266,9 @@ class BasePythonProxy:
                 eh.spam('URL:', url_in)
                 db_row = cache.get_data_from_cache(url_in)
                 if db_row is not None:
+                    valid_until = cache_time if cache_time > 0 else int(plugin_addon.getSetting('expireCache'))
                     expire_second = time.time() - float(db_row[1])
-                    if expire_second > int(plugin_addon.getSetting('expireCache')):
+                    if expire_second > valid_until:
                         # expire, get new date
                         eh.spam('The cached data is stale.')
                         body = self.get_data(url_in, None, timeout, apikey)
