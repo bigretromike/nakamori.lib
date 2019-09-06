@@ -587,7 +587,7 @@ class Group(Directory):
         return 'group'
 
     def get_plugin_url(self):
-        return plugin_utils.urlshow_group_menu(self.id, self.filter_id)
+        return plugin_utils.url_show_group_menu(self.id, self.filter_id)
 
     def get_listitem(self):
         """
