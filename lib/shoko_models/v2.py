@@ -53,6 +53,8 @@ class Directory(object):
         self.name = model_utils.get_title(json_node)
         self.size = int(json_node.get('size', '0'))
 
+        self.make_bold = False
+
         self.process_art(json_node)
 
     def __str__(self):
@@ -200,7 +202,10 @@ class Directory(object):
         :rtype: ListItem
         """
         url = self.get_plugin_url()
-        li = ListItem(self.name, path=url)
+        name = self.name
+        if self.make_bold:
+            name = kodi_utils.bold(self.name)
+        li = ListItem(name, path=url)
         li.setPath(url)
         infolabels = self.get_infolabels()
         li.set_watched_flags(infolabels, self.is_watched())
@@ -355,6 +360,12 @@ class Directory(object):
         sorting_setting = plugin_addon.getSetting('default_sort_series')
         kodi_utils.set_user_sort_method(sorting_setting)
 
+    def bold(self):
+        self.make_bold = True
+
+    def normal(self):
+        self.make_bold = False
+
 
 class CustomItem(Directory):
     def __init__(self, name, image, plugin_url, sort_index=0, is_folder=True):
@@ -381,6 +392,7 @@ class CustomItem(Directory):
         self.size = 0
         self.sort_index = sort_index
         self.directory_filter = False
+        self.make_bold = False
 
     def get_api_url(self):
         return None

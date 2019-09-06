@@ -528,3 +528,9 @@ def enable_addon(addonid='inputstream.adaptive'):
 
 def bold(value):
     return ''.join(['[B]', value, '[/B]'])
+
+
+def color(text_to_color, color_name, enable_color=True):
+    if enable_color:
+        return ''.join(['[COLOR %s]' % color_name, text_to_color, '[/COLOR]'])
+    return text_to_color
