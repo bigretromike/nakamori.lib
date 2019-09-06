@@ -493,7 +493,7 @@ class Filter(Directory):
             self.name = 'Unsorted Files'
             self.sort_index = 6
             self.apply_image_override('unsort.png')
-            self.plugin_url = plugin_utils.show_unsorted_menu()
+            self.plugin_url = plugin_utils.url_show_unsorted_menu()
 
     def process_children(self, json_node):
         items = json_node.get('filters', [])
