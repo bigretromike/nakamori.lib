@@ -430,7 +430,7 @@ class Filter(Directory):
     """
     A filter object, contains a unified method of representing a filter, with convenient converters
     """
-    def __init__(self, json_node, build_full_object=False, get_children=False):
+    def __init__(self, json_node, build_full_object=False, get_children=False, parent_menu=''):
         """
         Create a filter object from a json node, containing everything that is relevant to a ListItem.
         You can also pass an ID for a small helper object.
@@ -439,7 +439,12 @@ class Filter(Directory):
         """
         Directory.__init__(self, json_node, get_children)
         # we are making this overrideable for Unsorted and such
-        self.plugin_url = plugin_utils.url_show_filter_menu(self.id)
+
+        self.parent_url = parent_menu
+        self.plugin_url = '%sfilter-%s/' % (parent_menu, self.id)
+        if self.id == 0:  # 0 is for retrieving all Filters
+            self.plugin_url = parent_menu
+
         self.directory_filter = False
 
         if build_full_object:
@@ -447,7 +452,6 @@ class Filter(Directory):
             if self.size < 0:
                 # First, download basic info
                 json_node = self.get_full_object()
-                self.plugin_url = plugin_utils.url_show_filter_menu(self.id)
                 Directory.__init__(self, json_node, get_children)
                 self.directory_filter = json_node.get('type', 'filter') == 'filters'
             # then download children, optimized for type
@@ -511,7 +515,7 @@ class Filter(Directory):
         items = json_node.get('filters', [])
         for i in items:
             try:
-                self.items.append(Filter(i, build_full_object=True))
+                self.items.append(Filter(i, build_full_object=True, parent_menu=self.parent_url))
             except:
                 pass
         items = json_node.get('groups', [])
@@ -523,17 +527,17 @@ class Filter(Directory):
                 pass
 
     def get_collapsed_group(self, json_node):
-        group = Group(json_node, build_full_object=True, filter_id=self.id)
+        group = Group(json_node, build_full_object=True, filter_id=self.id, parent_menu=self.parent_url)
         if group.size == 1:
             if len(group.items) == 1 and group.items[0] is not None:
                 group = group.items[0]
                 if group.size < 0:
-                    group = Series(group.id, True)
+                    group = Series(group.id, parent_menu=self.parent_url)
             else:
-                group = Group(json_node, build_full_object=True, filter_id=self.id)
+                group = Group(json_node, build_full_object=True, filter_id=self.id, parent_menu=self.parent_url)
                 group = group.items[0]
                 if group.size < 0:
-                    group = Series(group.id, build_full_object=True)
+                    group = Series(group.id, build_full_object=True, parent_menu=self.parent_url)
         return group
 
     def get_context_menu_items(self):
@@ -548,7 +552,7 @@ class Group(Directory):
     """
     A group object, contains a unified method of representing a group, with convenient converters
     """
-    def __init__(self, json_node, build_full_object=False, get_children=False, filter_id=0):
+    def __init__(self, json_node, build_full_object=False, get_children=False, filter_id=0, parent_menu=''):
         """
         Create a group object from a json node, containing everything that is relevant to a ListItem.
         You can also pass an ID for a small helper object.
@@ -559,6 +563,9 @@ class Group(Directory):
         """
         self.filter_id = 0
         Directory.__init__(self, json_node, get_children)
+        self.plugin_url = '%sgroup-%s/' % (parent_menu, self.id)
+        self.parent_menu = parent_menu
+
         # don't redownload info on an okay object
         if build_full_object and (self.size < 0 or (get_children and len(self.items) < 1)):
             json_node = self.get_full_object()
@@ -599,7 +606,7 @@ class Group(Directory):
         return 'group'
 
     def get_plugin_url(self):
-        return plugin_utils.url_show_group_menu(self.id, self.filter_id)
+        return self.plugin_url
 
     def get_listitem(self):
         """
@@ -646,7 +653,7 @@ class Group(Directory):
         items = json_node.get('series', [])
         for i in items:
             try:
-                self.items.append(Series(i, build_full_object=True))
+                self.items.append(Series(i, build_full_object=True, parent_menu=self.get_plugin_url()))
             except:
                 pass
 
@@ -677,7 +684,8 @@ class Series(Directory):
     """
     A series object, contains a unified method of representing a series, with convenient converters
     """
-    def __init__(self, json_node, build_full_object=False, get_children=False, compute_hash=False, seiyuu_pic=False, use_aid=False, in_bookmark=False, force_cache=False, cache_time=0):
+    def __init__(self, json_node, build_full_object=False, get_children=False, compute_hash=False, seiyuu_pic=False,
+                 use_aid=False, in_bookmark=False, force_cache=False, cache_time=0, parent_menu=''):
         """
         Create a series object from a json node, containing everything that is relevant to a ListItem
         :param json_node: the json response from things like api/serie
@@ -687,6 +695,8 @@ class Series(Directory):
         self.url = None
         self.item_type = 'tvshow'
         self.use_aid = use_aid
+        self.plugin_url = '%sseries-%s/' % (parent_menu, self.id)
+        self.parent_menu = parent_menu
 
         # don't redownload info on an okay object
         if build_full_object and (self.size < 0 or (get_children and len(self.items) < 1)):
@@ -754,10 +764,7 @@ class Series(Directory):
         return 'serie'
 
     def get_plugin_url(self):
-        try:
-            return plugin_utils.url_show_series_menu(self.id)
-        except:
-            return str(self.id)
+        return self.plugin_url
 
     def get_listitem(self, url=None, disable_coloring=False):
         """
@@ -893,7 +900,7 @@ class Series(Directory):
             except:
                 pass
         for i in episode_types:
-            self.episode_types.append(SeriesTypeList(json_node, i))
+            self.episode_types.append(SeriesTypeList(json_node, i, parent_menu=self.parent_menu))
 
     def get_context_menu_items(self):
         context_menu = []
@@ -1008,13 +1015,14 @@ class SeriesTypeList(Series):
     """
     The Episode Type List for a series
     """
-    def __init__(self, json_node, episode_type, get_children=False, force_cache=False, cache_time=0):
+    def __init__(self, json_node, episode_type, get_children=False, force_cache=False, cache_time=0, parent_menu=''):
         self.episode_type = episode_type
         if isinstance(json_node, (int, str, unicode)):
             self.id = json_node
             self.get_children = get_children
             json_node = self.get_full_object(force_cache=force_cache, cache_time=cache_time)
         Series.__init__(self, json_node, get_children=get_children, force_cache=force_cache, cache_time=cache_time)
+        self.plugin_url = '%stype-%s/' % (parent_menu, self.episode_type)
 
     def process_children(self, json_node):
         items = json_node.get('eps', [])
@@ -1028,7 +1036,7 @@ class SeriesTypeList(Series):
                 pass
 
     def get_plugin_url(self):
-        return plugin_utils.url_show_series_episode_types_menu(self.id, self.episode_type)
+        return self.plugin_url
 
     def get_listitem(self):
         """
