@@ -45,7 +45,7 @@ class Directory(object):
         self.get_children = get_children
         self.sort_index = 1
         self.sizes = None
-        if isinstance(json_node, (str, int, unicode)):
+        if isinstance(json_node, int) or pyproxy.is_unicode_or_string(json_node):
             self.id = json_node
             return
 
@@ -148,7 +148,7 @@ class Directory(object):
         pass
 
     def set_watched_status(self, watched):
-        if isinstance(watched, str) or isinstance(watched, unicode):
+        if pyproxy.is_unicode_or_string(watched):
             watched = watched.lower() != 'false'
 
         url = self.base_url()
@@ -459,7 +459,7 @@ class Filter(Directory):
                 json_node = self.get_full_object()
 
         # check again, as we might have replaced it above
-        if isinstance(json_node, (str, int, unicode)):
+        if isinstance(json_node, int) or pyproxy.is_unicode_or_string(json_node):
             eh.spam(self)
             return
 
@@ -574,7 +574,7 @@ class Group(Directory):
             self.filter_id = filter_id
 
         # check again, as we might have replaced it above
-        if isinstance(json_node, (str, int, unicode)):
+        if isinstance(json_node, int) or pyproxy.is_unicode_or_string(json_node):
             eh.spam(self)
             return
 
@@ -704,7 +704,7 @@ class Series(Directory):
             Directory.__init__(self, json_node, get_children)
         self.episode_types = []
         # check again, as we might have replaced it above
-        if isinstance(json_node, (str, int, unicode)):
+        if isinstance(json_node, int) or pyproxy.is_unicode_or_string(json_node):
             eh.spam(self)
             return
 
@@ -1017,7 +1017,7 @@ class SeriesTypeList(Series):
     """
     def __init__(self, json_node, episode_type, get_children=False, force_cache=False, cache_time=0, parent_menu=''):
         self.episode_type = episode_type
-        if isinstance(json_node, (int, str, unicode)):
+        if isinstance(json_node, int) or pyproxy.is_unicode_or_string(json_node):
             self.id = json_node
             self.get_children = get_children
             json_node = self.get_full_object(force_cache=force_cache, cache_time=cache_time)
@@ -1196,7 +1196,7 @@ class Episode(Directory):
             json_node = self.get_full_object()
             Directory.__init__(self, json_node)
         # check again, as we might have replaced it above
-        if isinstance(json_node, (str, int, unicode)):
+        if isinstance(json_node, int) or pyproxy.is_unicode_or_string(json_node):
             eh.spam(self)
             return
 
@@ -1572,7 +1572,7 @@ class File(Directory):
             json_node = self.get_full_object()
             Directory.__init__(self, json_node)
         # check again, as we might have replaced it above
-        if isinstance(json_node, (str, int, unicode)):
+        if isinstance(json_node, int) or pyproxy.is_unicode_or_string(json_node):
             eh.spam(self)
             return
 

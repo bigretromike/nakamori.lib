@@ -8,6 +8,7 @@ from abc import abstractmethod
 from nakamori_utils.globalvars import plugin_addon
 
 from socket import timeout
+import xbmc
 
 try:
     from urllib.parse import urlparse, quote, unquote_plus, quote_plus, urlencode
@@ -45,46 +46,53 @@ class BasePythonProxy:
         pass
 
     def get_data(self, url, referer, timeout, apikey):
-        import error_handler as eh
-        headers = {
-            'Accept': 'application/json',
-            'apikey': apikey,
-        }
-        if referer is not None:
-            referer = quote(self.encode(referer)).replace('%3A', ':')
-            if len(referer) > 1:
-                headers['Referer'] = referer
-        if '127.0.0.1' not in url and 'localhost' not in url:
-            headers['Accept-Encoding'] = 'gzip'
-        if '/Stream/' in url:
-            headers['api-version'] = '1.0'
+        try:
+            import error_handler as eh
+            headers = {
+                'Accept': 'application/json',
+                'apikey': apikey,
+            }
 
-        req = Request(self.encode(url), headers=headers)
-        data = None
+            if referer is not None:
+                referer = quote(self.encode(referer)).replace('%3A', ':')
+                if len(referer) > 1:
+                    headers['Referer'] = referer
 
-        eh.spam('Getting Data ---')
-        eh.spam('URL: ', url)
-        eh.spam('Headers:', headers)
-        response = urlopen(req, timeout=int(timeout))
-        if response.info().get('Content-Encoding') == 'gzip':
-            eh.spam('Got gzipped response. Decompressing')
-            try:
-                buf = BytesIO(response.read())
-                f = gzip.GzipFile(fileobj=buf)
-                data = f.read()
-            except Exception as e:
-                eh.spam('Failed to decompress.', e.message)
-        else:
-            data = response.read()
-        response.close()
+            if '127.0.0.1' not in url and 'localhost' not in url:
+                headers['Accept-Encoding'] = 'gzip'
+            if '/Stream/' in url:
+                headers['api-version'] = '1.0'
 
-        eh.spam('Response Body:', data)
-        eh.spam('Checking Response for a text error.\n')
+            # self.encode(url) # py3 fix
+            req = Request(url, headers=headers)
+            data = None
 
-        if data is not None and data != '':
-            self.parse_possible_error(req, data)
+            eh.spam('Getting Data ---')
+            eh.spam('URL: ', url)
+            eh.spam('Headers:', headers)
+            response = urlopen(req, timeout=int(timeout))
 
-        return data
+            if response.info().get('Content-Encoding') == 'gzip':
+                eh.spam('Got gzipped response. Decompressing')
+                try:
+                    buf = BytesIO(response.read())
+                    f = gzip.GzipFile(fileobj=buf)
+                    data = f.read()
+                except Exception as e:
+                    eh.spam('Failed to decompress.', e.message)
+            else:
+                data = response.read()
+            response.close()
+
+            eh.spam('Response Body:', data)
+            eh.spam('Checking Response for a text error.\n')
+
+            if data is not None and data != '':
+                self.parse_possible_error(req, data)
+
+            return data
+        except Exception as ex:
+            xbmc.log(' === get_data error === %s' % ex, xbmc.LOGNOTICE)
 
     def head(self, url_in):
         try:
@@ -142,7 +150,7 @@ class BasePythonProxy:
         Push data to server using 'POST' method
         :param url_in:
         :param body:
-        :custom_timeout: if not given timeout from plugin setting will be used
+        :param custom_timeout: if not given timeout from plugin setting will be used
         :return:
         """
         if len(body) > 3:
@@ -180,10 +188,11 @@ class BasePythonProxy:
         eh.spam('Headers:', headers)
         eh.spam('POST Body:', data_in)
 
-        req = Request(self.encode(url), self.encode(data_in), headers)
-
-        data_out = None
         try:
+            # self.encode(url) # py3 fix
+            req = Request(url, self.encode(data_in), headers)
+            data_out = None
+
             response = urlopen(req, timeout=custom_timeout)
             data_out = response.read()
             response.close()
@@ -199,7 +208,8 @@ class BasePythonProxy:
                 eh.exception(ErrorPriority.HIGH)
         except http_error as err:
             raise err
-        except:
+        except Exception as ex:
+            xbmc.log('==== post_data error ==== %s ' % ex, xbmc.LOGNOTICE)
             eh.exception(ErrorPriority.HIGH)
 
         return data_out
@@ -247,6 +257,7 @@ class BasePythonProxy:
         :param cache_time: ignore setting to set custom cache expiration time, mainly to expire data quicker to refresh watch flags
         :return:
         """
+
         import error_handler as eh
         from error_handler import ErrorPriority
         try:
@@ -282,7 +293,8 @@ class BasePythonProxy:
                     cache.add_cache(url_in, body)
         except http_error as err:
             raise err
-        except:
+        except Exception as ex:
+            xbmc.log(' ========= ERROR JSON ============  %s' % ex, xbmc.LOGNOTICE)
             eh.exception(ErrorPriority.HIGH)
             body = None
         return body
@@ -329,6 +341,10 @@ class BasePythonProxy:
         except:
             return 0
 
+    @abstractmethod
+    def is_unicode_or_string(self, value):
+        pass
+
 
 class Python2Proxy(BasePythonProxy):
     def __init__(self):
@@ -360,6 +376,9 @@ class Python2Proxy(BasePythonProxy):
 
     def isnumeric(self, value):
         return unicode(value).isnumeric()
+
+    def is_unicode_or_string(self, value):
+        return isinstance(value, (str, unicode))
 
 
 class Python3Proxy(BasePythonProxy):
@@ -393,6 +412,9 @@ class Python3Proxy(BasePythonProxy):
     def isnumeric(self, value):
         # noinspection PyUnresolvedReferences
         return str(value).isnumeric()
+
+    def is_unicode_or_string(self, value):
+        return isinstance(value, str)
 
 
 python_proxy = Python2Proxy() if sys.version_info[0] < 3 else Python3Proxy()

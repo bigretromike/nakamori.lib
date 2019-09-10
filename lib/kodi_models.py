@@ -20,7 +20,8 @@ class WatchedStatus(object):
 
 class ListItem(xbmcgui.ListItem):
     def __init__(self, label='', label2='', icon_image='', thumbnail_image='', path='', offscreen=False):
-        xbmcgui.ListItem.__init__(self, label, label2, icon_image, thumbnail_image, path, offscreen)
+        #xbmcgui.ListItem.__init__(self, label, label2, icon_image, thumbnail_image, path, offscreen)
+        pass
 
     def set_art(self, dir_obj):
         """

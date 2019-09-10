@@ -337,7 +337,7 @@ def can_connect(ip=None, port=None):
         if json_file is None:
             return False
         return True
-    except:
+    except Exception as ex:
         return False
 
 
@@ -369,24 +369,29 @@ def auth():
 
 
 def get_apikey(login, password):
-    creds = (login, password, plugin_addon.getSetting('device'))
-    body = '{"user":"%s","pass":"%s","device":"%s"}' % creds
-    post_body = pyproxy.post_data(server + '/api/auth', body)
-    auth_body = json.loads(post_body)
-    if 'apikey' in auth_body:
-        apikey_found_in_auth = str(auth_body['apikey'])
-        return apikey_found_in_auth
-    else:
-        raise Exception(localized(30026))
+    try:
+        creds = (login, password, plugin_addon.getSetting('device'))
+        body = '{"user":"%s","pass":"%s","device":"%s"}' % creds
+        post_body = pyproxy.post_data(server + '/api/auth', body)
+        auth_body = json.loads(post_body)
+        if 'apikey' in auth_body:
+            apikey_found_in_auth = str(auth_body['apikey'])
+            return apikey_found_in_auth
+        else:
+            raise Exception(localized(30026))
+    except Exception as ex:
+        xbmc.log(' === get_apikey error === %s ' % ex, xbmc.LOGNOTICE)
+        return None
 
 
 def can_user_connect():
     # what better way to try than to just attempt to load the main menu?
     try:
-        # TRY to use new method that no one has yet
+        # TRY to use new method which is faster
         try:
-            ping = pyproxy.get_json(server + '/api/ping', True)
-            if ping is not None and 'pong' in ping:
+            url = server + '/api/ping'
+            ping = pyproxy.get_json(url, True)
+            if ping is not None and b'pong' in ping:
                 return True
             else:  # should never happen
                 return False
@@ -395,13 +400,16 @@ def can_user_connect():
             if ex.code == 401:
                 return False
             eh.exception(ErrorPriority.NORMAL)
+
+        # TODO DEPRECATE THIS AS MOST FUNCTIONS REQUIRE 3.9.5+ anyway
         # but since no one has it, we can't count on it actually working, so fall back
         from shoko_models.v2 import Filter
         f = Filter(0, build_full_object=True, get_children=False)
         if f.size < 1:
             raise RuntimeError(localized(30027))
         return True
-    except:
+    except Exception as ex:
+        xbmc.log(' ===== auth error ===== %s ' % ex, xbmc.LOGNOTICE)
         # because we always check for connection first, we can assume that auth is the only problem
         # we need to log in
         eh.exception(ErrorPriority.NORMAL)
