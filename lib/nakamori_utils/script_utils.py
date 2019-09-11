@@ -454,3 +454,18 @@ def url_playlist_series(series_id):
 def playlist_series(series_id, wait=False):
     url = url_playlist_series(series_id)
     xbmc.executebuiltin(url, wait)
+
+
+def url_install_webui():
+    url = '/shoko/webui/install/'
+    return run % url
+
+
+def url_stable_webui():
+    url = '/shoko/webui/update/'
+    return run % url
+
+
+def url_unstable_webui():
+    url = '/shoko/webui/unstable/'
+    return run % url
