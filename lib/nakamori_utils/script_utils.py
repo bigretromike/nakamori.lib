@@ -106,6 +106,11 @@ def url_script_settings():
     return run % url
 
 
+def url_service_settings():
+    url = '/dialog/service_settings'
+    return run % url
+
+
 def settings():
     url = url_settings()
     xbmc.executebuiltin(url)

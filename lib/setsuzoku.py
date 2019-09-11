@@ -84,6 +84,7 @@ class Event(object):
     BOOKMARK = 'bookmark'
     TVSHOW = 'tvshow'
     MOVIE = 'movie'
+    SETTINGS = 'settings'
 
 
 def log_call(category, action, event, value=1):
