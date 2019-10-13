@@ -11,3 +11,4 @@ def show_information():
     if os.path.exists(os.path.join(plugin_home, file_flag)):
         os.remove(os.path.join(plugin_home, file_flag))
         xbmc.executebuiltin('RunScript(script.module.nakamori,?info=information)', True)
+

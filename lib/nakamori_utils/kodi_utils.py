@@ -9,12 +9,9 @@ import xbmcplugin
 
 from nakamori_utils.globalvars import *
 import error_handler as eh
-from error_handler import ErrorPriority, log
+from error_handler import ErrorPriority
 from nakamori_utils.globalvars import plugin_addon
 from proxy.python_version_proxy import python_proxy as pyproxy
-from proxy.python_version_proxy import http_error as http_err
-from nakamori_utils.script_utils import log_setsuzoku
-from setsuzoku import Category, Action, Event
 
 try:
     from sqlite3 import dbapi2 as database
@@ -27,10 +24,6 @@ localize = script_addon.getLocalizedString
 localize2 = lib_addon.getLocalizedString
 
 sorting_types = []
-
-eigakan_url = plugin_addon.getSetting('ipEigakan')
-eigakan_port = plugin_addon.getSetting('portEigakan')
-eigakan_host = 'http://' + eigakan_url + ':' + eigakan_port
 
 
 class Sorting(object):
@@ -159,8 +152,6 @@ def clear_listitem_cache():
     Clear mark for nakamori files in kodi db
     :return:
     """
-    log_setsuzoku(Category.MAINTENANCE, Action.LISTITEM, Event.CLEAN)
-
     ret = xbmcgui.Dialog().yesno(plugin_addon.getLocalizedString(30104),
                                  plugin_addon.getLocalizedString(30081), plugin_addon.getLocalizedString(30112))
     if ret:
@@ -186,8 +177,6 @@ def clear_image_cache():
     Clear image cache in kodi db
     :return:
     """
-    log_setsuzoku(Category.MAINTENANCE, Action.IMAGE, Event.CLEAN)
-
     ret = xbmcgui.Dialog().yesno(plugin_addon.getLocalizedString(30104),
                                  plugin_addon.getLocalizedString(30081), plugin_addon.getLocalizedString(30112))
     if ret:
@@ -224,14 +213,6 @@ def search_box():
     return search_text
 
 
-def move_to_next():
-    select = get_kodi_setting('videolibrary.tvshowsselectfirstunwatcheditem') > 0 \
-             or plugin_addon.getSetting('select_unwatched') == 'true'
-    if select:
-        # looks like controlist allways returns 0 in size
-        xbmc.executebuiltin('Action(Down)', True)
-
-
 def move_to_index(index, absolute=False):
     try:
         # putting this in a method crashes kodi to desktop.
@@ -253,8 +234,7 @@ def move_to_index(index, absolute=False):
             xbmc.sleep(interval)
             elapsed += interval
         # endregion Fuck if I know....
-        if isinstance(control_list, xbmcgui.ControlList):
-            move_position_on_list(control_list, index, absolute)
+        move_position_on_list(control_list, index, absolute)
     except:
         eh.exception(ErrorPriority.HIGH, localize2(30014))
 
@@ -264,7 +244,7 @@ def move_position_on_list(control_list, position=0, absolute=False):
     Move to the position in a list - use episode number for position
     Args:
         control_list: the list control
-        position: the move_position_on_listindex of the item not including settings
+        position: the index of the item not including settings
         absolute: bypass setting and set position directly
     """
     if not absolute:
@@ -276,11 +256,10 @@ def move_position_on_list(control_list, position=0, absolute=False):
             position = int(position + 1)
     try:
         control_list.selectItem(position)
-        xbmc.log(' move_position_on_list : %s ' % position, xbmc.LOGNOTICE)
     except:
         try:
             control_list.selectItem(position - 1)
-        except Exception as e:
+        except:
             eh.exception(ErrorPriority.HIGH, localize2(30015))
 
 
@@ -291,7 +270,7 @@ def refresh():
     Allow time for the ui to reload
     """
     xbmc.executebuiltin('Container.Refresh')
-    xbmc.sleep(1000)
+    xbmc.sleep(int(plugin_addon.getSetting('refresh_wait')))
 
 
 def message_box(title, text, text2=None, text3=None):
@@ -347,190 +326,37 @@ def set_user_sort_method(content):
 
 
 def get_media_type_from_container():
-    if get_cond_visibility('Container.Content(tvshows)'):
+    if xbmc.getCondVisibility('Container.Content(tvshows)'):
         return "show"
-    elif get_cond_visibility('Container.Content(seasons)'):
+    elif xbmc.getCondVisibility('Container.Content(seasons)'):
         return "season"
-    elif get_cond_visibility('Container.Content(episodes)'):
+    elif xbmc.getCondVisibility('Container.Content(episodes)'):
         return "episode"
-    elif get_cond_visibility('Container.Content(movies)'):
+    elif xbmc.getCondVisibility('Container.Content(movies)'):
         return "movie"
-    elif get_cond_visibility('Container.Content(files)'):
+    elif xbmc.getCondVisibility('Container.Content(files)'):
         return 'file'
-    elif get_cond_visibility('Container.Content(genres)'):
+    elif xbmc.getCondVisibility('Container.Content(genres)'):
         return 'genre'
-    elif get_cond_visibility('Container.Content(years)'):
+    elif xbmc.getCondVisibility('Container.Content(years)'):
         return 'years'
-    elif get_cond_visibility('Container.Content(actors)'):
+    elif xbmc.getCondVisibility('Container.Content(actors)'):
         return 'actor'
-    elif get_cond_visibility('Container.Content(playlists)'):
+    elif xbmc.getCondVisibility('Container.Content(playlists)'):
         return 'playlist'
-    elif get_cond_visibility('Container.Content(plugins)'):
+    elif xbmc.getCondVisibility('Container.Content(plugins)'):
         return 'plugin'
-    elif get_cond_visibility('Container.Content(studios)'):
+    elif xbmc.getCondVisibility('Container.Content(studios)'):
         return 'studio'
-    elif get_cond_visibility('Container.Content(directors)'):
+    elif xbmc.getCondVisibility('Container.Content(directors)'):
         return 'director'
-    elif get_cond_visibility('Container.Content(sets)'):
+    elif xbmc.getCondVisibility('Container.Content(sets)'):
         return 'set'
-    elif get_cond_visibility('Container.Content(tags)'):
+    elif xbmc.getCondVisibility('Container.Content(tags)'):
         return 'tag'
-    elif get_cond_visibility('Container.Content(countries)'):
+    elif xbmc.getCondVisibility('Container.Content(countries)'):
         return 'country'
-    elif get_cond_visibility('Container.Content(roles)'):
+    elif xbmc.getCondVisibility('Container.Content(roles)'):
         return 'role'
     else:
         return None
-
-
-def get_device_id(reset=False):
-    import xbmcvfs
-    client_id = xbmcgui.Window(10000).getProperty('nakamori_deviceId')
-
-    if client_id:
-        return client_id
-    directory = xbmc.translatePath(plugin_addon.getAddonInfo('profile'))
-    nakamori_guid = os.path.join(directory, "nakamori_guid")
-    file_guid = xbmcvfs.File(nakamori_guid)
-    client_id = file_guid.read()
-    if client_id:
-        if len(client_id) < 16:
-            # reset device_id if its in old format
-            reset = True
-
-    if not client_id or reset:
-        client_id = str("%016X" % create_id())
-        file_guid = xbmcvfs.File(nakamori_guid, "w")
-        file_guid.write(client_id)
-
-    file_guid.close()
-
-    xbmcgui.Window(10000).setProperty('nakamori_deviceId', client_id)
-    return client_id
-
-
-def create_id():
-    from uuid import uuid4
-    log_setsuzoku(Category.SETTINGS, Action.DEVICEID, Event.CREATE)
-    return uuid4()
-
-
-def get_cond_visibility(condition):
-    return xbmc.getCondVisibility(condition)
-
-
-def is_dialog_active():
-    x = -1
-    try:
-        x = xbmcgui.getCurrentWindowDialogId()
-        x = int(x)
-        log('----- > is_dialog_window_is_visible: %s' % x)
-        # if there is any, wait 0.25s
-        xbmc.sleep(250)
-    except:
-        eh.spam('----- > is_dialog_is_visible: NONE')
-        pass
-    # https://github.com/xbmc/xbmc/blob/master/xbmc/guilib/WindowIDs.h
-    # 10138 - busy,loading
-    if 10099 <= x <= 10160:
-        return True
-    return False
-
-
-def send_profile():
-    eh.spam('Trying to send_profile(). Wish me luck!')
-    log_setsuzoku(Category.EIGAKAN, Action.PROFILE, Event.SEND)
-    # setup client on server
-    settings = {}
-
-    # tweak-ninja
-    settings['manual_mode'] = plugin_addon.getSetting('eigakan_manual_mode')
-    settings['h_resolution'] = plugin_addon.getSetting('eigakan_h_resolution')
-    settings['h_bitrate'] = plugin_addon.getSetting('eigakan_h_bitrate')
-    settings['l_resolution'] = plugin_addon.getSetting('eigakan_l_resolution')
-    settings['l_bitrate'] = plugin_addon.getSetting('eigakan_l_bitrate')
-    settings['x264_preset'] = plugin_addon.getSetting('eigakan_x264_preset')
-    settings['burn_subs'] = plugin_addon.getSetting('burnEigakan')
-    # lang-master
-    settings['pref_audio'] = plugin_addon.getSetting('audiolangEigakan')
-    settings['pref_subs'] = plugin_addon.getSetting('subEigakan')
-
-    settings = json.dumps(settings)
-
-    eh.spam('send_profile() data = %s' % settings)
-
-    try:
-        pyproxy.post_data(eigakan_host + '/api/clientid/%s' % get_device_id(), settings)
-        # if no error, lets mark that we did full handshake with eigakan
-        plugin_addon.setSetting('eigakan_handshake', 'true')
-    except Exception as ex:
-        plugin_addon.setSetting('eigakan_handshake', 'false')
-        eh.spam('error while send_profile(): %s' % ex)
-
-
-def check_eigakan():
-    try:
-        eigakan_data = pyproxy.get_json(eigakan_host + '/api/version')
-
-        if eigakan_data is None:
-            return False
-        elif 'eigakan' not in eigakan_data:
-            # raise RuntimeError('Invalid response from Eigakan')
-            return False
-        else:
-            if plugin_addon.getSetting('eigakan_handshake') == 'false':
-                eh.spam('We did not find Eigakan handshake')
-                try:
-                    pyproxy.get_json(eigakan_host + '/api/clientid/%s' % get_device_id())
-                except http_err as err:
-                    if int(err.code) == 404:
-                        eh.spam('We did not find device profile on Eigakan, sending new one...')
-                        plugin_addon.setSetting('eigakan_handshake', 'false')
-                        send_profile()
-                    else:
-                        return False
-            return True
-    except:
-        return False
-
-
-def is_addon_installed(addonid='inputstream.adaptive'):
-    x = xbmc.executeJSONRPC(
-        '{"jsonrpc":"2.0","id":1,"method":"Addons.GetAddonDetails","params":{"addonid":"%s","properties":["enabled"]}}'
-        % addonid)
-    # {"error":{"code":-32602,"message":"Invalid params."},"id":1,"jsonrpc":"2.0"}
-    xret = json.loads(x)
-    if 'error' in xret:
-        return False
-    return True
-
-
-def is_addon_enabled(addonid='inputstream.adaptive'):
-    x = xbmc.executeJSONRPC(
-        '{"jsonrpc":"2.0","id":1,"method":"Addons.GetAddonDetails","params":{"addonid":"%s","properties":["enabled"]}}'
-        % addonid)
-    # {"id":1,"jsonrpc":"2.0","result":{"addon":{"addonid":"inputstream.adaptive","enabled":false,"type":"kodi.inputstream"}}}
-    xret = json.loads(x)
-    xret = xret.get('result', {'addon': {'enabled': 'false'}}).get('addon').get('enabled')
-    if type(xret) is bool:
-        return xret
-    return False
-
-
-def enable_addon(addonid='inputstream.adaptive'):
-    x = xbmc.executeJSONRPC(
-        '{"jsonrpc":"2.0","id":1,"method":"Addons.SetAddonEnabled","params":{"addonid":"%s","enabled":true}}' % addonid)
-    y = '"result":"OK"'
-    if y in x:
-        return True
-    return False
-
-
-def bold(value):
-    return ''.join(['[B]', value, '[/B]'])
-
-
-def color(text_to_color, color_name, enable_color=True):
-    if enable_color:
-        return ''.join(['[COLOR %s]' % color_name, text_to_color, '[/COLOR]'])
-    return text_to_color

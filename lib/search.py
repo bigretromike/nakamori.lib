@@ -108,7 +108,7 @@ def check_in_database(term):
     db_cursor = db_connection.cursor()
     db_cursor.execute('SELECT Count(search_term) FROM search WHERE search_term=?', (term,))
     data = db_cursor.fetchone()
-    return True if data is not None else False
+    return data > 0
 
 
 def clear_search_history():

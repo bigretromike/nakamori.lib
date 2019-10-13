@@ -2,7 +2,6 @@
 # Yes this was super tedious and the reason that I want a routing registry
 import xbmc
 from proxy.python_version_proxy import python_proxy as pyproxy
-from nakamori_utils.globalvars import *
 
 run = 'RunScript(script.module.nakamori,%s)'
 
@@ -12,28 +11,8 @@ def url_calendar(when=0, page=0):
     return run % url
 
 
-def url_ac_calendar(when=0, page=0):
-    url = '/ac_calendar/%i/%i/' % (when, page)
-    return run % url
-
-
-def url_cr_calendar(when=0, page=0):
-    url = '/cr_calendar/%i/%i/' % (when, page)
-    return run % url
-
-
 def calendar(when=0, page=0):
     url = url_calendar(when, page)
-    xbmc.executebuiltin(url)
-
-
-def ac_calendar(when=0, page=0):
-    url = url_ac_calendar(when, page)
-    xbmc.executebuiltin(url)
-
-
-def cr_calendar(when=0, page=0):
-    url = url_cr_calendar(when, page)
     xbmc.executebuiltin(url)
 
 
@@ -106,11 +85,6 @@ def url_script_settings():
     return run % url
 
 
-def url_service_settings():
-    url = '/dialog/service_settings'
-    return run % url
-
-
 def settings():
     url = url_settings()
     xbmc.executebuiltin(url)
@@ -124,6 +98,16 @@ def url_shoko_menu():
 def shoko_menu():
     url = url_shoko_menu()
     xbmc.executebuiltin(url)
+
+
+def url_new_search(save):
+    url = '/dialog/search/%s' % save
+    return run % url
+
+
+def new_search(save):
+    url = url_new_search(save)
+    xbmc.executebuiltin(url, True)
 
 
 def url_remove_search_term(query):
@@ -294,183 +278,3 @@ def url_move_to_item(index):
 def move_to_item(index):
     url = url_move_to_item(index)
     xbmc.executebuiltin(url)
-
-
-def url_probe_file(file_id):
-    url = '/file/%i/probe' % file_id
-    return run % url
-
-
-def url_probe_episode(ep_id):
-    url = '/episode/%i/probe' % ep_id
-    return run % url
-
-
-def url_transcode_file(file_id):
-    url = '/file/%i/transcode' % file_id
-    return run % url
-
-
-def url_transcode_episode(ep_id):
-    url = '/episode/%i/transcode' % ep_id
-    return run % url
-
-
-def url_add_favorite(s_id):
-    url = '/favorite/%i/add' % s_id
-    return run % url
-
-
-def add_favorite(s_id):
-    url = url_add_favorite(s_id)
-    xbmc.executebuiltin(url)
-
-
-def url_remove_favorite(s_id):
-    url = '/favorite/%i/remove' % s_id
-    return run % url
-
-
-def remove_favorite(s_id):
-    url = url_remove_favorite(s_id)
-    xbmc.executebuiltin(url)
-
-
-def url_add_bookmark(s_id):
-    url = '/bookmark/%s/add/' % s_id
-    return run % url
-
-
-def add_bookmark(s_id):
-    url = url_add_bookmark(s_id)
-    xbmc.executebuiltin(url)
-
-
-def url_remove_bookmark(s_id):
-    url = '/bookmark/%s/remove/' % s_id
-    return run % url
-
-
-def remove_bookmark(s_id):
-    url = url_remove_bookmark(s_id)
-    xbmc.executebuiltin(url)
-
-
-def url_clear_favorite():
-    url = '/favorite/clear'
-    return run % url
-
-
-def clear_favorite():
-    url = url_clear_favorite()
-    xbmc.executebuiltin(url)
-
-
-def log_setsuzoku(category, action, event):
-    url = '/log/%s/%s/%s' % (category, action, event)
-    xbmc.executebuiltin(run % url)
-
-
-def url_move_to_item_and_enter(index):
-    url = '/menu/move_to_item_and_enter/%i/' % index
-    return run % url
-
-
-def move_to_item_and_enter(index):
-    url = url_move_to_item_and_enter(index)
-    xbmc.executebuiltin(url)
-
-
-def url_command_queue(role, command):
-    url = '/queue/%s/%s/' % (role, command)
-    return run % url
-
-
-def command_queue(role, command):
-    url = url_command_queue(role, command)
-    xbmc.executebuiltin(url)
-
-
-def url_folder_scan(id):
-    url = '/folder/%s/scan/' % id
-    return run % url
-
-
-def folder_scan(id):
-    url = url_folder_scan(id)
-    xbmc.executescript(url)
-
-
-def url_shoko_scandropfolder():
-    url = '/shoko/scandrop/'
-    return run % url
-
-
-def url_shoko_statusupdate():
-    url = '/shoko/statusupdate/'
-    return run % url
-
-
-def url_shoko_mediainfoupdate():
-    url = '/shoko/mediainfoupdate/'
-    return run % url
-
-
-def url_shoko_rescanunlinked():
-    url = '/shoko/rescanunlinked/'
-    return run % url
-
-
-def url_shoko_rehashunlinked():
-    url = '/shoko/rehashunlinked/'
-    return run % url
-
-
-def url_shoko_rescanmanuallinks():
-    url = '/shoko/rescanmanuallinks/'
-    return run % url
-
-
-def url_shoko_rehashmanuallinks():
-    url = '/shoko/rehashmanuallinks/'
-    return run % url
-
-
-def url_shoko_runimport():
-    url = '/shoko/runimport/'
-    return run % url
-
-
-def url_shoko_removemissing():
-    url = '/shoko/removemissing/'
-    return run % url
-
-
-def url_calendar_refresh():
-    url = '/shoko/calendarrefresh/'
-    return run % url
-
-
-def url_playlist_series(series_id):
-    url = '/series/%i/playlist/' % series_id
-    return run % url
-
-
-def playlist_series(series_id, wait=False):
-    url = url_playlist_series(series_id)
-    xbmc.executebuiltin(url, wait)
-
-
-def url_install_webui():
-    url = '/shoko/webui/install/'
-    return run % url
-
-
-def url_stable_webui():
-    url = '/shoko/webui/update/'
-    return run % url
-
-
-def url_unstable_webui():
-    url = '/shoko/webui/unstable/'
-    return run % url
