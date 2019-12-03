@@ -49,6 +49,7 @@ class Directory(object):
         self.fanart = ''
         self.poster = ''
         self.banner = ''
+        self.icon = ''
         self.size = -1
         self.get_children = get_children
         self.sort_index = 0
@@ -122,6 +123,7 @@ class Directory(object):
         thumb = ''
         fanart = ''
         banner = ''
+        icon = ''
         try:
             if len(json_node['art']['thumb']) > 0:
                 thumb = json_node['art']['thumb'][0]['url']
@@ -137,11 +139,17 @@ class Directory(object):
                 banner = json_node['art']['banner'][0]['url']
                 if banner is not None and ':' not in banner:
                     banner = server + banner
+
+            # TODO need to play with this a little more
+            if kodi_utils.get_cond_visibility('System.HasAddon(resource.images.studios.white)') == 1:
+                if hasattr(self, 'studio'):
+                    icon = 'resource://resource.images.studios.white/{studio}.png'.format(studio=self.studio)
         except:
             pass
         self.fanart = fanart
         self.poster = thumb
         self.banner = banner
+        self.icon = icon
 
     def process_children(self, json_node):
         pass
@@ -702,6 +710,7 @@ class Series(Directory):
         self.file_size = json_node.get('filesize', 0)
         self.year = json_node.get('year', 0)
         self.mpaa = self.get_mpaa_rating()
+        self.studio = ''
         self.outline = " ".join(self.overview.split(".", 3)[:2])  # first 3 sentence
         self.hash = None
 
@@ -846,6 +855,9 @@ class Series(Directory):
         f = e.get_file()
         if f is None:
             return
+
+        # if kodi_utils.get_cond_visibility('System.HasAddon(resource.images.studios.white)') == 1:
+
         more_infolabels = {
             'dateadded': f.date_added,
             'studio': f.group,
@@ -1107,12 +1119,6 @@ class SeriesTypeList(Series):
                 return sizes.total_specials
         return 0
 
-    def add_sort_methods(self, handle):
-        pass
-
-    def apply_default_sorting(self):
-        pass
-
 
 # noinspection Duplicates
 class Episode(Directory):
@@ -1363,7 +1369,10 @@ class Episode(Directory):
         context_menu = []
         # Play
         if plugin_addon.getSetting('context_show_play') == 'true':
-            context_menu.append((localize(30065), 'Action(Select)'))
+            # I change this to play, because with 'show info' this does not play file
+            url = 'RunPlugin(%s)' % puf(nakamoriplugin.play_video, self.id, self.get_file().id)
+            context_menu.append((localize(30065), url))
+            # context_menu.append((localize(30065), 'Action(Select)'))
 
         # Resume
         if self.get_file() is not None and self.get_file().resume_time > 0 \
@@ -1418,6 +1427,21 @@ class Episode(Directory):
         # Refresh
         if plugin_addon.getSetting('context_refresh') == 'true':
             context_menu.append((localize(30131), 'Container.Refresh'))
+
+        # Eigakan
+        # Probe / Transcode
+        # TODO lang fix
+        if plugin_addon.getSetting('enableEigakan') == 'true':
+            if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
+                context_menu.append(('Probe', script_utils.url_probe_episode(ep_id=self.id)))
+                context_menu.append(('Transcode', script_utils.url_transcode_episode(ep_id=self.id)))
+                context_menu.append(('Direct Play', 'RunPlugin(%s)' % puf(nakamoriplugin.direct_play_video, self.id)))
+            else:
+                file_ = self.get_file()
+                file_id = file_.id
+                context_menu.append(('Probe', script_utils.url_probe_file(file_id=file_id)))
+                context_menu.append(('Transcode', script_utils.url_transcode_file(file_id=file_id)))
+                context_menu.append(('Direct Play', 'RunPlugin(%s)' % puf(nakamoriplugin.direct_play_video, self.id, self.get_file().id)))
 
         # the default ones that say the rest are kodi's
         context_menu += Directory.get_context_menu_items(self)
@@ -1512,10 +1536,23 @@ class File(Directory):
 
         try:
             # Information about streams inside json_node file
+            eh.spam(json_node.get('media', {}))
             if len(json_node.get('media', {})) > 0:
-                self.video_streams = model_utils.get_video_streams(json_node['media'])
-                self.audio_streams = model_utils.get_audio_streams(json_node['media'])
-                self.sub_streams = model_utils.get_sub_streams(json_node['media'])
+                try:
+                    self.video_streams = model_utils.get_video_streams(json_node['media'])
+                except:
+                    self.video_streams = {}
+                    eh.exception(eh.ErrorPriority.NORMAL)
+                try:
+                    self.audio_streams = model_utils.get_audio_streams(json_node['media'])
+                except:
+                    self.audio_streams = {}
+                    eh.exception(eh.ErrorPriority.NORMAL)
+                try:
+                    self.sub_streams = model_utils.get_sub_streams(json_node['media'])
+                except:
+                    self.sub_streams = {}
+                    eh.exception(eh.ErrorPriority.NORMAL)
             else:
                 self.video_streams = {}
                 self.audio_streams = {}
@@ -1524,6 +1561,7 @@ class File(Directory):
             self.video_streams = {}
             self.audio_streams = {}
             self.sub_streams = {}
+            eh.exception(eh.ErrorPriority.NORMAL)
 
         eh.spam(self)
 

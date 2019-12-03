@@ -213,6 +213,46 @@ def search_box():
     return search_text
 
 
+def move_to_next():
+    try:
+        # putting this in a method crashes kodi to desktop.
+        # region Fuck if I know....
+        elapsed = 0
+        interval = 250
+        wait_time = 4000
+        control_list = None
+        while True:
+            if elapsed >= wait_time:
+                break
+            try:
+                wind = xbmcgui.Window(xbmcgui.getCurrentWindowId())
+                control_list = wind.getControl(wind.getFocusId())
+                if isinstance(control_list, xbmcgui.ControlList):
+                    break
+            except:
+                pass
+            xbmc.sleep(interval)
+            elapsed += interval
+        # endregion Fuck if I know....
+        if isinstance(control_list, xbmcgui.ControlList):
+            move_position_on_list_to_next(control_list)
+    except:
+        eh.exception(ErrorPriority.HIGH, localize2(30014))
+
+
+def move_position_on_list_to_next(control_list):
+    position = control_list.getSelectedPosition()
+    if position != -1:
+        try:
+            control_list.selectItem(position+1)
+        except:
+            try:
+                if position != 0:
+                    control_list.selectItem(position - 1)
+            except:
+                eh.exception(ErrorPriority.HIGH, localize2(30015))
+
+
 def move_to_index(index, absolute=False):
     try:
         # putting this in a method crashes kodi to desktop.
@@ -234,7 +274,8 @@ def move_to_index(index, absolute=False):
             xbmc.sleep(interval)
             elapsed += interval
         # endregion Fuck if I know....
-        move_position_on_list(control_list, index, absolute)
+        if isinstance(control_list, xbmcgui.ControlList):
+            move_position_on_list(control_list, index, absolute)
     except:
         eh.exception(ErrorPriority.HIGH, localize2(30014))
 
@@ -244,7 +285,7 @@ def move_position_on_list(control_list, position=0, absolute=False):
     Move to the position in a list - use episode number for position
     Args:
         control_list: the list control
-        position: the index of the item not including settings
+        position: the move_position_on_listindex of the item not including settings
         absolute: bypass setting and set position directly
     """
     if not absolute:
@@ -259,7 +300,8 @@ def move_position_on_list(control_list, position=0, absolute=False):
     except:
         try:
             control_list.selectItem(position - 1)
-        except:
+        except Exception as e:
+            xbmc.log(' -----> ERROR -----> %s' % e, xbmc.LOGNOTICE)
             eh.exception(ErrorPriority.HIGH, localize2(30015))
 
 
@@ -270,7 +312,7 @@ def refresh():
     Allow time for the ui to reload
     """
     xbmc.executebuiltin('Container.Refresh')
-    xbmc.sleep(int(plugin_addon.getSetting('refresh_wait')))
+    xbmc.sleep(1000)
 
 
 def message_box(title, text, text2=None, text3=None):
@@ -326,37 +368,84 @@ def set_user_sort_method(content):
 
 
 def get_media_type_from_container():
-    if xbmc.getCondVisibility('Container.Content(tvshows)'):
+    if get_cond_visibility('Container.Content(tvshows)'):
         return "show"
-    elif xbmc.getCondVisibility('Container.Content(seasons)'):
+    elif get_cond_visibility('Container.Content(seasons)'):
         return "season"
-    elif xbmc.getCondVisibility('Container.Content(episodes)'):
+    elif get_cond_visibility('Container.Content(episodes)'):
         return "episode"
-    elif xbmc.getCondVisibility('Container.Content(movies)'):
+    elif get_cond_visibility('Container.Content(movies)'):
         return "movie"
-    elif xbmc.getCondVisibility('Container.Content(files)'):
+    elif get_cond_visibility('Container.Content(files)'):
         return 'file'
-    elif xbmc.getCondVisibility('Container.Content(genres)'):
+    elif get_cond_visibility('Container.Content(genres)'):
         return 'genre'
-    elif xbmc.getCondVisibility('Container.Content(years)'):
+    elif get_cond_visibility('Container.Content(years)'):
         return 'years'
-    elif xbmc.getCondVisibility('Container.Content(actors)'):
+    elif get_cond_visibility('Container.Content(actors)'):
         return 'actor'
-    elif xbmc.getCondVisibility('Container.Content(playlists)'):
+    elif get_cond_visibility('Container.Content(playlists)'):
         return 'playlist'
-    elif xbmc.getCondVisibility('Container.Content(plugins)'):
+    elif get_cond_visibility('Container.Content(plugins)'):
         return 'plugin'
-    elif xbmc.getCondVisibility('Container.Content(studios)'):
+    elif get_cond_visibility('Container.Content(studios)'):
         return 'studio'
-    elif xbmc.getCondVisibility('Container.Content(directors)'):
+    elif get_cond_visibility('Container.Content(directors)'):
         return 'director'
-    elif xbmc.getCondVisibility('Container.Content(sets)'):
+    elif get_cond_visibility('Container.Content(sets)'):
         return 'set'
-    elif xbmc.getCondVisibility('Container.Content(tags)'):
+    elif get_cond_visibility('Container.Content(tags)'):
         return 'tag'
-    elif xbmc.getCondVisibility('Container.Content(countries)'):
+    elif get_cond_visibility('Container.Content(countries)'):
         return 'country'
-    elif xbmc.getCondVisibility('Container.Content(roles)'):
+    elif get_cond_visibility('Container.Content(roles)'):
         return 'role'
     else:
         return None
+
+
+def get_device_id(reset=False):
+    import xbmcvfs
+    client_id = xbmcgui.Window(10000).getProperty('nakamori_deviceId')
+
+    if client_id:
+        return client_id
+    directory = xbmc.translatePath(plugin_addon.getAddonInfo('profile'))
+    nakamori_guid = os.path.join(directory, "nakamori_guid")
+    file_guid = xbmcvfs.File(nakamori_guid)
+    client_id = file_guid.read()
+
+    if not client_id or reset:
+        client_id = str("%012X" % create_id())
+        file_guid = xbmcvfs.File(nakamori_guid, "w")
+        file_guid.write(client_id)
+
+    file_guid.close()
+
+    xbmcgui.Window(10000).setProperty('nakamori_deviceId', client_id)
+    return client_id
+
+
+def create_id():
+    from uuid import uuid4
+    return uuid4()
+
+
+def get_cond_visibility(condition):
+    return xbmc.getCondVisibility(condition)
+
+
+def is_dialog_active():
+    x = -1
+    try:
+        x = xbmcgui.getCurrentWindowDialogId()
+        x = int(x)
+        xbmc.log('----- > is_dialog_is_visible: %s' % x, xbmc.LOGNOTICE)
+    except:
+        pass
+    # https://github.com/xbmc/xbmc/blob/master/xbmc/guilib/WindowIDs.h
+    if 10099 <= x <= 10160:
+        return True
+    #if x == -1 or x == 9999:
+    #    return False
+    return False

@@ -35,10 +35,17 @@ class ListItem(xbmcgui.ListItem):
             self.set_thumb(dir_obj.poster)
         if dir_obj.banner is not None:
             self.set_banner(dir_obj.banner)
+        if dir_obj.icon is not None:
+            self.set_icon(dir_obj.icon)
+        else:
+            if dir_obj.poster is not None:
+                self.set_icon(dir_obj.poster)
+
+    def set_icon(self, icon):
+        xbmcgui.ListItem.setArt(self, {'icon': icon})
 
     def set_thumb(self, thumb):
         xbmcgui.ListItem.setArt(self, {'thumb': thumb})
-        xbmcgui.ListItem.setArt(self, {'icon': thumb})
         xbmcgui.ListItem.setArt(self, {'poster': thumb})
 
     def set_fanart(self, fanart):
@@ -97,6 +104,7 @@ class DirectoryListing(object):
 
     def set_content(self, content_type):
         self.content_type = content_type
+
         if self.content_type != '':
             xbmcplugin.setContent(self.handle, content_type)
 

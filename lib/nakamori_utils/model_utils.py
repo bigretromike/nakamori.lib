@@ -290,7 +290,7 @@ def get_video_streams(node):
             stream_info = node['videos'][stream_node]
             if not isinstance(stream_info, dict):
                 continue
-            stream_id = int(stream_info['Index'])
+            stream_id = int(stream_info.get('Index', '0'))
             streams[stream_id]['codec'] = stream_info['Codec']
             streams[stream_id]['width'] = stream_info['Width']
             streams[stream_id]['height'] = stream_info['Height']
@@ -313,7 +313,7 @@ def get_audio_streams(node):
             stream_info = node['audios'][stream_node]
             if not isinstance(stream_info, dict):
                 continue
-            stream_id = int(stream_info['Index'])
+            stream_id = int(stream_info.get('Index', '0'))
             # there are some codecs like AC3 that are really called AC3+, but Kodi doesn't do the +
             streams[stream_id]['codec'] = stream_info['Codec'].replace('+', '')
             streams[stream_id]['language'] = stream_info['LanguageCode'] if 'LanguageCode' in stream_info else 'unk'
