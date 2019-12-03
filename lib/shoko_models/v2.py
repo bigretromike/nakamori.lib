@@ -1534,34 +1534,24 @@ class File(Directory):
         self.date_added = pyproxy.decode(json_node.get('created', '')).replace('T', ' ')
         self.group = json_node.get('group_full', '')
 
-        try:
-            # Information about streams inside json_node file
-            eh.spam(json_node.get('media', {}))
-            if len(json_node.get('media', {})) > 0:
-                try:
-                    self.video_streams = model_utils.get_video_streams(json_node['media'])
-                except:
-                    self.video_streams = {}
-                    eh.exception(eh.ErrorPriority.NORMAL)
-                try:
-                    self.audio_streams = model_utils.get_audio_streams(json_node['media'])
-                except:
-                    self.audio_streams = {}
-                    eh.exception(eh.ErrorPriority.NORMAL)
-                try:
-                    self.sub_streams = model_utils.get_sub_streams(json_node['media'])
-                except:
-                    self.sub_streams = {}
-                    eh.exception(eh.ErrorPriority.NORMAL)
-            else:
+        # Information about streams inside json_node file
+        if len(json_node.get('media', {})) > 0:
+            try:
+                self.video_streams = model_utils.get_video_streams(json_node['media'])
+            except:
                 self.video_streams = {}
+            try:
+                self.audio_streams = model_utils.get_audio_streams(json_node['media'])
+            except:
                 self.audio_streams = {}
+            try:
+                self.sub_streams = model_utils.get_sub_streams(json_node['media'])
+            except:
                 self.sub_streams = {}
-        except Exception:
+        else:
             self.video_streams = {}
             self.audio_streams = {}
             self.sub_streams = {}
-            eh.exception(eh.ErrorPriority.NORMAL)
 
         eh.spam(self)
 
