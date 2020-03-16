@@ -113,17 +113,36 @@ def run_import():
     Same as pressing run import in Shoko. It performs many tasks, such as checking for files that are not added
     :return: None
     """
-    perform_server_action('/folder/import', object_id=None, refresh='awhile')
+    perform_server_action('folder/import', object_id=None, refresh='awhile')
 
 
 def scan_folder(object_id):
     """
-    THE API FOR THIS IS BROKEN. DON'T TRY TO USE IT
     Scans an import folder. This checks files for hashes and adds new ones. It takes longer than run import
     :param object_id:
     :return:
     """
-    pass
+    perform_server_action('rescan', object_id=object_id)
+
+
+def scan_dropfolder():
+    perform_server_action('folder/scan', refresh='awhile')
+
+
+def rescan_unlinked():
+    perform_server_action('rescanunlinked', refresh='awhile')
+
+
+def rehash_unlinked():
+    perform_server_action('rehashunlinked', refresh='awhile')
+
+
+def rescan_manuallinks():
+    perform_server_action('rescanmanuallinks', refresh='awhile')
+
+
+def rehash_manuallinks():
+    perform_server_action('rehashmanuallinks', refresh='awhile')
 
 
 def remove_missing_files():
@@ -172,11 +191,12 @@ def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon
             message_box(localized(30017), localized(30018), localized(30019), localized(30020))
             return False
 
+        was_canceled = False
         busy = xbmcgui.DialogProgress()
         busy.create(localized(30021), startup_state)
         busy.update(1)
         # poll every second until the server gives us a response that we want
-        while not busy.iscanceled():
+        while True:
             xbmc.sleep(1000)
             response = pyproxy.get_json(url, True)
 
@@ -202,7 +222,14 @@ def get_server_status(ip=plugin_addon.getSetting('ipaddress'), port=plugin_addon
             if startup_failed:
                 break
 
+            if busy.iscanceled():
+                was_canceled = True
+                break
+
         busy.close()
+
+        if was_canceled:
+            return False
 
         if startup_failed:
             message_box(localized(30017), localized(30018), localized(30019),
@@ -310,7 +337,7 @@ def can_connect(ip=None, port=None):
         if json_file is None:
             return False
         return True
-    except:
+    except Exception as ex:
         return False
 
 
@@ -342,24 +369,29 @@ def auth():
 
 
 def get_apikey(login, password):
-    creds = (login, password, plugin_addon.getSetting('device'))
-    body = '{"user":"%s","pass":"%s","device":"%s"}' % creds
-    post_body = pyproxy.post_data(server + '/api/auth', body)
-    auth_body = json.loads(post_body)
-    if 'apikey' in auth_body:
-        apikey_found_in_auth = str(auth_body['apikey'])
-        return apikey_found_in_auth
-    else:
-        raise Exception(localized(30026))
+    try:
+        creds = (login, password, plugin_addon.getSetting('device'))
+        body = '{"user":"%s","pass":"%s","device":"%s"}' % creds
+        post_body = pyproxy.post_data(server + '/api/auth', body)
+        auth_body = json.loads(post_body)
+        if 'apikey' in auth_body:
+            apikey_found_in_auth = str(auth_body['apikey'])
+            return apikey_found_in_auth
+        else:
+            raise Exception(localized(30026))
+    except Exception as ex:
+        xbmc.log(' === get_apikey error === %s ' % ex, xbmc.LOGNOTICE)
+        return None
 
 
 def can_user_connect():
     # what better way to try than to just attempt to load the main menu?
     try:
-        # TRY to use new method that no one has yet
+        # TRY to use new method which is faster
         try:
-            ping = pyproxy.get_json(server + '/api/ping', True)
-            if ping is not None and 'pong' in ping:
+            url = server + '/api/ping'
+            ping = pyproxy.get_json(url, True)
+            if ping is not None and b'pong' in ping:
                 return True
             else:  # should never happen
                 return False
@@ -368,13 +400,16 @@ def can_user_connect():
             if ex.code == 401:
                 return False
             eh.exception(ErrorPriority.NORMAL)
+
+        # TODO DEPRECATE THIS AS MOST FUNCTIONS REQUIRE 3.9.5+ anyway
         # but since no one has it, we can't count on it actually working, so fall back
         from shoko_models.v2 import Filter
         f = Filter(0, build_full_object=True, get_children=False)
         if f.size < 1:
             raise RuntimeError(localized(30027))
         return True
-    except:
+    except Exception as ex:
+        xbmc.log(' ===== auth error ===== %s ' % ex, xbmc.LOGNOTICE)
         # because we always check for connection first, we can assume that auth is the only problem
         # we need to log in
         eh.exception(ErrorPriority.NORMAL)
@@ -400,5 +435,20 @@ def trakt_scrobble(ep_id, status, progress, movie, notification):
         xbmc.executebuiltin('XBMC.Notification(%s, %s %s, 7500, %s)' % ('Trakt.tv', note_text, '',
                                                                         plugin_addon.getAddonInfo('icon')))
 
-    pyproxy.get_json(server + '/api/ep/scrobble?id=%i&ismovie=%s&status=%i&progress=%i' %
-                     (ep_id, movie, status, progress))
+    try:
+        pyproxy.get_json(server + '/api/ep/scrobble?id=%i&ismovie=%s&status=%i&progress=%i' % (ep_id, movie,
+                                                                                               status, progress))
+    except python_version_proxy.http_error as htex:
+        if htex.code == 500:
+            try:
+                xbmc.sleep(1000)
+                pyproxy.get_json(server + '/api/ep/scrobble?id=%i&ismovie=%s&status=%i&progress=%i' % (ep_id, movie,
+                                                                                                       status, progress))
+            except:
+                xbmc.log('trakt_scrobble error - double exception', xbmc.LOGNOTICE)
+        else:
+            xbmc.log('trakt_scrobble error - single exception', xbmc.LOGNOTICE)
+
+
+def calendar_refresh():
+    perform_server_action('serie/calendar/refresh')

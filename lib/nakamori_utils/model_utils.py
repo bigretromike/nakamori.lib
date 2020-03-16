@@ -398,7 +398,7 @@ def get_sort_name(episode):
     return str(episode.episode_number).zfill(3) + ' ' + episode.name
 
 
-def title_coloring(title, episode_count, total_count, special_count, total_special_count, airing=False):
+def title_coloring(title, episode_count, total_count, special_count, total_special_count, airing=False, is_movie=False):
     """
     Color title based on conditions
     :param title: title to color
@@ -407,10 +407,11 @@ def title_coloring(title, episode_count, total_count, special_count, total_speci
     :param special_count: special episode number
     :param total_special_count: total special episode number
     :param airing: is series still airing
+    :param is_movie: is series a movie, because they like to have parts so it would be not-complete most of the time
     :return: colorized title
     """
     color_title = title
-    if plugin_addon.getSetting('color_title') != 'true':
+    if plugin_addon.getSetting('color_title') != 'true' or is_movie:  # skip movies (they like to have parts)
         return color_title
 
     color_format = '[COLOR %s]%s[/COLOR]'

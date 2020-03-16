@@ -9,9 +9,12 @@ import xbmcplugin
 
 from nakamori_utils.globalvars import *
 import error_handler as eh
-from error_handler import ErrorPriority
+from error_handler import ErrorPriority, log
 from nakamori_utils.globalvars import plugin_addon
 from proxy.python_version_proxy import python_proxy as pyproxy
+from proxy.python_version_proxy import http_error as http_err
+from nakamori_utils.script_utils import log_setsuzoku
+from setsuzoku import Category, Action, Event
 
 try:
     from sqlite3 import dbapi2 as database
@@ -24,6 +27,10 @@ localize = script_addon.getLocalizedString
 localize2 = lib_addon.getLocalizedString
 
 sorting_types = []
+
+eigakan_url = plugin_addon.getSetting('ipEigakan')
+eigakan_port = plugin_addon.getSetting('portEigakan')
+eigakan_host = 'http://' + eigakan_url + ':' + eigakan_port
 
 
 class Sorting(object):
@@ -152,6 +159,8 @@ def clear_listitem_cache():
     Clear mark for nakamori files in kodi db
     :return:
     """
+    log_setsuzoku(Category.MAINTENANCE, Action.LISTITEM, Event.CLEAN)
+
     ret = xbmcgui.Dialog().yesno(plugin_addon.getLocalizedString(30104),
                                  plugin_addon.getLocalizedString(30081), plugin_addon.getLocalizedString(30112))
     if ret:
@@ -177,6 +186,8 @@ def clear_image_cache():
     Clear image cache in kodi db
     :return:
     """
+    log_setsuzoku(Category.MAINTENANCE, Action.IMAGE, Event.CLEAN)
+
     ret = xbmcgui.Dialog().yesno(plugin_addon.getLocalizedString(30104),
                                  plugin_addon.getLocalizedString(30081), plugin_addon.getLocalizedString(30112))
     if ret:
@@ -235,7 +246,7 @@ def move_to_next():
             elapsed += interval
         # endregion Fuck if I know....
         if isinstance(control_list, xbmcgui.ControlList):
-            move_position_on_list_to_next(control_list)
+            move_position_on_list(control_list, index, absolute)
     except:
         eh.exception(ErrorPriority.HIGH, localize2(30014))
 
@@ -297,6 +308,7 @@ def move_position_on_list(control_list, position=0, absolute=False):
             position = int(position + 1)
     try:
         control_list.selectItem(position)
+        xbmc.log(' move_position_on_list : %s ' % position, xbmc.LOGNOTICE)
     except:
         try:
             control_list.selectItem(position - 1)
@@ -414,9 +426,13 @@ def get_device_id(reset=False):
     nakamori_guid = os.path.join(directory, "nakamori_guid")
     file_guid = xbmcvfs.File(nakamori_guid)
     client_id = file_guid.read()
+    if client_id:
+        if len(client_id) < 16:
+            # reset device_id if its in old format
+            reset = True
 
     if not client_id or reset:
-        client_id = str("%012X" % create_id())
+        client_id = str("%016X" % create_id())
         file_guid = xbmcvfs.File(nakamori_guid, "w")
         file_guid.write(client_id)
 
@@ -428,6 +444,7 @@ def get_device_id(reset=False):
 
 def create_id():
     from uuid import uuid4
+    log_setsuzoku(Category.SETTINGS, Action.DEVICEID, Event.CREATE)
     return uuid4()
 
 
@@ -440,12 +457,113 @@ def is_dialog_active():
     try:
         x = xbmcgui.getCurrentWindowDialogId()
         x = int(x)
-        xbmc.log('----- > is_dialog_is_visible: %s' % x, xbmc.LOGNOTICE)
+        log('----- > is_dialog_window_is_visible: %s' % x)
+        # if there is any, wait 0.25s
+        xbmc.sleep(250)
     except:
+        eh.spam('----- > is_dialog_is_visible: NONE')
         pass
     # https://github.com/xbmc/xbmc/blob/master/xbmc/guilib/WindowIDs.h
+    # 10138 - busy,loading
     if 10099 <= x <= 10160:
         return True
-    #if x == -1 or x == 9999:
-    #    return False
     return False
+
+
+def send_profile():
+    eh.spam('Trying to send_profile(). Wish me luck!')
+    log_setsuzoku(Category.EIGAKAN, Action.PROFILE, Event.SEND)
+    # setup client on server
+    settings = {}
+
+    # tweak-ninja
+    settings['manual_mode'] = plugin_addon.getSetting('eigakan_manual_mode')
+    settings['h_resolution'] = plugin_addon.getSetting('eigakan_h_resolution')
+    settings['h_bitrate'] = plugin_addon.getSetting('eigakan_h_bitrate')
+    settings['l_resolution'] = plugin_addon.getSetting('eigakan_l_resolution')
+    settings['l_bitrate'] = plugin_addon.getSetting('eigakan_l_bitrate')
+    settings['x264_preset'] = plugin_addon.getSetting('eigakan_x264_preset')
+    settings['burn_subs'] = plugin_addon.getSetting('burnEigakan')
+    # lang-master
+    settings['pref_audio'] = plugin_addon.getSetting('audiolangEigakan')
+    settings['pref_subs'] = plugin_addon.getSetting('subEigakan')
+
+    settings = json.dumps(settings)
+
+    eh.spam('send_profile() data = %s' % settings)
+
+    try:
+        pyproxy.post_data(eigakan_host + '/api/clientid/%s' % get_device_id(), settings)
+        # if no error, lets mark that we did full handshake with eigakan
+        plugin_addon.setSetting('eigakan_handshake', 'true')
+    except Exception as ex:
+        plugin_addon.setSetting('eigakan_handshake', 'false')
+        eh.spam('error while send_profile(): %s' % ex)
+
+
+def check_eigakan():
+    try:
+        eigakan_data = pyproxy.get_json(eigakan_host + '/api/version')
+
+        if eigakan_data is None:
+            return False
+        elif 'eigakan' not in eigakan_data:
+            # raise RuntimeError('Invalid response from Eigakan')
+            return False
+        else:
+            if plugin_addon.getSetting('eigakan_handshake') == 'false':
+                eh.spam('We did not find Eigakan handshake')
+                try:
+                    pyproxy.get_json(eigakan_host + '/api/clientid/%s' % get_device_id())
+                except http_err as err:
+                    if int(err.code) == 404:
+                        eh.spam('We did not find device profile on Eigakan, sending new one...')
+                        plugin_addon.setSetting('eigakan_handshake', 'false')
+                        send_profile()
+                    else:
+                        return False
+            return True
+    except:
+        return False
+
+
+def is_addon_installed(addonid='inputstream.adaptive'):
+    x = xbmc.executeJSONRPC(
+        '{"jsonrpc":"2.0","id":1,"method":"Addons.GetAddonDetails","params":{"addonid":"%s","properties":["enabled"]}}'
+        % addonid)
+    # {"error":{"code":-32602,"message":"Invalid params."},"id":1,"jsonrpc":"2.0"}
+    xret = json.loads(x)
+    if 'error' in xret:
+        return False
+    return True
+
+
+def is_addon_enabled(addonid='inputstream.adaptive'):
+    x = xbmc.executeJSONRPC(
+        '{"jsonrpc":"2.0","id":1,"method":"Addons.GetAddonDetails","params":{"addonid":"%s","properties":["enabled"]}}'
+        % addonid)
+    # {"id":1,"jsonrpc":"2.0","result":{"addon":{"addonid":"inputstream.adaptive","enabled":false,"type":"kodi.inputstream"}}}
+    xret = json.loads(x)
+    xret = xret.get('result', {'addon': {'enabled': 'false'}}).get('addon').get('enabled')
+    if type(xret) is bool:
+        return xret
+    return False
+
+
+def enable_addon(addonid='inputstream.adaptive'):
+    x = xbmc.executeJSONRPC(
+        '{"jsonrpc":"2.0","id":1,"method":"Addons.SetAddonEnabled","params":{"addonid":"%s","enabled":true}}' % addonid)
+    y = '"result":"OK"'
+    if y in x:
+        return True
+    return False
+
+
+def bold(value):
+    return ''.join(['[B]', value, '[/B]'])
+
+
+def color(text_to_color, color_name, enable_color=True):
+    if enable_color:
+        return ''.join(['[COLOR %s]' % color_name, text_to_color, '[/COLOR]'])
+    return text_to_color

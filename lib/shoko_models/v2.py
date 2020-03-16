@@ -12,18 +12,9 @@ import nakamori_utils.model_utils
 import xbmcplugin
 from nakamori_utils.kodi_utils import Sorting
 
-try:
-    import nakamoriplugin
-    # This puts a dependency on plugin, which is a no no. It'll need to be replaced later
-    puf = nakamoriplugin.routing_plugin.url_for
-except:
-    import sys
-    if len(sys.argv) > 2:
-        eh.exception(eh.ErrorPriority.BLOCKING)
-
 from kodi_models import ListItem, WatchedStatus
 from nakamori_utils.globalvars import *
-from nakamori_utils import kodi_utils, shoko_utils, script_utils
+from nakamori_utils import kodi_utils, shoko_utils, script_utils, plugin_utils
 from nakamori_utils import model_utils
 
 from proxy.kodi_version_proxy import kodi_proxy
@@ -52,15 +43,17 @@ class Directory(object):
         self.icon = ''
         self.size = -1
         self.get_children = get_children
-        self.sort_index = 0
+        self.sort_index = 1
         self.sizes = None
-        if isinstance(json_node, (str, int, unicode)):
+        if isinstance(json_node, int) or pyproxy.is_unicode_or_string(json_node):
             self.id = json_node
             return
 
         self.id = json_node.get('id', 0)
         self.name = model_utils.get_title(json_node)
         self.size = int(json_node.get('size', '0'))
+
+        self.make_bold = False
 
         self.process_art(json_node)
 
@@ -111,9 +104,9 @@ class Directory(object):
     def base_url(self):
         return server + '/api/' + self.url_prefix()
 
-    def get_full_object(self):
+    def get_full_object(self, force_cache=False, cache_time=0):
         url = self.get_api_url()
-        json_body = pyproxy.get_json(url)
+        json_body = pyproxy.get_json(url, force_cache=force_cache, cache_time=cache_time)
         if json_body is None:
             return None
         json_node = json.loads(json_body)
@@ -155,17 +148,19 @@ class Directory(object):
         pass
 
     def set_watched_status(self, watched):
-        if isinstance(watched, str) or isinstance(watched, unicode):
+        if pyproxy.is_unicode_or_string(watched):
             watched = watched.lower() != 'false'
 
         url = self.base_url()
         url += '/watch' if watched else '/unwatch'
         url = pyproxy.set_parameter(url, 'id', self.id)
+        # TODO DEPRECATED
         if plugin_addon.getSetting('syncwatched') == 'true':
             pyproxy.get_json(url)
         else:
             xbmc.executebuiltin('XBMC.Action(ToggleWatched)')
 
+        # TODO DEPRECATED
         if plugin_addon.getSetting('sync_to_library') == 'true':
             # TODO NEED TO GET EPISODEID FROM FILE
             # IN DB FILES ARE STORED AS PATH: plugin://plugin.video.nakamori/  FILENAME: plugin://plugin.video.nakamori/tvshows/<ID>/ep/<EP_ID>/play
@@ -207,9 +202,13 @@ class Directory(object):
         :rtype: ListItem
         """
         url = self.get_plugin_url()
-        li = ListItem(self.name, path=url)
+        name = self.name
+        if self.make_bold:
+            name = kodi_utils.bold(self.name)
+        li = ListItem(name, path=url)
         li.setPath(url)
         infolabels = self.get_infolabels()
+        li.set_watched_flags(infolabels, self.is_watched())
         li.setInfo(type='video', infoLabels=infolabels)
         li.set_art(self)
         context = self.get_context_menu_items()
@@ -222,10 +221,14 @@ class Directory(object):
 
     def get_context_menu_items(self):
         context_menu = []
-        if plugin_addon.getSetting('show_refresh') == 'true':
+
+        # Refresh
+        if plugin_addon.getSetting('context_refresh') == 'true':
             context_menu += [(plugin_addon.getLocalizedString(30131), script_utils.url_refresh())]
-        context_menu += [('  ', 'empty'), (plugin_addon.getLocalizedString(30147), 'empty'),
-                         (plugin_addon.getLocalizedString(30148), 'empty')]
+
+        # Information about Kodi menu being below
+        context_menu += [('  ', 'empty'), ('  ', 'empty'), (plugin_addon.getLocalizedString(30147), 'empty')]
+        # ,(plugin_addon.getLocalizedString(30148), 'empty')]
         return context_menu
 
     def __iter__(self):
@@ -357,6 +360,12 @@ class Directory(object):
         sorting_setting = plugin_addon.getSetting('default_sort_series')
         kodi_utils.set_user_sort_method(sorting_setting)
 
+    def bold(self):
+        self.make_bold = True
+
+    def normal(self):
+        self.make_bold = False
+
 
 class CustomItem(Directory):
     def __init__(self, name, image, plugin_url, sort_index=0, is_folder=True):
@@ -383,6 +392,7 @@ class CustomItem(Directory):
         self.size = 0
         self.sort_index = sort_index
         self.directory_filter = False
+        self.make_bold = False
 
     def get_api_url(self):
         return None
@@ -420,7 +430,7 @@ class Filter(Directory):
     """
     A filter object, contains a unified method of representing a filter, with convenient converters
     """
-    def __init__(self, json_node, build_full_object=False, get_children=False):
+    def __init__(self, json_node, build_full_object=False, get_children=False, parent_menu=''):
         """
         Create a filter object from a json node, containing everything that is relevant to a ListItem.
         You can also pass an ID for a small helper object.
@@ -429,7 +439,14 @@ class Filter(Directory):
         """
         Directory.__init__(self, json_node, get_children)
         # we are making this overrideable for Unsorted and such
-        self.plugin_url = 'plugin://plugin.video.nakamori/menu/filter/%s/' % self.id
+
+        if parent_menu.endswith('/'):
+            parent_menu = parent_menu[:-1]
+        self.parent_url = parent_menu
+        self.plugin_url = '%s/filter-%s/' % (parent_menu, self.id)
+        if self.id == 0:  # 0 is for retrieving all Filters
+            self.plugin_url = parent_menu
+
         self.directory_filter = False
 
         if build_full_object:
@@ -437,7 +454,6 @@ class Filter(Directory):
             if self.size < 0:
                 # First, download basic info
                 json_node = self.get_full_object()
-                self.plugin_url = 'plugin://plugin.video.nakamori/menu/filter/%s/' % self.id
                 Directory.__init__(self, json_node, get_children)
                 self.directory_filter = json_node.get('type', 'filter') == 'filters'
             # then download children, optimized for type
@@ -445,7 +461,7 @@ class Filter(Directory):
                 json_node = self.get_full_object()
 
         # check again, as we might have replaced it above
-        if isinstance(json_node, (str, int, unicode)):
+        if isinstance(json_node, int) or pyproxy.is_unicode_or_string(json_node):
             eh.spam(self)
             return
 
@@ -495,13 +511,13 @@ class Filter(Directory):
             self.name = 'Unsorted Files'
             self.sort_index = 6
             self.apply_image_override('unsort.png')
-            self.plugin_url = puf(nakamoriplugin.show_unsorted_menu)
+            self.plugin_url = 'plugin://plugin.video.nakamori/menu-filter-unsorted/'
 
     def process_children(self, json_node):
         items = json_node.get('filters', [])
         for i in items:
             try:
-                self.items.append(Filter(i, build_full_object=True))
+                self.items.append(Filter(i, build_full_object=True, parent_menu=self.parent_url))
             except:
                 pass
         items = json_node.get('groups', [])
@@ -513,17 +529,17 @@ class Filter(Directory):
                 pass
 
     def get_collapsed_group(self, json_node):
-        group = Group(json_node, build_full_object=True, filter_id=self.id)
+        group = Group(json_node, build_full_object=True, filter_id=self.id, parent_menu=self.parent_url)
         if group.size == 1:
             if len(group.items) == 1 and group.items[0] is not None:
                 group = group.items[0]
                 if group.size < 0:
-                    group = Series(group.id, True)
+                    group = Series(group.id, parent_menu=self.parent_url)
             else:
-                group = Group(json_node, build_full_object=True, filter_id=self.id)
+                group = Group(json_node, build_full_object=True, filter_id=self.id, parent_menu=self.parent_url)
                 group = group.items[0]
                 if group.size < 0:
-                    group = Series(group.id, build_full_object=True)
+                    group = Series(group.id, build_full_object=True, parent_menu=self.parent_url)
         return group
 
     def get_context_menu_items(self):
@@ -538,7 +554,7 @@ class Group(Directory):
     """
     A group object, contains a unified method of representing a group, with convenient converters
     """
-    def __init__(self, json_node, build_full_object=False, get_children=False, filter_id=0):
+    def __init__(self, json_node, build_full_object=False, get_children=False, filter_id=0, parent_menu=''):
         """
         Create a group object from a json node, containing everything that is relevant to a ListItem.
         You can also pass an ID for a small helper object.
@@ -549,6 +565,11 @@ class Group(Directory):
         """
         self.filter_id = 0
         Directory.__init__(self, json_node, get_children)
+        if parent_menu.endswith('/'):
+            parent_menu = parent_menu[:-1]
+        self.plugin_url = '%s/group-%s/' % (parent_menu, self.id)
+        self.parent_menu = parent_menu
+
         # don't redownload info on an okay object
         if build_full_object and (self.size < 0 or (get_children and len(self.items) < 1)):
             json_node = self.get_full_object()
@@ -557,7 +578,7 @@ class Group(Directory):
             self.filter_id = filter_id
 
         # check again, as we might have replaced it above
-        if isinstance(json_node, (str, int, unicode)):
+        if isinstance(json_node, int) or pyproxy.is_unicode_or_string(json_node):
             eh.spam(self)
             return
 
@@ -589,7 +610,7 @@ class Group(Directory):
         return 'group'
 
     def get_plugin_url(self):
-        return puf(nakamoriplugin.show_group_menu, self.id, self.filter_id)
+        return self.plugin_url
 
     def get_listitem(self):
         """
@@ -636,7 +657,7 @@ class Group(Directory):
         items = json_node.get('series', [])
         for i in items:
             try:
-                self.items.append(Series(i, build_full_object=True))
+                self.items.append(Series(i, build_full_object=True, parent_menu=self.get_plugin_url()))
             except:
                 pass
 
@@ -667,7 +688,8 @@ class Series(Directory):
     """
     A series object, contains a unified method of representing a series, with convenient converters
     """
-    def __init__(self, json_node, build_full_object=False, get_children=False, compute_hash=False, seiyuu_pic=False, use_aid=False):
+    def __init__(self, json_node, build_full_object=False, get_children=False, compute_hash=False, seiyuu_pic=False,
+                 use_aid=False, in_bookmark=False, force_cache=False, cache_time=0, parent_menu=''):
         """
         Create a series object from a json node, containing everything that is relevant to a ListItem
         :param json_node: the json response from things like api/serie
@@ -677,21 +699,25 @@ class Series(Directory):
         self.url = None
         self.item_type = 'tvshow'
         self.use_aid = use_aid
+        if parent_menu.endswith('/'):
+            parent_menu = parent_menu[:-1]
+        self.plugin_url = '%s/series-%s/' % (parent_menu, self.id)
+        self.parent_menu = parent_menu
 
         # don't redownload info on an okay object
         if build_full_object and (self.size < 0 or (get_children and len(self.items) < 1)):
-            json_node = self.get_full_object()
+            json_node = self.get_full_object(force_cache=force_cache, cache_time=cache_time)
             Directory.__init__(self, json_node, get_children)
         self.episode_types = []
         # check again, as we might have replaced it above
-        if isinstance(json_node, (str, int, unicode)):
+        if isinstance(json_node, int) or pyproxy.is_unicode_or_string(json_node):
             eh.spam(self)
             return
 
         self.alternate_name = model_utils.get_title(json_node, 'en', 'official')
         self.overview = model_utils.make_text_nice(pyproxy.decode(json_node.get('summary', '')))
 
-        self.anidb_id = pyproxy.safe_int(json_node.get('aid', 0))
+        self.anidb_aid = pyproxy.safe_int(json_node.get('aid', 0))
         self.season = pyproxy.safe_int(json_node.get('season', '1'))
         self.date = model_utils.get_airdate(json_node)
         self.rating = float(str(json_node.get('rating', '0')).replace(',', '.'))
@@ -713,6 +739,9 @@ class Series(Directory):
         self.studio = ''
         self.outline = " ".join(self.overview.split(".", 3)[:2])  # first 3 sentence
         self.hash = None
+        self.in_favorite = False
+        self.in_bookmark = in_bookmark
+        self.match = json_node.get('match', '')
 
         self.process_children(json_node)
 
@@ -741,12 +770,9 @@ class Series(Directory):
         return 'serie'
 
     def get_plugin_url(self):
-        try:
-            return puf(nakamoriplugin.show_series_menu, self.id)
-        except:
-            return str(self.id)
+        return self.plugin_url
 
-    def get_listitem(self, url=None):
+    def get_listitem(self, url=None, disable_coloring=False):
         """
 
         :return:
@@ -756,16 +782,19 @@ class Series(Directory):
         if self.url is None:
             self.url = self.get_plugin_url()
 
-        # We need to assume not airing, as there is no end date provided in API
-        name = model_utils.title_coloring(self.name, self.sizes.local_episodes, self.sizes.total_episodes,
-                                          self.sizes.local_specials, self.sizes.total_specials, False)
+        if disable_coloring:
+            name = self.name
+        else:
+            # We need to assume not airing, as there is no end date provided in API
+            name = model_utils.title_coloring(self.name, self.sizes.local_episodes, self.sizes.total_episodes,
+                                              self.sizes.local_specials, self.sizes.total_specials, False)
 
         li = ListItem(name, path=self.url)
         infolabels = self.get_infolabels()
         li.setPath(self.url)
         li.set_watched_flags(infolabels, self.is_watched(), 1)
 
-        li.setUniqueIDs({'anidb': self.anidb_id, 'shoko_aid': self.id})
+        li.setUniqueIDs({'anidb': self.anidb_aid, 'anidb_aid': self.anidb_aid, 'shoko_aid': self.id})
         self.hide_info(infolabels)
         li.setRating('anidb', float(infolabels.get('rating', 0.0)), infolabels.get('votes', 0), True)
         li.setInfo(type='video', infoLabels=infolabels)
@@ -877,7 +906,7 @@ class Series(Directory):
             except:
                 pass
         for i in episode_types:
-            self.episode_types.append(SeriesTypeList(json_node, i))
+            self.episode_types.append(SeriesTypeList(json_node, i, parent_menu=self.parent_menu))
 
     def get_context_menu_items(self):
         context_menu = []
@@ -902,8 +931,25 @@ class Series(Directory):
         if plugin_addon.getSetting('context_show_vote_Series') == 'true':
             context_menu.append((localize(30124), script_utils.url_vote_for_series(self.id)))
 
-        # TODO Things to add: View Cast, Play All, Related, Similar
+        # Favorite
+        if plugin_addon.getSetting('show_favorites') == 'true':
+            if self.in_favorite:
+                context_menu.append((localize(30213), script_utils.url_remove_favorite(self.id)))
+            else:
+                context_menu.append((localize(30212), script_utils.url_add_favorite(self.id)))
 
+        # Bookmark
+        if plugin_addon.getSetting('show_bookmark') == 'true':
+            if self.in_bookmark:
+                context_menu.append((localize(30217), script_utils.url_remove_bookmark(self.anidb_aid)))
+            else:
+                context_menu.append((localize(30216), script_utils.url_add_bookmark(self.anidb_aid)))
+
+        # Playlist Mode
+        context_menu.append((localize(30130), script_utils.url_playlist_series(series_id=self.id)))
+
+        # TODO Things to add: View Cast, Play All, Related, Similar
+        context_menu += Directory.get_context_menu_items(self)
         return context_menu
 
     def vote(self, value):
@@ -966,19 +1012,25 @@ class Series(Directory):
                 return False
         return True
 
+    def is_in_favorite(self):
+        self.in_favorite = True
+
 
 # noinspection Duplicates
 class SeriesTypeList(Series):
     """
     The Episode Type List for a series
     """
-    def __init__(self, json_node, episode_type, get_children=False):
+    def __init__(self, json_node, episode_type, get_children=False, force_cache=False, cache_time=0, parent_menu=''):
         self.episode_type = episode_type
-        if isinstance(json_node, (int, str, unicode)):
+        if isinstance(json_node, int) or pyproxy.is_unicode_or_string(json_node):
             self.id = json_node
             self.get_children = get_children
-            json_node = self.get_full_object()
-        Series.__init__(self, json_node, get_children=get_children)
+            json_node = self.get_full_object(force_cache=force_cache, cache_time=cache_time)
+        Series.__init__(self, json_node, get_children=get_children, force_cache=force_cache, cache_time=cache_time)
+        if parent_menu.endswith('/'):
+            parent_menu = parent_menu[:-1]
+        self.plugin_url = '%s/type-%s/' % (parent_menu, self.episode_type)
 
     def process_children(self, json_node):
         items = json_node.get('eps', [])
@@ -992,7 +1044,7 @@ class SeriesTypeList(Series):
                 pass
 
     def get_plugin_url(self):
-        return puf(nakamoriplugin.show_series_episode_types_menu, self.id, self.episode_type)
+        return self.plugin_url
 
     def get_listitem(self):
         """
@@ -1133,7 +1185,8 @@ class Episode(Directory):
         """
         self.series_id = 0
         self.series_name = None
-        self.series_anidb_id = 0
+        self.anidb_aid = 0
+        self.anidb_eid = 0
         self.actors = []
         self.url = None
         self.item_type = 'episode'
@@ -1141,7 +1194,7 @@ class Episode(Directory):
             self.series_id = series.id
             self.series_name = series.name
             self.actors = series.actors
-            self.series_anidb_id = series.anidb_id
+            self.anidb_aid = series.anidb_aid
             if series.is_movie:
                 self.item_type = 'movie'
 
@@ -1151,12 +1204,15 @@ class Episode(Directory):
             json_node = self.get_full_object()
             Directory.__init__(self, json_node)
         # check again, as we might have replaced it above
-        if isinstance(json_node, (str, int, unicode)):
+        if isinstance(json_node, int) or pyproxy.is_unicode_or_string(json_node):
             eh.spam(self)
             return
 
         self.episode_number = pyproxy.safe_int(json_node.get('epnumber', ''))
         self.episode_type = json_node.get('eptype', 'Other')
+        if self.anidb_aid == 0:
+            self.anidb_aid = pyproxy.safe_int(json_node.get('aid', 0))
+        self.anidb_eid = pyproxy.safe_int(json_node.get('eid', 0))
         self.date = model_utils.get_airdate(json_node)
         self.tvdb_episode = json_node.get('season', '0x0')
         self.update_date = None
@@ -1169,10 +1225,11 @@ class Episode(Directory):
         self.alternate_name = model_utils.get_title(json_node, 'x-jat', 'main')
 
         self.watched = pyproxy.safe_int(json_node.get('view', 0)) != 0
+        self.watched_date = str(json_node.get('view_date', ''))
         self.year = pyproxy.safe_int(json_node.get('year', ''))
 
         self.rating = float(str(json_node.get('rating', '0')).replace(',', '.'))
-        self.user_rating = float(str(json_node.get('UserRating', '0')).replace(',', '.'))
+        self.user_rating = float(str(json_node.get('userrating', '0')).replace(',', '.'))
         self.overview = model_utils.make_text_nice(pyproxy.decode(json_node.get('summary', '')))
         self.votes = pyproxy.safe_int(json_node.get('votes', ''))
         self.outline = " ".join(self.overview.split(".", 3)[:2])  # first 3 sentence
@@ -1191,7 +1248,7 @@ class Episode(Directory):
     def get_file(self):
         """
         :return: the first file in the list, or None if not populated
-        :rtype: File
+        :rtype: File / None
         """
         if len(self.items) > 0 and self.items[0] is not None:
             return self.items[0]
@@ -1219,8 +1276,10 @@ class Episode(Directory):
     def url_prefix(self):
         return 'ep'
 
-    def get_plugin_url(self):
-        return 'plugin://plugin.video.nakamori/episode/%s/file/%s/play' % (self.id, 0)
+    def get_plugin_url(self, party_mode=False):
+        if party_mode:
+            return plugin_utils.url_play_video(self.id, 0)
+        return plugin_utils.url_play_video(self.id, 0)
 
     def is_watched(self):
         if self.watched:
@@ -1257,15 +1316,15 @@ class Episode(Directory):
         li.set_art(self)
         li.setCast(self.actors)
 
-        li.setUniqueIDs({'shoko_eid': self.id})
+        li.setUniqueIDs({'anidb_eid': self.anidb_eid, 'shoko_eid': self.id})
         if self.series_id != 0:
-            li.setUniqueIDs({'shoko_aid': self.series_id})
+            li.setUniqueIDs({'anidb_aid': self.anidb_aid, 'shoko_aid': self.series_id})
 
         f = self.get_file()
         if f is not None:
             model_utils.set_stream_info(li, f)
-        li.addContextMenuItems(self.get_context_menu_items())
 
+        li.addContextMenuItems(self.get_context_menu_items())
         return li
 
     def get_infolabels(self):
@@ -1370,7 +1429,7 @@ class Episode(Directory):
         # Play
         if plugin_addon.getSetting('context_show_play') == 'true':
             # I change this to play, because with 'show info' this does not play file
-            url = 'RunPlugin(%s)' % puf(nakamoriplugin.play_video, self.id, self.get_file().id)
+            url = plugin_utils.url_play_video(self.id, self.get_file().id, runplugin=True)
             context_menu.append((localize(30065), url))
             # context_menu.append((localize(30065), 'Action(Select)'))
 
@@ -1378,13 +1437,23 @@ class Episode(Directory):
         if self.get_file() is not None and self.get_file().resume_time > 0 \
                 and plugin_addon.getSetting('file_resume') == 'true':
             label = localize(30141) + ' (%s)' % time.strftime('%H:%M:%S', time.gmtime(self.get_file().resume_time))
-            url = 'RunPlugin(%s)' % puf(nakamoriplugin.resume_video, self.id, self.get_file().id)
+            url = plugin_utils.url_resume_video(self.id, self.get_file().id, runplugin=True)
             context_menu.append((label, url))
 
         # Play (No Scrobble)
         if plugin_addon.getSetting('context_show_play_no_watch') == 'true':
-            context_menu.append((localize(30132), 'RunPlugin(%s)' % puf(nakamoriplugin.play_video_without_marking,
-                                                                        self.id, self.get_file().id)))
+            context_menu.append((localize(30132), plugin_utils.url_play_video_without_marking(self.id, self.get_file().id, runplugin=True)))
+
+        # Play (transcode)
+        if plugin_addon.getSetting('context_show_force_transcode') == 'true' and plugin_addon.getSetting('eigakan_handshake') == 'true':
+            context_menu.append((localize(30174), plugin_utils.url_transcode_play_video(self.id, self.get_file().id, runplugin=True)))
+
+        # Play (Direct)
+        if plugin_addon.getSetting('enableEigakan') == 'true' and plugin_addon.getSetting('context_show_directplay') == 'true':
+            if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
+                context_menu.append((localize(30175), plugin_utils.url_direct_play_video(self.id, runplugin=True)))
+            else:
+                context_menu.append((localize(30175), plugin_utils.url_direct_play_video(self.id, self.get_file().id, runplugin=True)))
 
         # Inspect
         if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
@@ -1420,28 +1489,32 @@ class Episode(Directory):
             context_menu.append((localize(30123), 'Action(Info)'))
 
         # View Cast
-        if plugin_addon.getSetting('context_view_cast') == 'true' and self.series_id != 0:
+        # this was comment out, leaving until clean up
+        #if plugin_addon.getSetting('context_view_cast') == 'true' and self.series_id != 0:
             # context_menu.append((localize(30134), 'RunPlugin(%s&cmd=viewCast)'))
-            pass
+        #    pass
 
-        # Refresh
-        if plugin_addon.getSetting('context_refresh') == 'true':
-            context_menu.append((localize(30131), 'Container.Refresh'))
-
-        # Eigakan
-        # Probe / Transcode
-        # TODO lang fix
-        if plugin_addon.getSetting('enableEigakan') == 'true':
+        # Probe
+        if plugin_addon.getSetting('enableEigakan') == 'true' and plugin_addon.getSetting('context_show_probe') == 'true':
             if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
-                context_menu.append(('Probe', script_utils.url_probe_episode(ep_id=self.id)))
-                context_menu.append(('Transcode', script_utils.url_transcode_episode(ep_id=self.id)))
-                context_menu.append(('Direct Play', 'RunPlugin(%s)' % puf(nakamoriplugin.direct_play_video, self.id)))
+                context_menu.append((localize(30177), script_utils.url_probe_episode(ep_id=self.id)))
             else:
                 file_ = self.get_file()
                 file_id = file_.id
-                context_menu.append(('Probe', script_utils.url_probe_file(file_id=file_id)))
-                context_menu.append(('Transcode', script_utils.url_transcode_file(file_id=file_id)))
-                context_menu.append(('Direct Play', 'RunPlugin(%s)' % puf(nakamoriplugin.direct_play_video, self.id, self.get_file().id)))
+                context_menu.append((localize(30177), script_utils.url_probe_file(file_id=file_id)))
+
+        # Transcode
+        if plugin_addon.getSetting('enableEigakan') == 'true':
+            if plugin_addon.getSetting('context_pick_file') == 'true' and len(self.items) > 1:
+                context_menu.append((localize(30176), script_utils.url_transcode_episode(ep_id=self.id)))
+            else:
+                file_ = self.get_file()
+                file_id = file_.id
+                context_menu.append((localize(30176), script_utils.url_transcode_file(file_id=file_id)))
+
+        # Playlist Mode
+        if not self.watched:
+            context_menu.append((localize(30130), script_utils.url_playlist_series(series_id=self.series_id)))
 
         # the default ones that say the rest are kodi's
         context_menu += Directory.get_context_menu_items(self)
@@ -1507,7 +1580,7 @@ class File(Directory):
             json_node = self.get_full_object()
             Directory.__init__(self, json_node)
         # check again, as we might have replaced it above
-        if isinstance(json_node, (str, int, unicode)):
+        if isinstance(json_node, int) or pyproxy.is_unicode_or_string(json_node):
             eh.spam(self)
             return
 
@@ -1534,7 +1607,6 @@ class File(Directory):
         self.date_added = pyproxy.decode(json_node.get('created', '')).replace('T', ' ')
         self.group = json_node.get('group_full', '')
 
-        # Information about streams inside json_node file
         if len(json_node.get('media', {})) > 0:
             try:
                 self.video_streams = model_utils.get_video_streams(json_node['media'])
@@ -1572,7 +1644,11 @@ class File(Directory):
         return 'file'
 
     def get_plugin_url(self):
-        return 'plugin://plugin.video.nakamori/episode/%s/file/%s/play_without_marking' % (0, self.id)
+        return plugin_utils.url_play_video_without_marking(0, self.id)
+
+    @property
+    def remote_url_for_player(self):
+        return self.file_url
 
     @property
     def url_for_player(self):
@@ -1686,3 +1762,241 @@ def get_series_for_episode(ep_id):
     json_body = pyproxy.get_json(url)
     json_node = json.loads(json_body)
     return Series(json_node)
+
+
+class ImportFolder(object):
+    def __init__(self, json_node, build_full_object=False):
+        self.id = 0
+        self.name = ''
+        self.type = ''
+        self.location = ''
+        self.isDropSource = False
+        self.isDropDestination = False
+        self.isWatched = False
+        self.filesize = 0
+        self.size = 0
+        self.capacity = ''
+
+        if isinstance(json_node, int):
+            self.id = int(json_node)
+            return
+
+        if build_full_object:
+            json_node = self.get_full_object()
+        self.process(json_node)
+        self.plugin_url = plugin_utils.url_show_folder_menu(self.id)
+        self.extra_data()
+
+    def extra_data(self):
+        json_extra = pyproxy.get_json(server + '/api/serie/infobyfolder?id=%s' % self.id)
+        if json_extra is not None:
+            json_extra = json.loads(json_extra)
+            self.size = int(json_extra.get('size', 0))
+            self.filesize = int(json_extra.get('filesize', 0))
+            capacity, units = convert_units(self.filesize)
+            self.capacity = '%s %s' % (capacity, units)
+
+    def process(self, json_node):
+        body = json_node
+        self.id = int(body.get('ImportFolderID', 0))
+        self.location = body.get('ImportFolderLocation' '')
+        self.name = body.get('ImportFolderName', 'NA')
+        if self.name == 'NA':
+            self.name = self.location
+        self.type = int(body.get('ImportFolderType', 0))
+        self.isDropSource = True if int(body.get('isDropSource', 0)) == 1 else False
+        self.isDropDestination = True if int(body.get('isDropDestination', 0)) == 1 else False
+        self.isWatched = True if int(body.get('isWatched', 0)) == 1 else False
+
+    def get_full_object(self):
+        url = self.get_api_url()
+        json_body = pyproxy.get_json(url)
+        if json_body is None:
+            return None
+        json_node = json.loads(json_body)
+        return json_node
+
+    def get_api_url(self):
+        url = self.base_url()
+        return url
+
+    def base_url(self):
+        return server + '/api/' + self.url_prefix()
+
+    def url_prefix(self):
+        return 'folder/%s' % self.id
+
+    def get_plugin_url(self):
+        return self.plugin_url
+
+    def get_infolabels(self):
+        return {'Title': self.name, 'Plot': self.capacity}
+
+    def get_listitem(self):
+        url = self.get_plugin_url()
+        li = ListItem(self.name, path=url)
+        li.setPath(url)
+        infolabels = self.get_infolabels()
+        li.setInfo(type='video', infoLabels=infolabels)
+        # li.set_art(self)
+        context = self.get_context_menu_items()
+        if context is not None and len(context) > 0:
+            li.addContextMenuItems(context)
+        return li
+
+    def get_context_menu_items(self):
+        context_menu = []
+        # TODO edit folder https://github.com/ShokoAnime/ShokoServer/blob/master/Shoko.Server/API/v2/Modules/Common.cs#L93
+        # TODO delete folder https://github.com/ShokoAnime/ShokoServer/blob/master/Shoko.Server/API/v2/Modules/Common.cs#L121
+
+        context_menu += [('rescan this folder', script_utils.url_folder_scan(self.id))]
+        context_menu += [('  ', 'empty'), ('  ', 'empty'), (plugin_addon.getLocalizedString(30147), 'empty')]
+        return context_menu
+
+
+class ImportFolders(object):
+    def __init__(self):
+        self.items = []
+        self.size = 0
+
+        json_node = self.get_full_object()
+        if json_node is not None:
+            self.process_children(json_node)
+
+    def process_children(self, json_node):
+        for i in json_node:
+            try:
+                self.items.append(ImportFolder(i))
+            except:
+                pass
+        self.size = len(self.items)
+
+    def get_full_object(self):
+        url = self.get_api_url()
+        json_body = pyproxy.get_json(url)
+        if json_body is None:
+            return None
+        json_node = json.loads(json_body)
+        return json_node
+
+    def get_api_url(self):
+        url = self.base_url()
+        return url
+
+    def base_url(self):
+        return server + '/api/' + self.url_prefix()
+
+    def url_prefix(self):
+        return 'folder/list'
+
+
+class Queue(object):
+    def __init__(self, role):
+        self.count = 0
+        self.isrunning = False
+        self.state = ''
+
+        self.role = role
+
+        json_node = self.get_full_object()
+        if json_node is not None:
+            self.process(json_node)
+
+    def process(self, json_node):
+        self.count = int(json_node.get('count', 0))
+        self.isrunning = True if str(json_node.get('isrunning', 'False')) == 'True' else False
+        self.state = json_node.get('state', 'Idle')
+
+    def get_full_object(self):
+        url = self.get_api_url()
+        json_body = pyproxy.get_json(url)
+        if json_body is None:
+            return None
+        json_node = json.loads(json_body)
+        return json_node
+
+    def get_api_url(self):
+        url = self.base_url()
+        return url
+
+    def base_url(self):
+        return server + '/api/' + self.url_prefix()
+
+    def url_prefix(self):
+        return 'queue/%s/get' % self.role
+
+    def pause(self):
+        url = server + '/api/queue/%s/stop' % self.role
+        pyproxy.get_json(url)
+        self.isrunning = False
+
+    def start(self):
+        url = server + '/api/queue/%s/start' % self.role
+        pyproxy.get_json(url)
+        self.isrunning = True
+
+    def clear(self):
+        url = server + '/api/queue/%s/clear' % self.role
+        pyproxy.get_json(url)
+
+    def get_context_menu_items(self):
+        context_menu = []
+        if self.isrunning:
+            context_menu += [(localize(30220), script_utils.url_command_queue(self.role, 'stop'))]
+        else:
+            context_menu += [(localize(30219), script_utils.url_command_queue(self.role, 'start'))]
+        context_menu += [(localize(30228), script_utils.url_command_queue(self.role, 'clear'))]
+        return context_menu
+
+    def get_infolabels(self):
+        return {'Title': self.role, 'Plot': self.state}
+
+    def get_listitem(self):
+        url = ''  # self.get_plugin_url()
+        li = ListItem(self.get_name(), path=url)
+        li.setPath(url)
+        infolabels = self.get_infolabels()
+        li.setInfo(type='video', infoLabels=infolabels)
+
+        context = self.get_context_menu_items()
+        if context is not None and len(context) > 0:
+            li.addContextMenuItems(context)
+        return li
+
+    def get_name(self):
+        color = 'red'
+        if self.isrunning:
+            color = "green"
+        name = '[COLOR %s]%s[/COLOR] %s' % (color, self.role, self.count if self.count > 0 else '')
+        return name
+
+
+class QueueHasher(Queue):
+    def __init__(self):
+        Queue.__init__(self, 'hasher')
+
+
+class QueueImages(Queue):
+    def __init__(self):
+        Queue.__init__(self, 'images')
+
+
+class QueueGeneral(Queue):
+    def __init__(self):
+        Queue.__init__(self, 'general')
+
+
+def convert_units(input):
+    size = int(input)
+    # 2**10 = 1024
+    power = 2 ** 10
+    n = 0
+    power_labels = {0: '', 1: 'Ki', 2: 'Mi', 3: 'Gi', 4: 'Ti', 5: 'Pi', 6: 'Ei', 7: 'Zi', 8: 'Yi'}
+    while size > power:
+        size /= power
+        n += 1
+    return size, power_labels[n] + 'B'
+
+
+
+
